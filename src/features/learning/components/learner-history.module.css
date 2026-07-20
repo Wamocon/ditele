@@ -1,0 +1,95 @@
+.heading,
+.eventHeader,
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.privacyNotice {
+  border-inline-start: 4px solid var(--primary);
+}
+
+.privacyNotice h2,
+.privacyNotice p {
+  margin: 0;
+}
+
+.historyList {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eventCard {
+  min-width: 0;
+  border-inline-start: 4px solid var(--border-strong);
+}
+
+.eventHeader {
+  align-items: flex-start;
+}
+
+.eventHeader h2 {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.contextGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.contextGrid > div {
+  min-width: 0;
+  border-inline-start: 2px solid var(--border-strong);
+  padding-inline-start: 10px;
+}
+
+.contextGrid dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.contextGrid dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--foreground-strong);
+  font-weight: 700;
+}
+
+.eventFooter {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.pagination {
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+
+@media (max-width: 700px) {
+  .contextGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination {
+    align-items: stretch;
+  }
+
+  .pagination > *,
+  .eventFooter > * {
+    width: 100%;
+    text-align: center;
+  }
+}
+

@@ -1,0 +1,65 @@
+{
+  "name": "ditele-v2",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "dev:local": "next dev --hostname 127.0.0.1 --port 3100",
+    "build": "next build",
+    "start": "next start",
+    "start:local": "next start --hostname 127.0.0.1 --port 3100",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:local-auth-gateway": "node --test scripts/ensure-local-auth-gateway.test.mjs",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "i18n:check": "node scripts/check-i18n.mjs",
+    "secrets:check": "node scripts/check-client-secrets.mjs",
+    "db:start": "supabase start",
+    "env:local": "node scripts/configure-local-env.mjs",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset --local --sql-paths ./seed.sql --sql-paths ./seed_assessments.sql --sql-paths ./seed_cleanup.sql --sql-paths ./seed_role_accounts.sql && node scripts/ensure-local-auth-gateway.mjs",
+    "db:lint": "supabase db lint --local --level error --fail-on error",
+    "db:types": "supabase gen types --lang typescript --local > src/shared/database/database.types.ts",
+    "verify": "npm run i18n:check && npm run secrets:check && npm run typecheck && npm run lint && npm run test && npm run test:local-auth-gateway && npm run build"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.12.3",
+    "@supabase/supabase-js": "2.110.7",
+    "lucide-react": "1.25.0",
+    "next": "16.2.10",
+    "pdf-lib": "1.17.1",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "server-only": "0.0.1",
+    "sharp": "0.34.5",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
+    "@playwright/test": "1.61.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitest/coverage-v8": "4.1.10",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.10",
+    "jsdom": "29.1.1",
+    "supabase": "2.109.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  },
+  "overrides": {
+    "postcss": "8.5.19"
+  }
+}

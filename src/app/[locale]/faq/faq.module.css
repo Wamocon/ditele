@@ -1,0 +1,105 @@
+.page {
+  gap: 40px;
+}
+
+.introduction {
+  max-width: 720px;
+}
+
+.introduction p {
+  font-size: 1.08rem;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
+}
+
+.item {
+  overflow: clip;
+  padding: 0;
+}
+
+.item summary {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  padding: 20px 22px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.item summary::-webkit-details-marker {
+  display: none;
+}
+
+.item summary::after {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--primary);
+  content: "+";
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.item[open] summary::after {
+  content: "−";
+}
+
+.item summary:hover {
+  background: var(--surface);
+}
+
+.item summary:focus-visible {
+  outline-offset: -4px;
+}
+
+.number {
+  padding-top: 0.1rem;
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.question {
+  color: var(--foreground-strong);
+  font-size: 1.05rem;
+  font-weight: 720;
+  line-height: 1.4;
+}
+
+.answer {
+  border-top: 1px solid var(--border);
+  padding: 20px 22px 22px 4.6rem;
+}
+
+.answer p {
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .page {
+    gap: 32px;
+  }
+
+  .item summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 18px;
+  }
+
+  .number {
+    display: none;
+  }
+
+  .answer {
+    padding: 18px;
+  }
+}

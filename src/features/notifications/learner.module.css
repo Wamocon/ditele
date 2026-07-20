@@ -1,0 +1,139 @@
+.inboxHeader,
+.notificationHeader,
+.notificationFooter,
+.preferenceFooter,
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.notificationList {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notificationCard {
+  border-inline-start: 4px solid var(--border-strong);
+}
+
+.notificationCard:has(.badge--warning) {
+  border-inline-start-color: var(--warning);
+}
+
+.notificationHeader p,
+.compactForm p,
+.preferenceFooter p {
+  margin: 0;
+}
+
+.notificationFooter {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.compactForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.pagination {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+
+.preferenceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.preferenceCard {
+  min-width: 0;
+}
+
+.fieldset {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.fieldset legend {
+  margin-bottom: 12px;
+  color: var(--foreground-strong);
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.channelGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.checkbox {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.preferenceFooter {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.success,
+.error {
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.success {
+  color: var(--success);
+}
+
+.error {
+  color: var(--danger);
+}
+
+@media (max-width: 760px) {
+  .preferenceGrid,
+  .channelGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .notificationFooter,
+  .pagination {
+    align-items: stretch;
+  }
+
+  .notificationFooter > *,
+  .pagination > * {
+    width: 100%;
+    text-align: center;
+  }
+}

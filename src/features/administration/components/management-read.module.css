@@ -1,0 +1,261 @@
+.pageHeader,
+.cardHeader,
+.sectionHeader,
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pageHeader > div,
+.cardHeader > div,
+.sectionHeader > div {
+  min-width: 0;
+}
+
+.count {
+  color: var(--foreground-strong);
+  font-size: 0.95rem;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+}
+
+.card > * {
+  margin: 0;
+}
+
+.cardHeader {
+  align-items: flex-start;
+}
+
+.cardHeader h2,
+.cardHeader h3 {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.badges,
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.facts > div {
+  min-width: 0;
+  border-left: 2px solid var(--border-strong);
+  padding-left: 11px;
+}
+
+.facts dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.facts dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--foreground-strong);
+  font-weight: 650;
+}
+
+.membershipSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  color: var(--muted-strong);
+  font-size: 0.9rem;
+}
+
+.notice {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  background: var(--surface);
+}
+
+.notice h2,
+.notice h3,
+.notice p {
+  margin: 0;
+}
+
+.noticeWarning {
+  border-color: color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: var(--warning-soft);
+}
+
+.policyGap {
+  margin: 6px 0 0;
+  color: var(--warning);
+  font-size: 0.9rem;
+}
+
+.pagination {
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.section {
+  display: grid;
+  gap: 16px;
+}
+
+.sectionHeader {
+  align-items: flex-end;
+}
+
+.sectionHeader h2,
+.sectionHeader p {
+  margin-bottom: 0;
+}
+
+.organizationPanel {
+  display: grid;
+  gap: 20px;
+  padding: 22px;
+}
+
+.organizationPanel h2 {
+  margin: 0;
+}
+
+.organizationFacts {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.settingsList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settingsRow {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.1fr) minmax(0, 2fr);
+  gap: 18px;
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+
+.settingsRow:first-child {
+  padding-top: 0;
+}
+
+.settingsRow:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settingsRow h3,
+.settingsRow p {
+  margin-bottom: 0;
+}
+
+.settingsDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.settingsDetails dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.settingsDetails dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--foreground-strong);
+  font-weight: 650;
+}
+
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.skeleton {
+  min-height: 210px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(100deg, var(--surface) 25%, var(--surface-strong) 45%, var(--surface) 65%);
+  background-size: 200% 100%;
+  animation: management-loading 1.4s ease-in-out infinite;
+}
+
+@keyframes management-loading {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .list,
+  .skeletonGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .organizationFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .card,
+  .organizationPanel {
+    padding: 16px;
+  }
+
+  .facts,
+  .organizationFacts,
+  .settingsDetails,
+  .settingsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsRow {
+    gap: 12px;
+  }
+
+  .pagination {
+    align-items: stretch;
+  }
+}

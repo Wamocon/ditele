@@ -1,0 +1,47 @@
+import type { ReviewQueueLabels } from "@/features/review/components/review-queue";
+import type { Locale } from "@/shared/i18n/config";
+
+export const reviewQueueCopy: Record<Locale, ReviewQueueLabels> = {
+  en: {
+    title: "Submission queue",
+    itemCount: (count) => `${count} awaiting review`,
+    learner: "Learner",
+    task: "Task",
+    group: "Group",
+    submittedAt: "Submitted",
+    status: "Status",
+    open: "Open review",
+    emptyTitle: "Review queue is clear",
+    emptyDescription: "New submissions and revisions will appear here.",
+    states: { submitted: "Submitted", resubmitted: "Resubmitted" },
+    ownership: { assigned: "Assigned", transferred: "Transferred" },
+  },
+  de: {
+    title: "Einreichungswarteschlange",
+    itemCount: (count) => `${count} zur Prüfung`,
+    learner: "Lernende",
+    task: "Aufgabe",
+    group: "Gruppe",
+    submittedAt: "Eingereicht",
+    status: "Status",
+    open: "Review öffnen",
+    emptyTitle: "Keine offenen Reviews",
+    emptyDescription: "Neue Einreichungen und Überarbeitungen erscheinen hier.",
+    states: { submitted: "Eingereicht", resubmitted: "Erneut eingereicht" },
+    ownership: { assigned: "Zugewiesen", transferred: "Übertragen" },
+  },
+  ru: {
+    title: "Очередь работ",
+    itemCount: (count) => `Ожидают проверки: ${count}`,
+    learner: "Учащийся",
+    task: "Задание",
+    group: "Группа",
+    submittedAt: "Отправлено",
+    status: "Статус",
+    open: "Открыть проверку",
+    emptyTitle: "Очередь пуста",
+    emptyDescription: "Новые и повторные работы появятся здесь.",
+    states: { submitted: "Отправлено", resubmitted: "Отправлено повторно" },
+    ownership: { assigned: "Назначено", transferred: "Передано" },
+  },
+};

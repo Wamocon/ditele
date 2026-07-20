@@ -1,0 +1,19 @@
+.panel {
+  width: min(100%, 760px);
+}
+
+.form {
+  border-top: 1px solid var(--border);
+  padding-top: 22px;
+}
+
+.error,
+.conflict {
+  margin: 0;
+  color: var(--danger);
+  font-weight: 650;
+}
+
+.conflict {
+  color: var(--warning);
+}

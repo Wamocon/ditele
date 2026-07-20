@@ -1,0 +1,24 @@
+# dependencies and build output
+/node_modules/
+/.next/
+/out/
+/coverage/
+/playwright-report/
+/test-results/
+*.tsbuildinfo
+
+# local environment and Supabase runtime state
+.env
+.env.local
+.env.*.local
+!.env.example
+/supabase/.temp/
+/supabase/.branches/
+
+# editor and OS files
+.DS_Store
+*.swp
+*.log
+
+# generated QA output that is not curated evidence
+/artifacts/tmp/
