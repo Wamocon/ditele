@@ -1,0 +1,147 @@
+.panel {
+  width: min(100%, 760px);
+}
+
+.form {
+  border-top: 1px solid var(--border);
+  padding-top: 22px;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-weight: 650;
+}
+
+.stars {
+  min-inline-size: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.starRow {
+  display: flex;
+  gap: 6px;
+}
+
+.star {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.starInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.starIcon {
+  font-size: 2rem;
+  color: var(--border);
+  transition: color 140ms ease, transform 140ms ease;
+  transform-origin: center;
+}
+
+.star[data-filled="true"] .starIcon {
+  color: var(--warning);
+}
+
+.star:hover .starIcon {
+  transform: scale(1.12);
+}
+
+.star[data-selected="true"] .starIcon {
+  animation: rating-pop 260ms ease;
+}
+
+.starInput:focus-visible + .starIcon {
+  border-radius: 4px;
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.commentLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.comment {
+  min-height: 72px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--foreground);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.comment:focus-visible {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.success {
+  margin: 0;
+  font-weight: 650;
+  color: var(--success);
+}
+
+.error,
+.conflict {
+  margin: 0;
+  font-weight: 650;
+  color: var(--danger);
+}
+
+.conflict {
+  color: var(--warning);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes rating-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starIcon {
+    transition: none;
+  }
+
+  .star:hover .starIcon {
+    transform: none;
+  }
+
+  .star[data-selected="true"] .starIcon {
+    animation: none;
+  }
+}

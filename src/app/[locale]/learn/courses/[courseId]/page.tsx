@@ -1,8 +1,14 @@
+import { randomUUID } from "node:crypto";
+
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
 import { canRenderProtectedPage } from "@/app/[locale]/_data/principal";
 import { CourseWorkspace } from "@/features/learning/components/course-workspace";
+import { submitRatingAction } from "@/features/ratings/rating-actions";
+import { ratingCopy } from "@/features/ratings/rating-copy";
+import { readCourseRating } from "@/features/ratings/rating-data";
+import { RatingForm } from "@/features/ratings/rating-form";
 import { isLocale } from "@/shared/i18n/config";
 import { localizedDynamicRoute, localizedRoute } from "@/shared/i18n/routes";
 
@@ -31,16 +37,28 @@ export default async function LearnerCoursePage({
     dateStyle: "medium",
     timeStyle: "short",
   });
+  const rating = await readCourseRating(courseId);
 
   return (
-    <CourseWorkspace
-      course={course}
-      dashboardHref={localizedRoute(locale, "/learn")}
-      formatDateTime={(value) => formatter.format(new Date(value))}
-      labels={courseWorkspaceCopy[locale]}
-      taskHref={(taskId) =>
-        localizedDynamicRoute(locale, `/learn/tasks/${taskId}`)
-      }
-    />
+    <div className="stack">
+      <CourseWorkspace
+        course={course}
+        dashboardHref={localizedRoute(locale, "/learn")}
+        formatDateTime={(value) => formatter.format(new Date(value))}
+        labels={courseWorkspaceCopy[locale]}
+        taskHref={(taskId) =>
+          localizedDynamicRoute(locale, `/learn/tasks/${taskId}`)
+        }
+      />
+      <RatingForm
+        action={submitRatingAction}
+        copy={ratingCopy[locale]}
+        {...(rating ? { existing: rating } : {})}
+        idempotencyKey={randomUUID()}
+        locale={locale}
+        target="course"
+        targetId={courseId}
+      />
+    </div>
   );
 }

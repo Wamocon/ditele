@@ -6280,6 +6280,28 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      rate_course: {
+        Args: {
+          p_comment: string | null
+          p_correlation_id: string
+          p_course_id: string
+          p_expected_version: number
+          p_idempotency_key: string
+          p_score: number
+        }
+        Returns: Json
+      }
+      rate_task: {
+        Args: {
+          p_comment: string | null
+          p_correlation_id: string
+          p_expected_version: number
+          p_idempotency_key: string
+          p_score: number
+          p_task_id: string
+        }
+        Returns: Json
+      }
       update_own_profile: {
         Args: {
           p_correlation_id: string

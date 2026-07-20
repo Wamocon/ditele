@@ -1,8 +1,14 @@
+import { randomUUID } from "node:crypto";
+
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
 import { TaskWorkspace } from "@/features/tasks/components/task-workspace";
 import { canRenderProtectedPage } from "@/app/[locale]/_data/principal";
+import { submitRatingAction } from "@/features/ratings/rating-actions";
+import { ratingCopy } from "@/features/ratings/rating-copy";
+import { readTaskRating } from "@/features/ratings/rating-data";
+import { RatingForm } from "@/features/ratings/rating-form";
 import { isLocale } from "@/shared/i18n/config";
 
 import {
@@ -38,17 +44,29 @@ export default async function LearnerTaskPage({
     groupId: task.groupId,
     taskId: task.id,
   };
+  const rating = await readTaskRating(task.id);
 
   return (
-    <TaskWorkspace
-      addEvidence={createExternalTaskEvidenceAction.bind(null, actionContext)}
-      {...(attempt ? { initialAttempt: attempt } : {})}
-      key={task.id}
-      labels={taskWorkspaceCopy[locale]}
-      locale={locale}
-      saveDraft={saveAttemptDraftAction.bind(null, actionContext)}
-      submit={submitAttemptAction.bind(null, actionContext)}
-      task={task}
-    />
+    <div className="stack">
+      <TaskWorkspace
+        addEvidence={createExternalTaskEvidenceAction.bind(null, actionContext)}
+        {...(attempt ? { initialAttempt: attempt } : {})}
+        key={task.id}
+        labels={taskWorkspaceCopy[locale]}
+        locale={locale}
+        saveDraft={saveAttemptDraftAction.bind(null, actionContext)}
+        submit={submitAttemptAction.bind(null, actionContext)}
+        task={task}
+      />
+      <RatingForm
+        action={submitRatingAction}
+        copy={ratingCopy[locale]}
+        {...(rating ? { existing: rating } : {})}
+        idempotencyKey={randomUUID()}
+        locale={locale}
+        target="task"
+        targetId={task.id}
+      />
+    </div>
   );
 }
