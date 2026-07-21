@@ -44,6 +44,13 @@ export function formatDuration(seconds: number, t: Translate): string {
   return t("trainer.shared.duration", { minutes: Math.max(1, Math.round(seconds / 60)) });
 }
 
+/** German needs a real singular here — "1 Einträge" reads like a bug. */
+export function formatCount(total: number, t: Translate): string {
+  if (total === 0) return t("trainer.shared.resultsNone");
+  if (total === 1) return t("trainer.shared.resultsOne");
+  return t("trainer.shared.results", { count: total });
+}
+
 /** Amber past 24 h, red past 72 h (WS-4 brief). */
 export type AgeTone = "neutral" | "warning" | "danger";
 

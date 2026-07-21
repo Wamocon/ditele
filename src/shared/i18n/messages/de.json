@@ -772,7 +772,9 @@
       "showAll": "Alle anzeigen",
       "backToQueue": "Zurück zur Queue",
       "of": "von",
-      "results": "{count} Einträge"
+      "results": "{count} Einträge",
+      "resultsOne": "1 Eintrag",
+      "resultsNone": "Keine Einträge"
     },
     "dashboard": {
       "title": "Übersicht",

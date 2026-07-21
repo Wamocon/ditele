@@ -11,7 +11,7 @@ import {
   type QueueItem,
 } from "@/shared/data/review";
 import { getTranslator } from "@/features/review/i18n";
-import { formatDateTime } from "@/features/review/format";
+import { formatCount, formatDateTime } from "@/features/review/format";
 import { AgeBadge } from "@/features/review/age-badge";
 import { QueueFilters } from "@/features/review/queue-filters";
 import { Notice } from "@/features/review/notice";
@@ -119,7 +119,7 @@ export default async function Page({
         description={t("trainer.queue.description")}
         actions={
           <span className="text-[13px] text-[--color-fg-muted] tabular">
-            {t("trainer.shared.results", { count: total })}
+            {formatCount(total, t)}
           </span>
         }
       />
