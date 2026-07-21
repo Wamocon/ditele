@@ -87,7 +87,7 @@ values (
         "couponCode": "WMC10",
         "couponPercent": 10,
         "shippingCents": 495,
-        "freeShippingThresholdCents": 50000
+        "freeShippingThresholdCents": 100000
       }
     }
   ],
@@ -173,7 +173,7 @@ values (
       },
       "params": {},
       "reproduction": "Es werden Versandkosten berechnet, obwohl der Warenkorb bereits mehrere hundert Euro enthält.",
-      "expected": "KEIN Fehler. Die Versandkostenfreigrenze liegt bei 500,00 € und steht als Hinweis unter der Bestellübersicht."
+      "expected": "KEIN Fehler. Die Versandkostenfreigrenze liegt bei 1.000,00 € und steht als Hinweis unter der Bestellübersicht."
     }
   ]
 }$config$::jsonb,
