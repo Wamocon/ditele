@@ -649,7 +649,17 @@
       "passwordMismatch": "Die beiden Passwörter stimmen nicht überein.",
       "sectionSession": "Sitzung",
       "sessionHint": "Meldet dich auf diesem Gerät ab.",
-      "signOut": "Abmelden"
+      "signOut": "Abmelden",
+      "passwordHint": "Mindestens 12 Zeichen, mit Groß- und Kleinbuchstaben, einer Ziffer und einem Sonderzeichen.",
+      "passwordWeak": "Das Passwort erfüllt die Regeln nicht.",
+      "passwordRequired": "Bitte gib ein neues Passwort ein.",
+      "timezoneHint": "Bestimmt, in welcher Zeit Termine und Zeitstempel angezeigt werden.",
+      "languageHint": "Sprache der Oberfläche und der Benachrichtigungen.",
+      "languages": {
+        "de": "Deutsch",
+        "en": "English",
+        "ru": "Русский"
+      }
     },
     "enroll": {
       "title": "Kurs anfragen",
