@@ -10,6 +10,27 @@ import {
   pickLocale,
   type LocalizedText,
 } from "./rpc";
+import {
+  DefectReportSchema,
+  EMPTY_DEFECT,
+  type AttemptState,
+  type DefectReport,
+  type DraftState,
+  type LearningCourseDetail,
+  type LearningCourseSummary,
+  type LearningTask,
+  type SavedDraft,
+  type StartedAttempt,
+  type SubmittedAttempt,
+  type TaskWorkspace,
+} from "@/features/learning/model";
+
+/**
+ * The types and the pure helpers live in `@/features/learning/model` because
+ * this module is `server-only` and the workspace is a Client Component. They are
+ * re-exported here so a caller only ever needs one import.
+ */
+export * from "@/features/learning/model";
 
 /**
  * WS-2 owns this file. Everything the student learning screens read or write
@@ -137,26 +158,6 @@ const AttemptRow = z.object({
   submitted_at: z.string().nullish().transform((v) => v ?? null),
 });
 
-/** The structured defect report, round-tripped through `attempt_drafts.evidence_draft`. */
-export const DefectReportSchema = z.object({
-  summary: z.string().default(""),
-  severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  sourceUri: z.string().default(""),
-  steps: z.string().default(""),
-  expected: z.string().default(""),
-  actual: z.string().default(""),
-});
-export type DefectReport = z.infer<typeof DefectReportSchema>;
-
-export const EMPTY_DEFECT: DefectReport = {
-  summary: "",
-  severity: "medium",
-  sourceUri: "",
-  steps: "",
-  expected: "",
-  actual: "",
-};
-
 const DraftRow = z.object({
   answer_text: text,
   selected_option_ids: z.array(z.string()).nullish().transform((v) => v ?? []),
@@ -187,123 +188,6 @@ const SubmissionRow = z.object({
   latest_version_number: int,
   row_version: int,
 });
-
-/* ── Public types ────────────────────────────────────────────────────────── */
-
-export interface LearningCourseSummary {
-  enrollmentId: string;
-  enrollmentState: string;
-  courseId: string;
-  cohortId: string | null;
-  cohortState: string;
-  contentVersionState: string;
-  versionNumber: number;
-  title: string;
-  completedActivities: number;
-  totalActivities: number;
-  nextTaskId: string | null;
-  nextTaskTitle: string;
-  nextTaskState: string;
-}
-
-export interface LearningActivity {
-  id: string;
-  title: string;
-  description: string;
-  position: number;
-  state: string;
-  lockReasons: string[];
-  availableFrom: string | null;
-  dueAt: string | null;
-  expectedMinutes: number;
-  locked: boolean;
-}
-
-export interface LearningStage {
-  id: string;
-  title: string;
-  description: string;
-  position: number;
-  activities: LearningActivity[];
-}
-
-export interface LearningCourseDetail {
-  courseId: string;
-  title: string;
-  summary: string;
-  cohortName: string;
-  cohortState: string;
-  enrollmentState: string;
-  contentVersionState: string;
-  versionNumber: number;
-  completedActivities: number;
-  totalActivities: number;
-  stages: LearningStage[];
-}
-
-export interface TaskOption {
-  id: string;
-  label: string;
-}
-
-export interface TaskAssessment {
-  id: string;
-  question: string;
-  multiple: boolean;
-  options: TaskOption[];
-}
-
-export interface TaskHint {
-  id: string;
-  content: string;
-}
-
-export interface LearningTask {
-  id: string;
-  courseId: string | null;
-  cohortId: string | null;
-  enrollmentId: string | null;
-  title: string;
-  instructions: string;
-  access: string;
-  /** Non-null ⇒ practice task: the IframePanel target. Null ⇒ theory task. */
-  targetUrl: string | null;
-  cohortState: string;
-  assessment: TaskAssessment | null;
-  hints: TaskHint[];
-}
-
-export interface AttemptState {
-  id: string;
-  sequenceNumber: number;
-  /** attempt_state enum: in_progress · submitted · revision_required · resubmitted · accepted · abandoned */
-  state: string;
-  rowVersion: number;
-  elapsedSeconds: number;
-  hintUsed: boolean;
-  submittedAt: string | null;
-}
-
-export interface DraftState {
-  answerText: string;
-  selectedOptionIds: string[];
-  defect: DefectReport;
-  usedHintIds: string[];
-  /** `p_expected_draft_version` for the next save. Never send a stale one (I-009). */
-  version: number;
-  updatedAt: string | null;
-}
-
-export interface TaskWorkspace {
-  task: LearningTask;
-  attempt: AttemptState | null;
-  draft: DraftState | null;
-}
-
-/** Attempt states in which the workspace is read-only. */
-const LOCKED_ATTEMPT_STATES = new Set(["submitted", "resubmitted", "accepted"]);
-export const isAttemptLocked = (state: string | undefined) =>
-  state !== undefined && LOCKED_ATTEMPT_STATES.has(state);
 
 /* ── Reads ───────────────────────────────────────────────────────────────── */
 
@@ -568,12 +452,6 @@ async function rpcCall<T>(name: string, args: Record<string, unknown>): Promise<
 
 const firstRow = <T>(value: unknown): unknown => (Array.isArray(value) ? (value as T[])[0] : value);
 
-export interface StartedAttempt {
-  attemptId: string;
-  state: string;
-  rowVersion: number;
-}
-
 export async function startAttempt(args: {
   taskId: string;
   enrollmentId: string;
@@ -596,12 +474,6 @@ export async function startAttempt(args: {
     state: parsed.data.attempt_state,
     rowVersion: parsed.data.attempt_row_version,
   });
-}
-
-export interface SavedDraft {
-  draftVersion: number;
-  attemptVersion: number;
-  updatedAt: string | null;
 }
 
 /**
@@ -674,11 +546,6 @@ async function createExternalEvidence(args: {
   const parsed = parse(EvidenceRow, firstRow(result.data), "Evidenz");
   if (!parsed.ok) return parsed;
   return ok(parsed.data.id);
-}
-
-export interface SubmittedAttempt {
-  submissionId: string;
-  state: string;
 }
 
 /**

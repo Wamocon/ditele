@@ -1339,7 +1339,10 @@
       "enrollments": "Kursanfragen und Einschreibungen",
       "cohorts": "Gruppen",
       "noEnrollments": "Keine Einschreibungen.",
-      "noCohorts": "In keiner Gruppe."
+      "noCohorts": "In keiner Gruppe.",
+      "selfProtected": "Sie können Ihr eigenes Konto nicht deaktivieren.",
+      "notFound": "Dieses Konto gibt es nicht.",
+      "backToUsers": "Zur Benutzerübersicht"
     },
     "groups": {
       "title": "Gruppenverwaltung",

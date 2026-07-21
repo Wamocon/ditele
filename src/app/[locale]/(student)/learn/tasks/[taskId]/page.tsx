@@ -1,19 +1,60 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import { ErrorState } from "@/shared/ui";
+import { getTaskWorkspace } from "@/shared/data/learning";
+import { TaskWorkspace } from "@/features/learning/task-workspace";
+import { learnStrings } from "@/features/learning/i18n";
+
+export const metadata: Metadata = { title: "Aufgabe · DiTeLe" };
 
 /**
- * STUB — owned by WS-2. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
+ * ⭐⭐ The task workspace route — WS-2's signature screen.
+ *
+ * A Server Component that fetches and hands off: the task, its newest attempt
+ * and that attempt's draft all come from one `getTaskWorkspace` call, and
+ * everything interactive lives in the client component below it. Nothing here
+ * touches Supabase directly (MASTER_PLAN §13.1).
  */
-export default function Page() {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ locale: string; taskId: string }>;
+}) {
+  const { locale, taskId } = await params;
+  const s = learnStrings(locale);
+  const result = await getTaskWorkspace(taskId, locale);
+
+  if (!result.ok) {
+    return (
+      <>
+        <PageHeader title={s.task.breadcrumb} />
+        <ErrorState message={result.error.message} />
+      </>
+    );
+  }
+
+  const { task, attempt, draft } = result.data;
+  const courseHref = task.courseId
+    ? `/${locale}/learn/courses/${task.courseId}`
+    : `/${locale}/learn/courses`;
+
   return (
     <>
-      <PageHeader title="Aufgaben-Workspace" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-2</p>
-      </Card>
+      <PageHeader
+        title={task.title}
+        breadcrumbs={[
+          { label: s.courses.title, href: `/${locale}/learn/courses` },
+          ...(task.courseId ? [{ label: s.course.breadcrumb, href: courseHref }] : []),
+          { label: task.title },
+        ]}
+      />
+      <TaskWorkspace
+        locale={locale}
+        task={task}
+        attempt={attempt}
+        draft={draft}
+        courseHref={courseHref}
+      />
     </>
   );
 }
