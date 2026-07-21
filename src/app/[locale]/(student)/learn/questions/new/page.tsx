@@ -1,18 +1,75 @@
+import { MessageCircle } from "lucide-react";
 import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import { Card, EmptyState, ErrorState } from "@/shared/ui";
+import { listAskableContexts } from "@/shared/data/questions";
+import { LinkButton } from "@/features/questions/components/link-button";
+import { getWs3Messages } from "@/features/questions/i18n";
+import { AskForm } from "./ask-form";
 
-/**
- * STUB — owned by WS-3. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
- */
-export default function Page() {
+export default async function NewQuestionPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const messages = await getWs3Messages(locale);
+  const t = messages.learn.questionNew;
+
+  const breadcrumbs = [
+    { label: messages.learn.questions.title, href: `/${locale}/learn/questions` },
+    { label: t.breadcrumb },
+  ];
+
+  const result = await listAskableContexts(locale);
+
+  if (!result.ok) {
+    return (
+      <>
+        <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} />
+        <ErrorState title={messages.learn.shared.loadErrorTitle} message={result.error.message} />
+      </>
+    );
+  }
+
+  if (result.data.length === 0) {
+    return (
+      <>
+        <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} />
+        <EmptyState
+          title={t.emptyTitle}
+          description={t.emptyDescription}
+          icon={<MessageCircle className="size-6 text-[--color-fg-subtle]" aria-hidden />}
+          action={
+            <LinkButton href={`/${locale}/learn/courses`} variant="outline">
+              {messages.nav.courses}
+            </LinkButton>
+          }
+        />
+      </>
+    );
+  }
+
   return (
     <>
-      <PageHeader title="Frage stellen" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-3</p>
+      <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} />
+      <Card>
+        <AskForm
+          locale={locale}
+          contexts={result.data}
+          labels={{
+            contextLabel: t.contextLabel,
+            contextHint: t.contextHint,
+            contextPlaceholder: t.contextPlaceholder,
+            subjectLabel: t.subjectLabel,
+            subjectHint: t.subjectHint,
+            subjectPlaceholder: t.subjectPlaceholder,
+            bodyLabel: t.bodyLabel,
+            bodyHint: t.bodyHint,
+            bodyPlaceholder: t.bodyPlaceholder,
+            submit: t.submit,
+            unknownTask: messages.learn.shared.unknownTask,
+          }}
+        />
       </Card>
     </>
   );
