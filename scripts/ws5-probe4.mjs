@@ -1,14 +1,37 @@
+// WS-5 — restore a readable German name on the archived probe course.
+// The course cannot be deleted (`55000 published content versions are
+// immutable`) and its task therefore survives in the inventory. Leaving the
+// course cell blank there would look like a bug, so it gets an honest label.
 import { createClient } from "@supabase/supabase-js";
-const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+
+const db = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  { auth: { persistSession: false } }
+);
 await db.auth.signInWithPassword({ email: "admin@ditele.local", password: "123123123" });
-for (const [name, q] of [
-  ["content_reviews", db.from("content_reviews").select("*").limit(3)],
-  ["stage_localizations", db.from("stage_localizations").select("*").limit(2)],
-  ["task_hints", db.from("task_hints").select("*").limit(2)],
-  ["task_option_answers", db.from("task_option_answers").select("*").limit(3)],
-  ["audit_events", db.from("audit_events").select("*").order("occurred_at", { ascending: false }).limit(3)],
-  ["bug_categories", db.from("bug_categories").select("id, code").limit(3)],
-]) {
-  const { data, error } = await q;
-  console.log(`${name}:`, error ? `❌ ${error.code} ${error.message}` : `${data.length} rows · ${JSON.stringify(data[0] ?? {}).slice(0, 400)}`);
+
+const { data: course } = await db
+  .from("courses")
+  .select("id")
+  .eq("slug", "ws5-probe-lifecycle")
+  .maybeSingle();
+if (!course) {
+  console.log("no probe course left — nothing to do");
+  process.exit(0);
+}
+
+for (const locale of ["de", "en", "ru"]) {
+  const { error } = await db.from("course_localizations").upsert(
+    {
+      course_id: course.id,
+      locale,
+      title: "WS-5 Testlauf (archiviert)",
+      summary: "Rest eines Lifecycle-Tests. Archiviert, nicht im Katalog.",
+      description_html: "<p>Archivierter Testlauf.</p>",
+      learning_outcomes: [],
+    },
+    { onConflict: "course_id,locale" }
+  );
+  console.log(locale, error ? `${error.code} ${error.message}` : "ok");
 }
