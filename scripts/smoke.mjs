@@ -38,14 +38,13 @@ const STUDENT = [
 
 const TRAINER = [
   "/trainer", "/trainer/submissions", "/trainer/questions",
-  "/trainer/questions/archive", "/trainer/groups", `/trainer/groups/${COHORT}`,
+  "/trainer/questions/archive",
   "/trainer/progress", "/trainer/history", "/trainer/profile",
 ];
 
 const ADMIN = [
   "/admin", "/admin/courses", "/admin/courses/new", `/admin/courses/${COURSE}`,
-  "/admin/tasks", "/admin/users", "/admin/users/new", "/admin/groups",
-  "/admin/groups/new", "/admin/applications", "/admin/issues", "/admin/ratings",
+  "/admin/tasks", "/admin/users", "/admin/users/new", "/admin/applications", "/admin/issues", "/admin/ratings",
   "/admin/settings", "/admin/profile",
 ];
 

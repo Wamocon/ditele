@@ -94,7 +94,6 @@ export async function assignEnrollmentAction(
     if (!result.ok) return failure(result.error.message);
 
     revalidatePath("/[locale]/(admin)/admin/applications", "page");
-    revalidatePath("/[locale]/(admin)/admin/groups", "page");
     return success("Der Gruppe zugeteilt.");
   });
 }
@@ -212,8 +211,6 @@ export async function transitionCohortAction(
     const result = await transitionCohortState({ cohortId, targetState, reason });
     if (!result.ok) return failure(result.error.message);
 
-    revalidatePath("/[locale]/(admin)/admin/groups", "page");
-    revalidatePath("/[locale]/(admin)/admin/groups/[cohortId]", "page");
     return success("Status geändert.");
   });
 }
@@ -243,8 +240,6 @@ export async function updateCohortScheduleAction(
     const result = await updateCohortSchedule({ cohortId, name, capacity, startsAt, endsAt });
     if (!result.ok) return failure(result.error.message);
 
-    revalidatePath("/[locale]/(admin)/admin/groups", "page");
-    revalidatePath("/[locale]/(admin)/admin/groups/[cohortId]", "page");
     return success("Stammdaten gespeichert.");
   });
 }

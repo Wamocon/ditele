@@ -149,12 +149,9 @@ export default async function UserDetailPage({
             <ul className="flex flex-col divide-y divide-(--color-border)">
               {cohorts.map((c) => (
                 <li key={c.cohortId} className="flex flex-wrap items-center justify-between gap-2 py-3">
-                  <Link
-                    href={`/${locale}/admin/groups/${c.cohortId}` as Route}
-                    className="text-[15px] font-semibold leading-6 text-(--color-brand) hover:underline"
-                  >
+                  <span className="text-[15px] font-semibold leading-6">
                     {c.cohortName}
-                  </Link>
+                  </span>
                   <div className="flex items-center gap-2">
                     <Badge tone={c.role === "trainer" ? "info" : "neutral"}>
                       {c.role === "trainer" ? t.groupDetail.roleTrainer : t.groupDetail.roleLearner}

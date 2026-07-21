@@ -141,10 +141,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             {dashboard.cohorts.map((cohort) => (
               <li key={cohort.id}>
                 <Card interactive padded={false} className="h-full">
-                  <Link
-                    href={`/${locale}/trainer/groups/${cohort.id}` as Route}
-                    className="flex h-full flex-col gap-3 p-4 lg:p-5"
-                  >
+                  <div className="flex h-full flex-col gap-3 p-4 lg:p-5">
                     <span className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-[18px] font-semibold leading-6">{cohort.name}</span>
                       <StatusBadge state={cohort.state} />
@@ -169,7 +166,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                         </span>
                       </span>
                     </span>
-                  </Link>
+                  </div>
                 </Card>
               </li>
             ))}

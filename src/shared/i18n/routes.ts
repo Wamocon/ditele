@@ -21,7 +21,6 @@ export type StaticLocalizedPath =
   | "/learn/certificates"
   | "/learn/history"
   | "/trainer"
-  | "/trainer/groups"
   | "/trainer/submissions"
   | "/trainer/questions"
   | "/trainer/progress"
@@ -30,7 +29,6 @@ export type StaticLocalizedPath =
   | "/admin"
   | "/admin/courses"
   | "/admin/tasks"
-  | "/admin/groups"
   | "/admin/users"
   | "/admin/applications"
   | "/admin/settings";

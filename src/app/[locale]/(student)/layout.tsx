@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@/shared/layout";
+import { getHeaderIdentity } from "@/shared/auth/identity";
 import { requireRole } from "@/shared/auth/guard";
 
 /**
@@ -17,9 +18,10 @@ export default async function StudentLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const { uiRole, principal } = await requireRole(["student", "trainer", "admin"], locale);
+  const { uiRole } = await requireRole(["student", "trainer", "admin"], locale);
+  const identity = await getHeaderIdentity();
   return (
-    <AppShell locale={locale} role={uiRole} displayName={principal.userId}>
+    <AppShell locale={locale} role={uiRole} displayName={identity.displayName} email={identity.email}>
       {children}
     </AppShell>
   );

@@ -61,7 +61,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <Tile label={s.users} value={data.users} />
         <Tile label={s.courses} value={data.courses} href={`/${locale}/admin/courses` as Route} />
-        <Tile label={s.cohorts} value={data.activeCohorts} href={`/${locale}/admin/groups` as Route} />
+        <Tile label={s.cohorts} value={data.activeCohorts} />
         <Tile label={s.pendingReviews} value={data.pendingReviews} />
         <Tile
           label={s.openRequests}

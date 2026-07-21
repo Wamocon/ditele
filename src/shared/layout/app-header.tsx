@@ -10,15 +10,17 @@ import type { UiRole } from "@/shared/auth/role";
 import { navForRole } from "./nav-config";
 import { Container } from "./container";
 import { ThemeToggle } from "./theme-toggle";
+import { AccountMenu } from "./account-menu";
 
 export interface AppHeaderProps {
   locale: string;
   /** null = guest */
   role: UiRole | null;
   displayName?: string | undefined;
+  email?: string | undefined;
 }
 
-export function AppHeader({ locale, role, displayName }: AppHeaderProps) {
+export function AppHeader({ locale, role, displayName, email }: AppHeaderProps) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
 
@@ -99,12 +101,12 @@ export function AppHeader({ locale, role, displayName }: AppHeaderProps) {
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
           {role ? (
-            <span
-              className="flex size-9 items-center justify-center rounded-full bg-(--color-brand) text-[13px] font-semibold text-(--color-brand-fg)"
-              title={displayName ?? "Konto"}
-            >
-              {initials(displayName)}
-            </span>
+            <AccountMenu
+              locale={locale}
+              role={role}
+              displayName={displayName ?? "Konto"}
+              email={email}
+            />
           ) : (
             /* h-11 = the mandatory 44px mobile touch target (MASTER_PLAN §6.5).
                It relaxes to the header's 36px rhythm from lg up, where the
@@ -120,13 +122,4 @@ export function AppHeader({ locale, role, displayName }: AppHeaderProps) {
       </Container>
     </header>
   );
-}
-
-function initials(name?: string): string {
-  if (!name) return "?";
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
 }
