@@ -7,31 +7,50 @@ Started: 2026-07-21 · Port: 3103 · Dist: `.next-ws3` · Account: `learner@dite
 ## RESUME HERE
 Updated: 2026-07-21 · Chat: **#1**
 
-**State:** IN PROGRESS
+**State:** DONE — all 8 WS-3 routes are built, verified against the live
+database, and committed. Nothing is half-finished.
+
+> ### For the coordinator, in one paragraph
+> **WS-3 is complete.** All eight routes render real data behind working guards:
+> notifications (with mark-read and mark-all-read), the questions list, the ask
+> form, the question thread, profile (account · theme · notification
+> preferences · password · sign out), course enrolment, learning history and
+> certificates. `tsc` is clean on WS-3 files, `eslint .` is clean, and
+> `node scripts/smoke.mjs` is **47/47**. Two things need someone else:
+> **a learner cannot reply in a question thread** because no RPC exists for it
+> (I-014), and **the header has no notification bell and shows the initials of a
+> UUID** (I-016). Neither is in WS-3's tree.
 
 **Done and committed:**
 - Data layer — `src/shared/data/profile.ts`, `questions.ts`, `notifications.ts`
 - WS-3 helpers — `src/features/questions/i18n.ts`, `format.ts`, `components/`
 - German keys — `messages/de.json` → new top-level `learn.*` namespace
-- `/learn/notifications` — real data, day grouping, mark-read, mark-all-read
+- `/learn/notifications` — day grouping, unread state, mark-read, mark-all-read
 - `/learn/questions` — list, waiting-first ordering, empty state
 - `/learn/questions/new` — context picker, validation, values survive an error
 - `/learn/questions/[questionId]` — thread, system rows, honest no-reply notice
 - `/learn/profile` — account, theme, notification preferences, password, sign out
-- `/learn/enroll/[courseId]` — course summary, request form, existing-request status
+- `/learn/enroll/[courseId]` — course summary, request form, request status
 - `/learn/history` — keyset "load older" pagination, pinned snapshot
 - `/learn/certificates` — honest empty state (P1 / BLK-003), real table if rows appear
 
 **Half-finished:**
 - Nothing.
 
-**Next, in order:**
-- **All 8 WS-3 routes are built.** What is left is verification and polish:
-  1. Walk each route at 375 / 768 / 1440 in a real browser (checked in markup,
-     not yet eyeballed) and in dark mode.
-  2. Tab through each form — focus visibility relies on WS-0's global styles.
-  3. Re-check `/learn/notifications` once WS-4 starts deciding submissions, so
-     the `review.decided` event type gets a real row behind its label.
+**Next, in order — for whoever picks this up:**
+1. **Open all 8 routes in a real browser** at 375 / 768 / 1440, light and dark,
+   and tab through each form. This session had no browser; the responsive,
+   dark-mode and keyboard columns below are marked ⚙ for exactly that reason.
+2. Re-check `/learn/notifications` once WS-4 starts deciding submissions — the
+   `review.decided` and `submission.transferred` labels have no real row behind
+   them yet, so their wording is untested against a live payload.
+3. If someone adds a learner follow-up RPC (I-014), the thread page has the
+   place for the composer marked with the notice card.
+4. P1 leftovers, all deliberately not built: avatar upload (Storage unresolved,
+   §16 Q6), certificate download (no delivery route for `media_asset_id`),
+   e-mail and push notification channels (no SMTP, §16 Q5 — they render as
+   disabled checkboxes, and their stored values ride along in hidden fields so
+   saving never silently resets them).
 
 **⭐ Things I learned that are written down nowhere else:**
 
@@ -206,6 +225,15 @@ exists to do.
 
 ## Issues found in someone else's area
 
+All four are in `plan/status/ISSUES.md` with the detail; each was worked around
+locally and none blocked WS-3.
+
 - **I-013** — concurrent read-modify-write silently drops rows in `ISSUES.md`
-  and keys in `de.json`. It happened to me twice.
-- **I-014** — see below, filed with the route work.
+  and keys in `de.json`. It happened to me twice, once in each file.
+- **I-014** — `mapPostgrestError` does not know `40001` (the CAS conflict code),
+  and there is no learner-callable RPC for replying in a question thread.
+- **I-015** — `get_public_catalog_course` returns a one-element **array**, not
+  the single object `RPC_CONTRACTS.md` §2 documents. **WS-1 uses the same RPC.**
+- **I-016** — the header has no notification bell, and all three role layouts
+  pass `displayName={principal.userId}` so the avatar shows the initials of a
+  UUID. Both are in WS-0's tree.
