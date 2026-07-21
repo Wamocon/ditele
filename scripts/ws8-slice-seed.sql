@@ -54,11 +54,19 @@ alter table public.prerequisites
   disable trigger prerequisites_guard_published_graph;
 alter table public.task_rubric_assignments
   disable trigger task_rubric_assignments_guard_published_graph;
+-- And the version row itself: rebuilding snapshot is an UPDATE on a published
+-- content_versions row, which guard_content_version_lifecycle also refuses.
+alter table public.content_versions
+  disable trigger content_versions_lifecycle_guard;
 
 -- ─── The hunt task H, and the content task T2 it unlocks ────────────────────
+-- `tasks_external_pair` requires source_system and external_id to be set or
+-- null together, so a hunt names both: the arena registry, and the scenario
+-- code inside it that WS-9 will resolve.
 insert into public.tasks (
   id, course_id, stage_id, content_version_id, position, task_kind, state,
-  target_url, expected_minutes, hint_penalty_basis_points, external_id
+  target_url, expected_minutes, hint_penalty_basis_points,
+  source_system, external_id
 )
 values
   -- H — the hunt. external_id is the handle WS-9 resolves to a scenario.
@@ -66,13 +74,13 @@ values
    '01980a20-0000-7000-8000-000000000001',
    '01980a23-0000-7000-8000-000000000001',
    '01980a22-0000-7000-8000-000000000001',
-   1, 'hunt', 'active', null, 20, 0, 'checkout-v1'),
+   1, 'hunt', 'active', null, 20, 0, 'arena', 'checkout-v1'),
   -- T2 — the task that stays locked until H is accepted.
   ('019f9100-0000-7000-8000-000000000002',
    '01980a20-0000-7000-8000-000000000001',
    '01980a23-0000-7000-8000-000000000001',
    '01980a22-0000-7000-8000-000000000001',
-   2, 'knowledge', 'active', null, 15, 0, null)
+   2, 'knowledge', 'active', null, 15, 0, null, null)
 on conflict (id) do nothing;
 
 -- ─── Course material — GERMAN ONLY ──────────────────────────────────────────
@@ -159,6 +167,8 @@ alter table public.prerequisites
   enable trigger prerequisites_guard_published_graph;
 alter table public.task_rubric_assignments
   enable trigger task_rubric_assignments_guard_published_graph;
+alter table public.content_versions
+  enable trigger content_versions_lifecycle_guard;
 
 commit;
 
@@ -168,7 +178,8 @@ commit;
 select
   (select count(*) from pg_trigger t
     where not t.tgisinternal
-      and t.tgname like '%_guard_published_graph'
+      and (t.tgname like '%_guard_published_graph'
+           or t.tgname = 'content_versions_lifecycle_guard')
       and t.tgenabled <> 'O') as guards_still_disabled,
   jsonb_array_length(snapshot -> 'stages' -> 0 -> 'tasks') as tasks_in_snapshot,
   app_private.is_valid_learner_content_snapshot(snapshot) as snapshot_valid
