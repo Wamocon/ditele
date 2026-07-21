@@ -15,7 +15,28 @@ export function AppFooter({ locale }: { locale: string }) {
     <footer className="mt-12 hidden border-t border-[--color-border] bg-[--color-surface] py-10 lg:block">
       <Container className="flex flex-col gap-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
-          <Image src="/footerlogo.svg" alt="DiTeLe" width={150} height={43} className="h-[43px] w-auto" />
+          {/*
+            Two files rather than one, because next/image renders an <img> and an
+            <img> cannot inherit currentColor. The navy ink in the mark is
+            invisible on the dark surface, so each theme gets its own artwork.
+            `.theme-light-only` / `.theme-dark-only` are driven by
+            :root[data-theme] in globals.css.
+          */}
+          <Image
+            src="/footerlogo.svg"
+            alt="WAMOCON Academy · DiTeLe"
+            width={189}
+            height={43}
+            className="theme-light-only h-[43px] w-auto"
+          />
+          <Image
+            src="/footerlogo-dark.svg"
+            alt=""
+            aria-hidden
+            width={189}
+            height={43}
+            className="theme-dark-only h-[43px] w-auto"
+          />
           <nav aria-label="Fußzeilennavigation">
             <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
               {PUBLIC_NAV.filter((i) => i.path !== "").map((item) => (

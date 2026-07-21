@@ -144,6 +144,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .scroll-area { overflow-y: auto; overscroll-behavior: contain; }
 
+/* Theme-swapped artwork. next/image renders an <img>, which cannot inherit
+   currentColor, so a logo with dark ink needs a separate file per theme. */
+.theme-dark-only { display: none; }
+:root[data-theme="dark"] .theme-light-only { display: none; }
+:root[data-theme="dark"] .theme-dark-only  { display: block; }
+
 /* Focus is always visible. Never remove this without a replacement. */
 :focus-visible {
   outline: 2px solid var(--color-brand);
