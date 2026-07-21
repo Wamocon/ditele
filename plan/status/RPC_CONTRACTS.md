@@ -112,6 +112,48 @@ grants table privileges to `anon` and `authenticated` and **never grants them to
 - `src/shared/database/service-role.ts` is still correct to keep — but it is only
   usable for Auth Admin operations. Do not reach for it to bypass RLS.
 
+### 0.6 🚨 There is no direct-write path. Every mutation goes through an RPC.
+
+Direct table writes are refused **even for an admin session**:
+
+| Tables | What happens on insert |
+|---|---|
+| `attempts` `submissions` `questions` `question_messages` `notifications` `ratings` `profiles` `cohorts` | `42501 permission denied for table …` — no DML grant at all |
+| `enrollments` `cohort_memberships` `support_issues` `entitlements` | `42501 new row violates row-level security policy` |
+| `courses` `course_localizations` `content_versions` | ✅ direct insert works |
+
+Later migrations revoke DML from `authenticated` and route everything through
+`SECURITY DEFINER` command RPCs. **Never write `.from("submissions").insert(...)`.**
+It will not fail at compile time and it will not fail quietly — it will 42501 at
+runtime, in production, on a user action. Use the command RPC every time.
+
+`content_versions.snapshot` is the published-content projection: a single jsonb
+document holding the whole course tree (stages → tasks → hints, options,
+assessment, rubric, skill mappings, localizations). **This is what the learner
+RPCs read** — it is why a student sees 0 rows in `tasks` yet
+`get_my_learning_course` returns a full curriculum. **WS-5:** publishing is not
+"flip a state column", it is "write a correct snapshot". `publish_content_version`
+builds it for you — do not hand-assemble one.
+
+### 0.7 🚨 New learners cannot be enrolled — `entitlements` blocks it (ISSUES.md I-004)
+
+`request_enrollment` first checks `public.entitlements` for a row with
+`capability in ('catalog','learning')` for the actor
+(migration `…096000` lines 62-70, re-stated in `…100140` lines 91-103).
+
+Inserting that row is **refused by RLS for admin**, and **none of the 48 RPCs
+grants an entitlement**. Only `learner@ditele.local` has one (plus a `portfolio`
+capability), pointing at `product_package_id 01980a40-0000-7000-8000-000000000001`.
+
+**Consequence:** the six seeded `learner1..6@ditele.local` accounts exist and hold
+the `learner` role, but cannot enrol, so they cannot generate submissions,
+questions or ratings. Unblocking needs someone with direct Postgres access —
+the SQL is in the header of `scripts/seed-mock.mjs`.
+
+**Until then:** `learner@ditele.local` is the *only* account with real learning
+data. WS-2, WS-3 and WS-4 build against that one learner, and every list screen
+will be short. Build the empty states properly — you will be seeing a lot of them.
+
 ---
 
 ## 1. Enum values — read them from here, never invent a state name

@@ -6,7 +6,10 @@
 
 | ID | Time | From | Area / file | What is wrong | Blocks me? | Status |
 |---|---|---|---|---|:---:|---|
-| I-001 | | | | | | |
+| I-001 | 2026-07-21 | WS-0 | `plan/00_MASTER_PLAN.md` §4.4 | The documented test password `Ditele-Local-2026!` is **wrong**. It comes from `supabase/seed.sql`, but `supabase/seed_role_accounts.sql` runs afterwards and re-hashes all four accounts to **`123123123`**. Verified by logging in as all four. No reset was needed. | no | ✅ resolved — correct password recorded in `WS-0.md` |
+| I-002 | 2026-07-21 | WS-0 | `SUPABASE_SERVICE_ROLE_KEY` / all tables | The service-role key has **no table grants** on this deployment — `42501 permission denied` on every table and RPC. Cause: migration `…095000` line 285-287 grants DML to `anon`/`authenticated` only. It **does** still work for the Auth Admin API. | no | open — documented in `RPC_CONTRACTS.md` §0.5; WS-6 must use the admin session for `profiles`/`user_roles` |
+| I-003 | 2026-07-21 | WS-0 | writes to all domain tables | **All domain writes are RPC-only.** Even an admin session is refused direct inserts on `attempts`, `submissions`, `questions`, `notifications`, `ratings`, `profiles`, `cohorts` (`42501 permission denied`) and on `enrollments`, `cohort_memberships`, `support_issues`, `entitlements` (`42501 RLS violation`). Only `courses`, `course_localizations` and `content_versions` accept direct inserts. | no | open — every workstream must mutate through the command RPCs, never `.from().insert()` |
+| I-004 | 2026-07-21 | WS-0 | `public.entitlements` · seeding | 🚨 **Cannot enrol any new learner.** `request_enrollment` requires a `public.entitlements` row (`capability in ('catalog','learning')`, migration `…096000` line 62-70). Inserting that row is refused by RLS for admin, and **no RPC in the 48 grants an entitlement**. Only the original `learner@ditele.local` has one. So the 6 new learner accounts exist but cannot be enrolled, which blocks seeding submissions, questions and ratings. **Needs direct Postgres access** (psql as the DB owner) to insert entitlement rows. | **yes — blocks a rich seed** | open — needs the coordinator / server admin |
 
 ---
 
