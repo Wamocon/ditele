@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/shared/ui";
 import type { UiRole } from "@/shared/auth/role";
-import { navForRole } from "./nav-config";
+import { navForRole, type NavItem } from "./nav-config";
 import { activeNavHref } from "./active-nav";
 import { Container } from "./container";
 import { ThemeToggle } from "./theme-toggle";
@@ -22,9 +22,11 @@ export interface AppHeaderProps {
   displayName?: string | undefined;
   email?: string | undefined;
   unreadCount?: number | undefined;
+  /** Locale-resolved nav, computed server-side in AppShell. */
+  items?: NavItem[] | undefined;
 }
 
-export function AppHeader({ locale, role, displayName, email, unreadCount }: AppHeaderProps) {
+export function AppHeader({ locale, role, displayName, email, unreadCount, items: navItems }: AppHeaderProps) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
 
@@ -36,7 +38,9 @@ export function AppHeader({ locale, role, displayName, email, unreadCount }: App
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const nav = role ? navForRole(role) : [];
+  // Prefer the locale-resolved list from AppShell; navForRole is the German
+  // fallback for any caller that has not been updated.
+  const nav = navItems ?? (role ? navForRole(role) : []);
   const items = nav.filter((i) => i.primary);
   // Resolved once against the full nav, not per item — see active-nav.ts for why
   // a per-item prefix test marked every ancestor tab as selected.

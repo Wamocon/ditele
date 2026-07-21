@@ -7,16 +7,25 @@ import { useState } from "react";
 import { Home, BookOpen, CheckSquare, MessageCircle, MoreHorizontal, X } from "lucide-react";
 import { cn } from "@/shared/ui";
 import type { UiRole } from "@/shared/auth/role";
-import { primaryNav, secondaryNav } from "./nav-config";
+import { primaryNav, secondaryNav, type NavItem } from "./nav-config";
 import { activeNavHref } from "./active-nav";
 
 const ICONS = [Home, BookOpen, CheckSquare, MessageCircle];
 
-export function MobileTabBar({ locale, role }: { locale: string; role: UiRole }) {
+export function MobileTabBar({
+  locale,
+  role,
+  items,
+}: {
+  locale: string;
+  role: UiRole;
+  /** Locale-resolved nav from AppShell; falls back to the German config. */
+  items?: NavItem[] | undefined;
+}) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
-  const tabs = primaryNav(role);
-  const rest = secondaryNav(role);
+  const tabs = items ? items.filter((i) => i.primary) : primaryNav(role);
+  const rest = items ? items.filter((i) => !i.primary) : secondaryNav(role);
 
   // Resolved once against every entry, tabs and sheet alike, so the most
   // specific one wins instead of every ancestor lighting up at once.

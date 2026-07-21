@@ -11,7 +11,18 @@ import type { UiRole } from "@/shared/auth/role";
  */
 export interface NavItem {
   path: string;
+  /**
+   * German label. Used as-is for `de`, and as the fallback whenever `labelKey`
+   * has no translation in the active locale.
+   */
   label: string;
+  /**
+   * Key into the `nav.*` namespace. Without this the label stays German in
+   * every locale, which is exactly the bug this closes: the nav read
+   * "Start Kurse Aufgaben Fragen" on /en because these strings never went
+   * through i18n at all.
+   */
+  labelKey?: string;
   /** Show in the primary nav / tab bar. Max 5 per role, the 5th being "Mehr". */
   primary?: boolean;
   /** Owning workstream — so an unfinished route is traceable. */
@@ -20,12 +31,12 @@ export interface NavItem {
 
 /** Routes reachable without a session. */
 export const PUBLIC_NAV: NavItem[] = [
-  { path: "", label: "Start", owner: "WS-1" },
-  { path: "/catalog", label: "Kurse", primary: true, owner: "WS-1" },
-  { path: "/about", label: "Über uns", primary: true, owner: "WS-1" },
-  { path: "/faq", label: "FAQ", primary: true, owner: "WS-1" },
-  { path: "/privacy", label: "Datenschutz", owner: "WS-1" },
-  { path: "/legal", label: "Impressum", owner: "WS-1" },
+  { path: "", label: "Start", labelKey: "home", owner: "WS-1" },
+  { path: "/catalog", label: "Kurse", labelKey: "courses", primary: true, owner: "WS-1" },
+  { path: "/about", label: "Über uns", labelKey: "about", primary: true, owner: "WS-1" },
+  { path: "/faq", label: "FAQ", labelKey: "faq", primary: true, owner: "WS-1" },
+  { path: "/privacy", label: "Datenschutz", labelKey: "privacy", owner: "WS-1" },
+  { path: "/legal", label: "Impressum", labelKey: "legal", owner: "WS-1" },
 ];
 
 export const AUTH_NAV: NavItem[] = [
@@ -36,35 +47,35 @@ export const AUTH_NAV: NavItem[] = [
 ];
 
 export const STUDENT_NAV: NavItem[] = [
-  { path: "/learn", label: "Start", primary: true, owner: "WS-2" },
-  { path: "/learn/courses", label: "Kurse", primary: true, owner: "WS-2" },
-  { path: "/learn/tasks", label: "Aufgaben", primary: true, owner: "WS-2" },
-  { path: "/learn/questions", label: "Fragen", primary: true, owner: "WS-3" },
-  { path: "/learn/history", label: "Verlauf", owner: "WS-3" },
-  { path: "/learn/certificates", label: "Zertifikate", owner: "WS-3" },
-  { path: "/learn/notifications", label: "Benachrichtigungen", owner: "WS-3" },
-  { path: "/learn/profile", label: "Profil", owner: "WS-3" },
+  { path: "/learn", label: "Start", labelKey: "home", primary: true, owner: "WS-2" },
+  { path: "/learn/courses", label: "Kurse", labelKey: "courses", primary: true, owner: "WS-2" },
+  { path: "/learn/tasks", label: "Aufgaben", labelKey: "tasks", primary: true, owner: "WS-2" },
+  { path: "/learn/questions", label: "Fragen", labelKey: "questions", primary: true, owner: "WS-3" },
+  { path: "/learn/history", label: "Verlauf", labelKey: "learningHistory", owner: "WS-3" },
+  { path: "/learn/certificates", label: "Zertifikate", labelKey: "certificates", owner: "WS-3" },
+  { path: "/learn/notifications", label: "Benachrichtigungen", labelKey: "notifications", owner: "WS-3" },
+  { path: "/learn/profile", label: "Profil", labelKey: "profile", owner: "WS-3" },
 ];
 
 export const TRAINER_NAV: NavItem[] = [
-  { path: "/trainer", label: "Übersicht", primary: true, owner: "WS-4" },
-  { path: "/trainer/submissions", label: "Reviews", primary: true, owner: "WS-4" },
-  { path: "/trainer/questions", label: "Fragen", primary: true, owner: "WS-4" },
-  { path: "/trainer/progress", label: "Fortschritt", owner: "WS-4" },
-  { path: "/trainer/history", label: "Verlauf", owner: "WS-4" },
-  { path: "/trainer/questions/archive", label: "Frage-Archiv", owner: "WS-4" },
-  { path: "/trainer/profile", label: "Profil", owner: "WS-4" },
+  { path: "/trainer", label: "Übersicht", labelKey: "overview", primary: true, owner: "WS-4" },
+  { path: "/trainer/submissions", label: "Reviews", labelKey: "submissions", primary: true, owner: "WS-4" },
+  { path: "/trainer/questions", label: "Fragen", labelKey: "questions", primary: true, owner: "WS-4" },
+  { path: "/trainer/progress", label: "Fortschritt", labelKey: "learnerProgress", owner: "WS-4" },
+  { path: "/trainer/history", label: "Verlauf", labelKey: "learningHistory", owner: "WS-4" },
+  { path: "/trainer/questions/archive", label: "Frage-Archiv", labelKey: "reviewHistory", owner: "WS-4" },
+  { path: "/trainer/profile", label: "Profil", labelKey: "profile", owner: "WS-4" },
 ];
 
 export const ADMIN_NAV: NavItem[] = [
-  { path: "/admin", label: "Übersicht", primary: true, owner: "WS-5" },
-  { path: "/admin/courses", label: "Kurse", primary: true, owner: "WS-5" },
-  { path: "/admin/users", label: "Benutzer", primary: true, owner: "WS-6" },
-  { path: "/admin/tasks", label: "Aufgaben", owner: "WS-5" },
-  { path: "/admin/applications", label: "Kursanfragen", owner: "WS-6" },
-  { path: "/admin/issues", label: "Fehlermeldungen", owner: "WS-6" },
-  { path: "/admin/settings", label: "Einstellungen", owner: "WS-6" },
-  { path: "/admin/profile", label: "Profil", owner: "WS-6" },
+  { path: "/admin", label: "Übersicht", labelKey: "overview", primary: true, owner: "WS-5" },
+  { path: "/admin/courses", label: "Kurse", labelKey: "courses", primary: true, owner: "WS-5" },
+  { path: "/admin/users", label: "Benutzer", labelKey: "users", primary: true, owner: "WS-6" },
+  { path: "/admin/tasks", label: "Aufgaben", labelKey: "tasks", owner: "WS-5" },
+  { path: "/admin/applications", label: "Kursanfragen", labelKey: "applications", owner: "WS-6" },
+  { path: "/admin/issues", label: "Fehlermeldungen", labelKey: "reports", owner: "WS-6" },
+  { path: "/admin/settings", label: "Einstellungen", labelKey: "settings", owner: "WS-6" },
+  { path: "/admin/profile", label: "Profil", labelKey: "profile", owner: "WS-6" },
 ];
 
 export function navForRole(role: UiRole): NavItem[] {
