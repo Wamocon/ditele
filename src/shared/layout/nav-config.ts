@@ -50,7 +50,25 @@ export const STUDENT_NAV: NavItem[] = [
   { path: "/learn", label: "Start", labelKey: "home", primary: true, owner: "WS-2" },
   { path: "/learn/courses", label: "Kurse", labelKey: "courses", primary: true, owner: "WS-2" },
   { path: "/learn/tasks", label: "Aufgaben", labelKey: "tasks", primary: true, owner: "WS-2" },
-  { path: "/learn/questions", label: "Fragen", labelKey: "questions", primary: true, owner: "WS-3" },
+  /**
+   * ⭐ The Bug Arena hub.
+   *
+   * Added under the narrow, written exception to this file's "Only WS-0 edits
+   * it" rule, granted to WS-8 for the Arena entry and the `primary` flags and
+   * nothing else — `06_ARENA_WORKSTREAMS.md` §7, recorded in `ISSUES.md` I-038.
+   * No other Arena workstream touches this file; a later nav change goes
+   * through `ISSUES.md` to WS-13.
+   *
+   * "Fragen" gives up its primary slot rather than Start/Kurse/Aufgaben,
+   * because the mobile tab bar caps at 5 including "Mehr". It keeps its place
+   * in the sheet, so nothing became unreachable.
+   *
+   * ⚠️ The route itself is WS-11's (`learn/arena/**`) and does NOT exist yet,
+   * so this link 404s until WS-11 lands. See ISSUES.md I-043 — the alternative
+   * was WS-11 editing a file it does not own.
+   */
+  { path: "/learn/arena", label: "Arena", labelKey: "arena", primary: true, owner: "WS-11" },
+  { path: "/learn/questions", label: "Fragen", labelKey: "questions", owner: "WS-3" },
   { path: "/learn/history", label: "Verlauf", labelKey: "learningHistory", owner: "WS-3" },
   { path: "/learn/certificates", label: "Zertifikate", labelKey: "certificates", owner: "WS-3" },
   { path: "/learn/notifications", label: "Benachrichtigungen", labelKey: "notifications", owner: "WS-3" },

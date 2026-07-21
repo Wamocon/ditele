@@ -1947,6 +1947,142 @@ export type Database = {
         }
         Relationships: []
       }
+      // ─────────────────────────────────────────────────────────────────────
+      // hunt_findings / hunt_scenarios were added BY HAND by WS-8, not by
+      // `npm run db:types`. That script shells out to `supabase gen types`,
+      // which starts a local Docker container, and this machine has no Docker
+      // daemon — it fails with "check if the path is correct and if the daemon
+      // is running". These two blocks are exactly what a regeneration on a
+      // machine that does have Docker will produce from migration
+      // 20260722200000_arena_hunt_tables.sql, so the next real regeneration
+      // simply overwrites them with the same content. Nothing to unwind.
+      // ─────────────────────────────────────────────────────────────────────
+      hunt_findings: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          organization_id: string | null
+          planted_code: string | null
+          reported_summary: string
+          row_version: number
+          scenario_id: string | null
+          severity: string | null
+          submission_id: string | null
+          updated_at: string
+          verdict: string
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          organization_id?: string | null
+          planted_code?: string | null
+          reported_summary?: string
+          row_version?: number
+          scenario_id?: string | null
+          severity?: string | null
+          submission_id?: string | null
+          updated_at?: string
+          verdict?: string
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          organization_id?: string | null
+          planted_code?: string | null
+          reported_summary?: string
+          row_version?: number
+          scenario_id?: string | null
+          severity?: string | null
+          submission_id?: string | null
+          updated_at?: string
+          verdict?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hunt_findings_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hunt_findings_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "hunt_scenarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hunt_findings_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hunt_scenarios: {
+        Row: {
+          code: string
+          configuration: Json
+          created_at: string
+          description: string
+          expected_findings: number
+          id: string
+          organization_id: string | null
+          row_version: number
+          scenario_version: number
+          state: Database["public"]["Enums"]["record_state"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          configuration?: Json
+          created_at?: string
+          description?: string
+          expected_findings?: number
+          id?: string
+          organization_id?: string | null
+          row_version?: number
+          scenario_version?: number
+          state?: Database["public"]["Enums"]["record_state"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          configuration?: Json
+          created_at?: string
+          description?: string
+          expected_findings?: number
+          id?: string
+          organization_id?: string | null
+          row_version?: number
+          scenario_version?: number
+          state?: Database["public"]["Enums"]["record_state"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hunt_scenarios_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       impersonation_sessions: {
         Row: {
           actor_user_id: string

@@ -23,7 +23,18 @@
     "unavailable": "Nicht verfügbar",
     "previewOnly": "Nur Vorschau",
     "notConfigured": "Nicht konfiguriert",
-    "saved": "Gerade gespeichert"
+    "saved": "Gerade gespeichert",
+    "brandHome": "DiTeLe — zur Startseite",
+    "mainNav": "Hauptnavigation",
+    "accountMenu": "Kontomenü",
+    "chooseLanguage": "Sprache wählen",
+    "moreNav": "Weitere Navigation",
+    "breadcrumbNav": "Brotkrümelnavigation",
+    "close": "Schließen",
+    "notifications": "Benachrichtigungen",
+    "notificationsUnread": "Benachrichtigungen, {count} ungelesen",
+    "themeToLight": "Zu hellem Design wechseln",
+    "themeToDark": "Zu dunklem Design wechseln"
   },
   "roles": {
     "guest": "Gast",
@@ -56,6 +67,7 @@
     "overview": "Übersicht",
     "courses": "Kurse",
     "tasks": "Aufgaben",
+    "arena": "Arena",
     "users": "Benutzer",
     "applications": "Anträge",
     "reports": "Berichte",
