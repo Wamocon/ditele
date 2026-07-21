@@ -44,7 +44,10 @@ export function AppHeader({ locale, role, displayName }: AppHeaderProps) {
       <Container className="flex h-full items-center justify-between gap-4">
         <Link
           href={`/${locale}` as Route}
-          className="flex shrink-0 items-center"
+          /* The wordmark is only 17–32px tall, but it is the "go home" control on
+             every route, so the hit area is padded out to the mandatory 44px on
+             mobile without changing how the logo looks. */
+          className="flex min-h-11 shrink-0 items-center lg:min-h-0"
           aria-label="DiTeLe — zur Startseite"
         >
           <Image

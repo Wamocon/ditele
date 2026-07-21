@@ -23,8 +23,10 @@ const button = cva(
         link: "bg-transparent text-(--color-brand) underline-offset-4 hover:underline",
       },
       size: {
-        // min-h-11 = 44px — the mandatory mobile touch target.
-        sm: "h-9 min-h-9 rounded-(--radius-sm) px-3 text-[13px]",
+        // 44px is the mandatory mobile touch target (MASTER_PLAN §6.5), so even
+        // the small size honours it up to lg and only then relaxes to its
+        // 36px desktop rhythm. Tables are card lists below md, so there is room.
+        sm: "h-11 min-h-11 rounded-(--radius-sm) px-3 text-[13px] lg:h-9 lg:min-h-9",
         md: "h-11 min-h-11 rounded-(--radius-md) px-4 text-[15px]",
         lg: "h-12 min-h-12 rounded-(--radius-md) px-6 text-[15px]",
         icon: "size-11 min-h-11 rounded-(--radius-md)",

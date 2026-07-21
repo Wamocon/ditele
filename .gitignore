@@ -26,3 +26,6 @@
 # Per-workstream dev build output (NEXT_DIST_DIR)
 .next-*
 .gstack/
+
+# WS-7 scratch (build logs, probes) — not part of the app
+.ws7/
