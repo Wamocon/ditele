@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   CardTitle,
+  ConfirmDialog,
   Field,
   StatusBadge,
   Textarea,
@@ -24,7 +25,6 @@ import {
   type LearningTask,
 } from "./model";
 import { saveDraftAction, startAttemptAction, submitAttemptAction } from "./actions";
-import { ConfirmDialog } from "./confirm-dialog";
 import { DefectForm, formatDefectReport, isDefectComplete } from "./defect-form";
 import { HintCascade } from "./hint-cascade";
 import { IframePanel } from "./iframe-panel";
@@ -568,7 +568,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
         description={s.confirmDescription}
         confirmLabel={s.confirmAction}
         cancelLabel={s.confirmCancel}
-        loading={submitting}
+        busy={submitting}
         onConfirm={onConfirmSubmit}
         onCancel={() => setConfirmOpen(false)}
       />

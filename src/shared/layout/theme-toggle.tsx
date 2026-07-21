@@ -43,7 +43,10 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={theme === "dark" ? "Zu hellem Design wechseln" : "Zu dunklem Design wechseln"}
-      className="flex size-9 items-center justify-center rounded-(--radius-md) text-(--color-fg-muted) transition-colors hover:bg-(--color-surface) hover:text-(--color-fg)"
+      /* size-11 = 44×44, the mandatory mobile touch target (MASTER_PLAN §6.5).
+         The icon stays 16px; only the hit area grows. From lg up it relaxes to
+         the header's 36px rhythm, where the pointer is a mouse. */
+      className="flex size-11 items-center justify-center rounded-(--radius-md) text-(--color-fg-muted) transition-colors hover:bg-(--color-surface) hover:text-(--color-fg) lg:size-9"
     >
       {theme === "dark" ? <Moon className="size-4" /> : <Sun className="size-4" />}
     </button>

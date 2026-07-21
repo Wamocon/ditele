@@ -2,14 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Button, Card, ErrorState, Field, Select, Textarea } from "@/shared/ui";
+import { Button, Card, ConfirmDialog, ErrorState, Field, Select, Textarea } from "@/shared/ui";
 import {
   answerQuestionAction,
   archiveQuestionAction,
   claimQuestionAction,
   transferQuestionAction,
 } from "./actions";
-import { ConfirmDialog } from "./confirm-dialog";
 
 /**
  * Claim → answer → transfer → archive, in one panel.

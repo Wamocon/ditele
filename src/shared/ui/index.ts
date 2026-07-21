@@ -14,4 +14,5 @@ export { Field, type FieldProps } from "./field";
 export { Badge, type BadgeProps } from "./badge";
 export { StatusBadge, statusLabel } from "./status-badge";
 export { Skeleton, SkeletonText, SkeletonCard, EmptyState, ErrorState, DotMark } from "./states";
+export { ConfirmDialog, type ConfirmDialogProps } from "./confirm-dialog";
 export { DataTable, type Column, type DataTableProps } from "./data-table";

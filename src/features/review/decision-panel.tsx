@@ -3,10 +3,9 @@
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Badge, Button, Card, ErrorState, Field, Input, Select, Textarea, cn } from "@/shared/ui";
+import { Badge, Button, Card, ConfirmDialog, ErrorState, Field, Input, Select, Textarea, cn } from "@/shared/ui";
 import type { RubricCriterion } from "@/shared/data/review";
 import { decideSubmissionAction, transferSubmissionAction } from "./actions";
-import { ConfirmDialog } from "./confirm-dialog";
 
 /**
  * ReviewDecisionBar. Three outcomes, one screen, no navigation in between —

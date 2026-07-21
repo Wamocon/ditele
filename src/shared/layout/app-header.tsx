@@ -103,9 +103,12 @@ export function AppHeader({ locale, role, displayName }: AppHeaderProps) {
               {initials(displayName)}
             </span>
           ) : (
+            /* h-11 = the mandatory 44px mobile touch target (MASTER_PLAN §6.5).
+               It relaxes to the header's 36px rhythm from lg up, where the
+               pointer is a mouse. */
             <Link
               href={`/${locale}/login`}
-              className="flex h-9 items-center rounded-(--radius-md) bg-(--color-brand) px-3 text-[13px] font-semibold text-(--color-brand-fg) hover:bg-(--color-brand-hover)"
+              className="flex h-11 items-center rounded-(--radius-md) bg-(--color-brand) px-3 text-[13px] font-semibold text-(--color-brand-fg) hover:bg-(--color-brand-hover) lg:h-9"
             >
               Anmelden
             </Link>
