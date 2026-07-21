@@ -7,7 +7,17 @@ Started: 2026-07-21 · Port: 3107 · Account: all four · **Verified against a p
 ## RESUME HERE
 Updated: 2026-07-21 · Chat: **#1**
 
-**State:** ✅ **DONE.** All four hard stops pass. `plan/status/RELEASE.md` is written.
+**State:** ✅ **DONE at commit `f3d8d13`.** All four hard stops pass **for that
+commit**. `plan/status/RELEASE.md` is written.
+
+> ⚠️ **The working tree has since moved and it is not WS-7's.** Another session
+> has uncommitted work in the same tree that deletes the `/admin/groups` and
+> `/trainer/groups` route trees (15 files, staged) and rewires the header/shell
+> around a new `account-menu.tsx`. It typechecks, it looks deliberate, and it
+> pairs with commit `2113f2b` ("course-based trainer assignment") — but it is
+> **unverified**. Per `02_WORKSTREAMS` §11 I did not resolve, revert or commit
+> any of it. Every gate result below describes `f3d8d13`. See RELEASE.md's
+> banner.
 
 > ### For the coordinator, in one paragraph
 > **All four hard stops are green.** `smoke.mjs` 47/47; `grep -r "service_role"

@@ -5,6 +5,35 @@
 > one**, so everything known to be missing, broken or unverified is in here —
 > including the things that make this report less flattering.
 
+> ## ⚠️ Every number in this report describes commit `f3d8d13`, and only that commit
+>
+> **The working tree moved underneath this report while it was being written.**
+> After `f3d8d13` was committed, another session began an uncommitted change in
+> the same tree that, among other things:
+>
+> - **deletes the entire `/admin/groups` and `/trainer/groups` route trees**
+>   (15 files, staged for commit), and edits `scripts/smoke.mjs` to stop
+>   requesting them;
+> - adds `src/shared/layout/account-menu.tsx`, `account-actions.ts` and
+>   `src/shared/auth/identity.ts`, and rewires `app-header`, `app-shell`,
+>   `nav-config`, `routes.ts` and all three role layouts to use them.
+>
+> It looks deliberate and coherent — it pairs with commit `2113f2b`
+> ("course-based trainer assignment"), so it reads as cohorts being replaced by
+> course-based assignment, which would be a sane answer to I-011 and I-012. It
+> is **not** broken: `npx tsc --noEmit` is green on the working tree as it stands.
+>
+> But it is **uncommitted, in flight, and not verified by WS-7**. Concretely:
+>
+> - The counts below — **53 route files, 47 smoke-covered** — are `f3d8d13`'s.
+>   If that work lands, both numbers drop and §2's table is wrong.
+> - The smoke, sweep, SEC and contrast results below were measured against a
+>   production build of `f3d8d13`. **They say nothing about the current tree.**
+> - Per `02_WORKSTREAMS` §11, WS-7 did not resolve, revert or commit any of it.
+>
+> **Coordinator: whoever owns that change must re-run the gates before it lands,
+> and §2 and §5 of this file need updating with it.** The commands are in §7.
+
 ---
 
 ## 1. The one-paragraph version
