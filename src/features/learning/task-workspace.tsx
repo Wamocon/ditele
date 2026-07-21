@@ -284,10 +284,18 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
 
     if (!result.ok) {
       setFormError(
-        result.error.code === "22023"
-          ? s.errorEvidence
-          : result.error.code === "CONFLICT"
-            ? s.errorConflict
+        // ⚠️ `EVIDENCE_URI` before the generic `22023`. The evidence RPC
+        // requires `^https://`, and the defect form prefills the sandbox URL —
+        // so on a deployment served over plain HTTP every hunt report was
+        // refused with "fill in the defect report", on a form that was already
+        // full. Naming the actual problem is the difference between a learner
+        // fixing it in five seconds and filing a support ticket.
+        result.error.code === "EVIDENCE_URI"
+          ? s.errorEvidenceUri
+          : result.error.code === "22023"
+            ? s.errorEvidence
+            : result.error.code === "CONFLICT"
+              ? s.errorConflict
             : result.error.message || s.errorSubmit
       );
       return;

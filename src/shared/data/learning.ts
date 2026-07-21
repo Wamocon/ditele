@@ -622,7 +622,43 @@ export async function submitAttempt(args: {
       title: args.evidence.title.trim() || args.evidence.sourceUri,
       sourceUri: args.evidence.sourceUri.trim(),
     });
-    if (!evidence.ok) return evidence;
+    if (!evidence.ok) {
+      /**
+       * 🚨 **Do not let this surface as the generic evidence error.**
+       *
+       * `create_external_task_evidence` requires the source URI to match
+       * `^https://` — HTTP is refused, and so is a root-relative path. The
+       * defect form prefills `sourceUri` with the sandbox URL, so on any
+       * deployment that is not served over HTTPS **every hunt report fails to
+       * submit**, and `task-workspace.tsx` mapped the resulting `22023` to
+       * "Für diese Aufgabe ist ein Fehlerbericht mit Adresse erforderlich.
+       * Bitte fülle den Fehlerbericht vollständig aus."
+       *
+       * That message tells a learner to fill in a field that is already
+       * filled, on the one screen where they cannot possibly diagnose it. It
+       * cost this workstream an hour, with the answer visible only by calling
+       * the RPC by hand and reading `invalid external evidence payload`.
+       *
+       * A distinct code lets the workspace say what is actually wrong. The
+       * underlying HTTPS requirement is not relaxed — an evidence URI that
+       * anyone may later open deserves it — and `NEXT_PUBLIC_SUPABASE_URL`
+       * being plain HTTP on a LAN address is already `RELEASE.md` §6 launch
+       * blocker 1.
+       */
+      const isUriRejection =
+        evidence.error.code === "22023" &&
+        /external evidence payload/i.test(evidence.error.message ?? "");
+      if (isUriRejection) {
+        // The CODE is the contract; the workspace owns the wording, so no UI
+        // string leaks into the data layer.
+        return err({
+          code: "EVIDENCE_URI",
+          message: evidence.error.message,
+          retryable: false,
+        });
+      }
+      return evidence;
+    }
     evidenceRefs.push(evidence.data);
   }
 

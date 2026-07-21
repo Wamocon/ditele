@@ -552,6 +552,7 @@
       "notStartedDescription": "Der Versuch wird gestartet, sobald du mit der Bearbeitung beginnst. Deine Eingaben werden automatisch gespeichert.",
       "start": "Aufgabe starten",
       "errorEvidence": "Für diese Aufgabe ist ein Fehlerbericht mit Adresse erforderlich. Bitte fülle den Fehlerbericht vollständig aus.",
+      "errorEvidenceUri": "Die betroffene Adresse muss mit https:// beginnen. Kopiere die vollständige Adresse aus der Testumgebung.",
       "errorConflict": "Diese Aufgabe wurde in einem anderen Tab geändert. Bitte lade die Seite neu.",
       "errorSubmit": "Die Abgabe konnte nicht eingereicht werden.",
       "stepsTitle": "Fortschritt",
