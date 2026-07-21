@@ -712,7 +712,11 @@
         "certificate_available": "Zertifikat verfügbar",
         "certificate_revoked": "Zertifikat widerrufen",
         "certificate_expired": "Zertifikat abgelaufen",
-        "fallback": "Ereignis"
+        "fallback": "Ereignis",
+        "task_submitted": "Aufgabe eingereicht",
+        "task_resubmitted": "Aufgabe erneut eingereicht",
+        "review_accepted": "Abgabe angenommen",
+        "review_revision_required": "Überarbeitung angefordert"
       }
     },
     "certificates": {

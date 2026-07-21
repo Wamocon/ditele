@@ -19,13 +19,19 @@ Updated: 2026-07-21 · Chat: **#1**
 - `/learn/questions/[questionId]` — thread, system rows, honest no-reply notice
 - `/learn/profile` — account, theme, notification preferences, password, sign out
 - `/learn/enroll/[courseId]` — course summary, request form, existing-request status
+- `/learn/history` — keyset "load older" pagination, pinned snapshot
+- `/learn/certificates` — honest empty state (P1 / BLK-003), real table if rows appear
 
 **Half-finished:**
 - Nothing.
 
 **Next, in order:**
-1. `/learn/history`
-2. `/learn/certificates`
+- **All 8 WS-3 routes are built.** What is left is verification and polish:
+  1. Walk each route at 375 / 768 / 1440 in a real browser (checked in markup,
+     not yet eyeballed) and in dark mode.
+  2. Tab through each form — focus visibility relies on WS-0's global styles.
+  3. Re-check `/learn/notifications` once WS-4 starts deciding submissions, so
+     the `review.decided` event type gets a real row behind its label.
 
 **⭐ Things I learned that are written down nowhere else:**
 
@@ -97,7 +103,14 @@ Updated: 2026-07-21 · Chat: **#1**
     boundary and the page shows its error state with no hint why. Logged as
     I-015 — **WS-1 calls the same RPC on `/catalog/[slug]`.**
 
-11. **`de.json` and `ISSUES.md` lose writes.** Both are shared, and a
+11. **The learning-history RPC emits four event kinds that are not greppable**
+    the way the others are (`task_submitted`, `task_resubmitted`,
+    `review_accepted`, `review_revision_required` — built with a `case`
+    expression in migration `…100100`, not a literal alias). If a history row
+    renders as the generic "Ereignis" label, that is a missing key, not a
+    missing feature. The full list is in `learn.history.events` in `de.json`.
+
+12. **`de.json` and `ISSUES.md` lose writes.** Both are shared, and a
    read-modify-write from another chat lands on top of yours. My first
    `ISSUES.md` row vanished within seconds. Always write, then **read back and
    confirm**. See I-013.
@@ -117,8 +130,8 @@ Updated: 2026-07-21 · Chat: **#1**
 | `/learn/questions/[questionId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/learn/profile` | ✅ | ✅ | ✅ | n/a | ✅ | ✅ | ✅ | ✅ |
 | `/learn/enroll/[courseId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/learn/history` | ⬜ | | | | | | | |
-| `/learn/certificates` | ⬜ | | | | | | | |
+| `/learn/history` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/learn/certificates` | ✅ | ⚠️ empty | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ## Data functions added
 
