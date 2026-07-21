@@ -57,6 +57,10 @@ const PAIRS = [
   ["--color-fg-subtle", ["--color-bg", "--color-surface"]],
   ["--color-brand", ["--color-bg", "--color-surface"]],
   ["--color-brand-fg", ["--color-brand", "--color-brand-hover", "--color-brand-active"]],
+  // Same lesson, second offender: `Button variant="danger"` hardcoded
+  // `text-white`, which measured 2.47:1 on the lightened dark-mode danger pink.
+  // WS-7's browser sweep caught it; this pair stops it coming back.
+  ["--color-danger-fg", ["--color-danger"]],
   ["--color-success", ["--color-bg", "--color-surface", "--color-success-soft"]],
   ["--color-warning", ["--color-bg", "--color-surface", "--color-warning-soft"]],
   ["--color-danger", ["--color-bg", "--color-surface", "--color-danger-soft"]],

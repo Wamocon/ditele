@@ -100,8 +100,8 @@
     "loginAction": "Sicher anmelden",
     "registerAction": "Konto erstellen",
     "resetAction": "Reset-Link senden",
-    "sessionExpired": "Deine Sitzung ist abgelaufen. Melde dich erneut an.",
-    "invalid": "Prüfe deine Angaben und versuche es erneut.",
+    "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "invalid": "Bitte prüfen Sie Ihre Angaben und versuchen Sie es erneut.",
     "shared": {
       "emailLabel": "E-Mail-Adresse",
       "emailPlaceholder": "name@unternehmen.de",
@@ -1225,7 +1225,7 @@
     "publish": "Version veröffentlichen",
     "versionChecklist": "Versionscheckliste",
     "discardDraft": "Entwurf verwerfen",
-    "impersonation": "Du siehst DiTeLe in einer anderen Rollenansicht. Deine Administratorrechte bleiben unverändert.",
+    "impersonation": "Sie sehen DiTeLe in einer anderen Rollenansicht. Ihre Administratorrechte bleiben unverändert.",
     "endRoleView": "Rollenansicht beenden"
   },
   "status": {

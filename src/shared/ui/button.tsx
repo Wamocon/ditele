@@ -19,7 +19,7 @@ const button = cva(
           "border border-(--color-border-strong) bg-transparent text-(--color-fg) hover:bg-(--color-surface)",
         ghost: "bg-transparent text-(--color-fg) hover:bg-(--color-surface)",
         danger:
-          "bg-(--color-danger) text-white shadow-(--shadow-sm) hover:brightness-110",
+          "bg-(--color-danger) text-(--color-danger-fg) shadow-(--shadow-sm) hover:brightness-110",
         link: "bg-transparent text-(--color-brand) underline-offset-4 hover:underline",
       },
       size: {

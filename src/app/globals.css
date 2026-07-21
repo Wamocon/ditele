@@ -40,6 +40,11 @@
   --color-warning-soft:  #FFF5DF;
   --color-danger:        #B42331;
   --color-danger-soft:   #FFF0F1;
+  /* The text that sits ON a filled danger button. Same lesson as I-027 and the
+     brand pair: a filled button's contrast pair is fg-on-fill, not fill-on-page.
+     White on #B42331 is 6.51:1 here; in dark mode --color-danger lightens to a
+     pink where white would be 2.47:1, so the dark block below flips it. */
+  --color-danger-fg:     #FFFFFF;
   --color-info:          #175EC8;
   --color-info-soft:     #EAF2FF;
 
@@ -100,6 +105,9 @@
   --color-warning-soft:  #3D2E14;
   --color-danger:        #FF7C87;
   --color-danger-soft:   #40191E;
+  /* Dark ink on the lightened danger pink. White measured 2.47:1 — a filled
+     "Kurs archivieren" button was effectively unreadable in dark mode. */
+  --color-danger-fg:     #2A0E11;
   --color-info:          #75A8F5;
   --color-info-soft:     #172A44;
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.32);
