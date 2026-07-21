@@ -79,26 +79,25 @@ export default async function Page({
     if (!result.ok) {
       return <ErrorState title={s.loadErrorTitle} message={result.error.message} locale={locale} />;
     }
-    // ⚠️ The fallback is a WORKAROUND for ISSUES.md I-050, and it is load-
-    // bearing today: `hunt_scenarios_scoped_read` proves the learner may see
-    // the scenario by joining through `public.tasks`, but a learner reads ZERO
-    // rows from `tasks` under its own RLS (RPC_CONTRACTS §10), so the `exists`
-    // is false for every learner and the seeded row is invisible to exactly
-    // the people it is for. Measured, not guessed: `can_access_cohort` returns
-    // true and `select count(*) from tasks` returns 0 in the same session.
+    // ⭐ The I-050 fallback is GONE, and with it the scope it cost.
     //
-    // So the shipped definition renders instead. It cannot drift from the row:
-    // `seed_arena_scenarios.sql` is generated from the same file and
-    // `scripts/ws9-check-scenario.mjs` diffs the two. The database row stays
-    // the ground truth for grading, which is what WS-10 reads it for.
+    // WS-9 shipped `result.data ?? getDraftScenario(scenarioId)` because
+    // `hunt_scenarios_scoped_read` could never be true for a learner — a policy
+    // body is not `security definer`, so its `exists` over `public.tasks` was
+    // evaluated under `tasks`' own RLS, which a learner does not pass. The
+    // seeded row was invisible to exactly the people it was for, and it failed
+    // silently: the read returned null, which is indistinguishable from "no
+    // such scenario".
     //
-    // What it costs: any signed-in learner can render any shipped scenario by
-    // guessing its code, rather than only the ones their cohort reaches. A
-    // sandbox is a fake shop with no learner data in it, so this leaks nothing
-    // — but it is a real narrowing of scope that WS-8's policy was meant to
-    // enforce. **Delete this branch the day I-050 is fixed**, and the intended
-    // path is already there above it.
-    scenario = result.data ?? getDraftScenario(scenarioId);
+    // The price of that fallback was that ANY signed-in learner could render
+    // ANY shipped scenario by guessing its code. WS-13's `20260727100000`
+    // moves the check into `app_private.hunt_scenario_is_reachable`, and
+    // `scripts/ws13-integration-probe.sql` §1–§2 measure both halves: the
+    // enrolled learner reads the scenario (while still reading 0 tasks), and an
+    // unenrolled one reads nothing.
+    //
+    // So the database is the only source now, and `null` means what it says.
+    scenario = result.data;
   }
 
   if (!scenario) {
