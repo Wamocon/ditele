@@ -12,15 +12,16 @@ export interface AppShellProps {
   role: UiRole | null;
   displayName?: string | undefined;
   email?: string | undefined;
+  unreadCount?: number | undefined;
   children: ReactNode;
   /** Set for full-bleed pages (the landing hero) that manage their own width. */
   bleed?: boolean;
 }
 
-export function AppShell({ locale, role, displayName, email, children, bleed = false }: AppShellProps) {
+export function AppShell({ locale, role, displayName, email, unreadCount, children, bleed = false }: AppShellProps) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <AppHeader locale={locale} role={role} displayName={displayName} email={email} />
+      <AppHeader locale={locale} role={role} displayName={displayName} email={email} unreadCount={unreadCount} />
 
       <main
         id="main"

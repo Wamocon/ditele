@@ -1,21 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import type { Route } from "next";
 import Link from "next/link";
-import { Bell, Check, Globe, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 
 import { cn } from "@/shared/ui";
 import type { UiRole } from "@/shared/auth/role";
-import { locales, type Locale } from "@/shared/i18n/config";
 import { signOutAction } from "./account-actions";
-
-const LOCALE_LABEL: Record<Locale, string> = {
-  de: "Deutsch",
-  en: "English",
-  ru: "Русский",
-};
 
 /** Profile lives at a different path per role. */
 function profilePath(role: UiRole): string {
@@ -42,8 +34,6 @@ export function AccountMenu({ locale, role, displayName, email }: AccountMenuPro
   const [pending, setPending] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const pathname = usePathname();
-  const router = useRouter();
 
   // Close on outside click and on Escape. Escape returns focus to the trigger so
   // keyboard users are not dropped at the top of the document.
@@ -72,12 +62,6 @@ export function AccountMenu({ locale, role, displayName, email }: AccountMenuPro
   // flags it.
   const close = () => setOpen(false);
 
-  /** Swap the leading locale segment, keeping the rest of the path. */
-  function switchLocale(next: Locale) {
-    const rest = pathname.replace(/^\/[^/]+/, "");
-    router.push(`/${next}${rest || ""}` as Route);
-    setOpen(false);
-  }
 
   const itemClass =
     "flex w-full items-center gap-2.5 px-3 py-2 text-left text-[14px] transition-colors " +
@@ -128,39 +112,7 @@ export function AccountMenu({ locale, role, displayName, email }: AccountMenuPro
             Profil
           </Link>
 
-          {role === "student" && (
-            <Link
-              href={`/${locale}/learn/notifications` as Route}
-              role="menuitem"
-              onClick={close}
-              className={itemClass}
-            >
-              <Bell className="size-4 shrink-0" aria-hidden />
-              Benachrichtigungen
-            </Link>
-          )}
 
-          <div className="border-t border-(--color-border) pt-1">
-            <p className="flex items-center gap-2.5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
-              <Globe className="size-3.5 shrink-0" aria-hidden />
-              Sprache
-            </p>
-            {locales.map((code) => (
-              <button
-                key={code}
-                type="button"
-                role="menuitemradio"
-                aria-checked={code === locale}
-                onClick={() => switchLocale(code)}
-                className={cn(itemClass, "pl-9")}
-              >
-                <span className="flex-1">{LOCALE_LABEL[code]}</span>
-                {code === locale && (
-                  <Check className="size-4 shrink-0 text-(--color-brand)" aria-hidden />
-                )}
-              </button>
-            ))}
-          </div>
 
           <form
             action={async () => {

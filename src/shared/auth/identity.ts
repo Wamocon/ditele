@@ -7,6 +7,8 @@ import { createServerClient } from "@/shared/database/server";
 export interface HeaderIdentity {
   displayName: string;
   email: string | undefined;
+  /** Unread notifications, for the header bell badge. */
+  unreadCount: number;
 }
 
 /**
@@ -21,9 +23,15 @@ export interface HeaderIdentity {
 export const getHeaderIdentity = cache(async (): Promise<HeaderIdentity> => {
   const supabase = await createServerClient();
 
-  const [{ data: auth }, profileResult] = await Promise.all([
+  const [{ data: auth }, profileResult, unreadResult] = await Promise.all([
     supabase.auth.getUser(),
     supabase.from("profiles").select("display_name").maybeSingle(),
+    // There is no boolean `read` column — unread is `read_at is null`.
+    // RLS already scopes notifications to the signed-in user.
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .is("read_at", null),
   ]);
 
   const email = auth?.user?.email ?? undefined;
@@ -38,5 +46,5 @@ export const getHeaderIdentity = cache(async (): Promise<HeaderIdentity> => {
   const displayName =
     fromProfile || fromMetadata || email?.split("@")[0] || "Konto";
 
-  return { displayName, email };
+  return { displayName, email, unreadCount: unreadResult.count ?? 0 };
 });

@@ -11,6 +11,8 @@ import { navForRole } from "./nav-config";
 import { Container } from "./container";
 import { ThemeToggle } from "./theme-toggle";
 import { AccountMenu } from "./account-menu";
+import { LocaleSwitcher } from "./locale-switcher";
+import { NotificationBell } from "./notification-bell";
 
 export interface AppHeaderProps {
   locale: string;
@@ -18,9 +20,10 @@ export interface AppHeaderProps {
   role: UiRole | null;
   displayName?: string | undefined;
   email?: string | undefined;
+  unreadCount?: number | undefined;
 }
 
-export function AppHeader({ locale, role, displayName, email }: AppHeaderProps) {
+export function AppHeader({ locale, role, displayName, email, unreadCount }: AppHeaderProps) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
 
@@ -98,7 +101,11 @@ export function AppHeader({ locale, role, displayName, email }: AppHeaderProps) 
           </ul>
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
+          {role === "student" && (
+            <NotificationBell locale={locale} unread={unreadCount ?? 0} />
+          )}
+          <LocaleSwitcher locale={locale} />
           <ThemeToggle />
           {role ? (
             <AccountMenu

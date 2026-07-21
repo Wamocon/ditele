@@ -21,7 +21,7 @@ export default async function StudentLayout({
   const { uiRole } = await requireRole(["student", "trainer", "admin"], locale);
   const identity = await getHeaderIdentity();
   return (
-    <AppShell locale={locale} role={uiRole} displayName={identity.displayName} email={identity.email}>
+    <AppShell locale={locale} role={uiRole} displayName={identity.displayName} email={identity.email} unreadCount={identity.unreadCount}>
       {children}
     </AppShell>
   );
