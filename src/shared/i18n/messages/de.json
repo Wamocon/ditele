@@ -1399,7 +1399,8 @@
       "trainerBlocked": "Trainer können derzeit keiner Gruppe zugewiesen werden (I-011/I-012, Datenbankmigration nötig).",
       "emptyMembers": "Diese Gruppe hat noch keine Mitglieder.",
       "course": "Kurs",
-      "progression": "Ablaufmodus"
+      "progression": "Ablaufmodus",
+      "notFound": "Diese Gruppe gibt es nicht."
     },
     "issues": {
       "title": "Fehlermeldungen",

@@ -14,18 +14,18 @@ Updated: 2026-07-21 · Chat: **#1**
 - WS-3 helpers — `src/features/questions/i18n.ts`, `format.ts`, `components/`
 - German keys — `messages/de.json` → new top-level `learn.*` namespace
 - `/learn/notifications` — real data, day grouping, mark-read, mark-all-read
+- `/learn/questions` — list, waiting-first ordering, empty state
+- `/learn/questions/new` — context picker, validation, values survive an error
+- `/learn/questions/[questionId]` — thread, system rows, honest no-reply notice
 
 **Half-finished:**
 - Nothing.
 
 **Next, in order:**
-1. `/learn/questions` — list
-2. `/learn/questions/new` — ask
-3. `/learn/questions/[questionId]` — thread
-4. `/learn/profile`
-5. `/learn/enroll/[courseId]`
-6. `/learn/history`
-7. `/learn/certificates`
+1. `/learn/profile`
+2. `/learn/enroll/[courseId]`
+3. `/learn/history`
+4. `/learn/certificates`
 
 **⭐ Things I learned that are written down nowhere else:**
 
@@ -97,9 +97,9 @@ Updated: 2026-07-21 · Chat: **#1**
 | Route | Built | Real data | Loading | Empty | Error | 375px | Dark | Keyboard |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | `/learn/notifications` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/learn/questions` | ⬜ | | | | | | | |
-| `/learn/questions/new` | ⬜ | | | | | | | |
-| `/learn/questions/[questionId]` | ⬜ | | | | | | | |
+| `/learn/questions` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/learn/questions/new` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/learn/questions/[questionId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/learn/profile` | ⬜ | | | | | | | |
 | `/learn/enroll/[courseId]` | ⬜ | | | | | | | |
 | `/learn/history` | ⬜ | | | | | | | |
@@ -136,8 +136,8 @@ Updated: 2026-07-21 · Chat: **#1**
 
 - [x] `npx tsc --noEmit` — no errors in WS-3 files
 - [x] `npx eslint` on WS-3 paths — clean
-- [ ] `node scripts/smoke.mjs` — running
-- [ ] committed
+- [x] `node scripts/smoke.mjs` — **47/47 routes OK**
+- [x] committed
 
 > ⚠️ `tsc --noEmit` on the whole tree is **not** green: other chats have
 > in-flight errors in `(auth)/_components/*` and `features/content/model.ts`.
