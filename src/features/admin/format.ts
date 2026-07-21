@@ -1,42 +1,35 @@
-import { defaultLocale, isLocale } from "@/shared/i18n/config";
+import {
+  formatDate as sharedDate,
+  formatDateTime as sharedDateTime,
+  formatNumber,
+} from "@/shared/format";
 
 /**
- * Timestamps are stored UTC and rendered with Intl (MASTER_PLAN §13.4).
- * No date library — that is a deliberate dependency freeze, not an oversight.
+ * WS-6's date helpers now delegate to `src/shared/format.ts` (WS-7 consistency
+ * pass). The local version passed the bare locale (`"en"`) to Intl, which
+ * resolves to en-US and renders `07/21/2026` — month first — while the student
+ * and trainer sections rendered `21/07/2026` for the same instant. The shared
+ * module pins en-GB so the day/month order never changes with the language.
+ *
+ * These keep returning `string | null` rather than an em dash, because every
+ * WS-6 call site already branches on null to render its own copy
+ * ("nie angemeldet", "kein Zeitplan").
  */
 
-const localeTag = (locale: string) => (isLocale(locale) ? locale : defaultLocale);
+const usable = (value: string | null | undefined): value is string =>
+  Boolean(value) && !Number.isNaN(new Date(value as string).getTime());
 
 export function formatDate(value: string | null | undefined, locale: string): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return new Intl.DateTimeFormat(localeTag(locale), {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
+  return usable(value) ? sharedDate(value, locale) : null;
 }
 
 export function formatDateTime(value: string | null | undefined, locale: string): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return new Intl.DateTimeFormat(localeTag(locale), {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  return usable(value) ? sharedDateTime(value, locale) : null;
 }
 
 /** One decimal, locale-aware — used for the rating averages. */
 export function formatAverage(value: number, locale: string): string {
-  return new Intl.NumberFormat(localeTag(locale), {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(value);
+  return formatNumber(value, locale, 1);
 }
 
 /** `<input type="datetime-local">` wants `YYYY-MM-DDTHH:mm`, never an ISO Z string. */

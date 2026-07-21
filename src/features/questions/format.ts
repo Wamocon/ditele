@@ -1,54 +1,12 @@
-import { defaultLocale, isLocale, type Locale } from "@/shared/i18n/config";
-
 /**
  * Date and name formatting shared by every WS-3 route.
- * Timestamps are stored UTC and rendered with Intl (MASTER_PLAN §13.4) — no
- * date library, per the frozen dependency list.
+ *
+ * The date helpers delegate to `src/shared/format.ts` (WS-7 consistency pass) —
+ * WS-3's local copies already matched the house style, so this changes no
+ * output; it removes the fifth duplicate of the same twelve lines and makes
+ * the format a single decision instead of six agreeing ones.
  */
-
-const BCP47: Record<Locale, string> = {
-  de: "de-DE",
-  en: "en-GB",
-  ru: "ru-RU",
-};
-
-export function intlLocale(locale: string): string {
-  return BCP47[isLocale(locale) ? locale : defaultLocale];
-}
-
-export function formatDate(iso: string | null | undefined, locale: string): string {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat(intlLocale(locale), {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
-export function formatDateTime(iso: string | null | undefined, locale: string): string {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat(intlLocale(locale), {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-export function formatTime(iso: string | null | undefined, locale: string): string {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat(intlLocale(locale), {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
+export { intlTag as intlLocale, formatDate, formatDateTime, formatTime } from "@/shared/format";
 
 export type DayBucket = "today" | "yesterday" | "earlier";
 

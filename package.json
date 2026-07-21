@@ -13,7 +13,7 @@
     "start:local": "next start --hostname 127.0.0.1 --port 3100",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node --max-old-space-size=8192 ./node_modules/typescript/lib/tsc.js --noEmit",
     "test": "vitest run",
     "test:local-auth-gateway": "node --test scripts/ensure-local-auth-gateway.test.mjs",
     "test:watch": "vitest",
@@ -28,7 +28,8 @@
     "db:reset": "supabase db reset --local --sql-paths ./seed.sql --sql-paths ./seed_assessments.sql --sql-paths ./seed_cleanup.sql --sql-paths ./seed_role_accounts.sql && node scripts/ensure-local-auth-gateway.mjs",
     "db:lint": "supabase db lint --local --level error --fail-on error",
     "db:types": "supabase gen types --lang typescript --local > src/shared/database/database.types.ts",
-    "verify": "npm run i18n:check && npm run secrets:check && npm run typecheck && npm run lint && npm run test && npm run test:local-auth-gateway && npm run build"
+    "verify": "npm run i18n:check && npm run secrets:check && npm run a11y:contrast && npm run typecheck && npm run lint && npm run test && npm run build",
+    "a11y:contrast": "node scripts/check-contrast.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.3",

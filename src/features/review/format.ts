@@ -5,30 +5,12 @@ import type { Translate } from "./i18n";
  * `Intl` is in the platform (00_MASTER_PLAN §6.1).
  */
 
-const LOCALE_TAGS: Record<string, string> = { de: "de-DE", en: "en-GB", ru: "ru-RU" };
-
-function tag(locale: string): string {
-  return LOCALE_TAGS[locale] ?? "de-DE";
-}
-
-export function formatDateTime(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(tag(locale), {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(iso));
-}
-
-export function formatDate(iso: string | null, locale: string): string {
-  if (!iso) return "—";
-  return new Intl.DateTimeFormat(tag(locale), {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(iso));
-}
+/**
+ * Dates delegate to `src/shared/format.ts` (WS-7 consistency pass). WS-4's local
+ * copies already matched the house style, so no trainer screen changes; the
+ * duplication does.
+ */
+export { formatDate, formatDateTime } from "@/shared/format";
 
 /** "vor 3 Std." — the queue's whole job is showing how long someone has waited. */
 export function formatWaiting(hours: number, t: Translate): string {

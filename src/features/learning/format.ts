@@ -1,32 +1,31 @@
 /**
- * Dates are stored UTC and rendered with `Intl` (MASTER_PLAN §13.4) — no date
- * library, none is needed.
+ * WS-2's date helpers now delegate to `src/shared/format.ts`.
+ *
+ * They used to be the odd one out: `dateStyle: "medium"` rendered
+ * `21. Juli 2026` while every other workstream rendered `21.07.2026`, so a
+ * learner saw two different formats moving between the course page and their
+ * history. The shared module owns the decision now (WS-7 consistency pass).
+ *
+ * The empty-value fallback stays `""` rather than the shared default `"—"`:
+ * these dates appear inline inside sentences and card meta rows, where a stray
+ * em dash reads as a bug rather than as "unknown".
  *
  * ⚠️ Only call the date helpers from a Server Component, or from a Client
  * Component after mount. Server and browser can sit in different time zones, and
  * formatting the same instant in both during hydration produces a mismatch.
  */
-
-const TAGS: Record<string, string> = { de: "de-DE", en: "en-GB", ru: "ru-RU" };
-
-const tag = (locale: string) => TAGS[locale] ?? "de-DE";
+import { formatDate as sharedDate, formatDateTime as sharedDateTime, formatTime as sharedTime } from "@/shared/format";
 
 export function formatDate(iso: string | null, locale: string): string {
-  if (!iso) return "";
-  return new Intl.DateTimeFormat(tag(locale), { dateStyle: "medium" }).format(new Date(iso));
+  return sharedDate(iso, locale, { fallback: "" });
 }
 
 export function formatDateTime(iso: string | null, locale: string): string {
-  if (!iso) return "";
-  return new Intl.DateTimeFormat(tag(locale), {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(iso));
+  return sharedDateTime(iso, locale, { fallback: "" });
 }
 
 export function formatTime(iso: string | null, locale: string): string {
-  if (!iso) return "";
-  return new Intl.DateTimeFormat(tag(locale), { timeStyle: "short" }).format(new Date(iso));
+  return sharedTime(iso, locale, { fallback: "" });
 }
 
 /** Percent complete, clamped, safe when the total is zero. */

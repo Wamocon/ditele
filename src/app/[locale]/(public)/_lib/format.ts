@@ -4,13 +4,7 @@
  * hand-rolled string. Unit labels are passed in so they stay in the i18n layer.
  */
 
-const INTL_LOCALE: Record<string, string> = {
-  de: "de-DE",
-  en: "en-GB",
-  ru: "ru-RU",
-};
-
-const intlLocale = (locale: string) => INTL_LOCALE[locale] ?? INTL_LOCALE.de ?? "de-DE";
+import { formatDate as sharedDate, interpolate as sharedInterpolate } from "@/shared/format";
 
 /** "8 Std." · "90 Min." · "2 Std. 30 Min." — empty string when unknown. */
 export function formatDuration(
@@ -25,28 +19,19 @@ export function formatDuration(
   return `${h} ${units.hours} ${m} ${units.minutes}`;
 }
 
-/** "21.07.2026" in German, localised elsewhere. Empty string when unknown. */
+/**
+ * "21.07.2026" in German, localised elsewhere. Empty string when unknown —
+ * these dates sit inline in catalog card meta, where an em dash would read as
+ * a bug rather than as "no date".
+ *
+ * Delegates to `src/shared/format.ts` (WS-7 consistency pass).
+ */
 export function formatDate(iso: string | null | undefined, locale: string): string {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat(intlLocale(locale), {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
+  return sharedDate(iso, locale, { fallback: "" });
 }
 
-/**
- * Fills `{name}` placeholders in a translated string.
- * Keeps counts and page numbers inside the i18n layer instead of concatenating
- * fragments in JSX, which does not survive translation into other languages.
- */
-export function interpolate(template: string, values: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
-    key in values ? String(values[key]) : match
-  );
-}
+/** Re-exported so WS-1's call sites keep their existing import. */
+export const interpolate = sharedInterpolate;
 
 const ENTITIES: Record<string, string> = {
   "&amp;": "&",

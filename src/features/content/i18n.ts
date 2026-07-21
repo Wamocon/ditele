@@ -21,22 +21,12 @@ export function adminStrings(locale: string): AdminStrings {
   return BUNDLES[locale] ?? de.admin;
 }
 
-/** One date format across every WS-5 screen. Timestamps are stored UTC. */
-export function formatDate(value: string | null | undefined, locale: string): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat(locale === "de" ? "de-DE" : locale, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
-/** `format(s.courses.versionCount, { count: 3 })` → "3 Versionen" */
-export function format(template: string, values: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (match, key: string) => {
-    const value = values[key];
-    return value === undefined ? match : String(value);
-  });
-}
+/**
+ * Re-exported from `src/shared/format.ts` (WS-7 consistency pass).
+ *
+ * The local version passed `locale === "de" ? "de-DE" : locale` to Intl, so
+ * `/en` fell through to en-US and rendered `07/21/2026` — month first — while
+ * WS-1, WS-3 and WS-4 rendered `21/07/2026` on the same screen flow. The shared
+ * module pins en-GB so the day/month order never changes with the language.
+ */
+export { formatDate, interpolate as format } from "@/shared/format";

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2, Lock } from "lucide-react";
 
 import { PageHeader } from "@/shared/layout";
@@ -8,7 +9,6 @@ import { Button, Card, CardTitle, CardDescription, ErrorState } from "@/shared/u
 import { getCatalogCourse, resolveLocalization } from "@/shared/data/catalog";
 import { getOptionalPrincipal } from "@/shared/auth/guard";
 import { getDict } from "../../_lib/i18n";
-import { NotFoundView } from "../../_components/not-found-view";
 import { formatDate, formatDuration, plainText, richTextParagraphs } from "../../_lib/format";
 
 export async function generateMetadata({
@@ -52,14 +52,13 @@ export default async function CourseDetailPage({
   // An unknown slug comes back as an empty array from the RPC (I-016), not as
   // an error. That is a 404, not a failure.
   //
-  // ⚠️ Rendered rather than `notFound()`-thrown: on this Next/Turbopack build a
-  // segment-level `not-found.tsx` is never picked up — neither in the route
-  // group nor next to the page — and `notFound()` falls through to Next's own
-  // unbranded English default. Filed as I-022. The `not-found.tsx` files are
-  // left in place so this reverts to one line once a root
-  // `app/not-found.tsx` exists. Cost of the workaround: the response is 200
-  // rather than 404.
-  if (!result.data) return <NotFoundView />;
+  // WS-1 had to render the view directly here, because a `not-found.tsx` inside
+  // a route group is never the boundary for a nested segment and every miss
+  // fell through to Next's unbranded English default (I-025). WS-7 added
+  // `[locale]/not-found.tsx`, which *is* the nearest boundary, so this is a
+  // real `notFound()` again — and the response is a real 404 instead of the
+  // soft 200 that search engines would have indexed.
+  if (!result.data) notFound();
 
   const course = result.data;
   const localized = resolveLocalization(course, locale);

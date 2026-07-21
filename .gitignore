@@ -25,3 +25,4 @@
 
 # Per-workstream dev build output (NEXT_DIST_DIR)
 .next-*
+.gstack/

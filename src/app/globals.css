@@ -23,7 +23,11 @@
   /* ── Text (light) ──────────────────────────────── */
   --color-fg:            #243036;
   --color-fg-muted:      #5C6878;
-  --color-fg-subtle:     #A7AEB8;
+  /* Was #A7AEB8 (the V1 muted grey), but that measures only 2.24:1 on white —
+     a hard WCAG AA failure on 25 usages of caption/meta text. #68727F keeps the
+     same blue-grey family and measures 4.88:1 on --color-bg, 4.59:1 on
+     --color-surface. Verified with scripts/check-contrast.mjs. */
+  --color-fg-subtle:     #68727F;
 
   /* ── Lines (light) ─────────────────────────────── */
   --color-border:        #E2E5EA;
@@ -75,13 +79,20 @@
   --color-overlay:       rgb(0 0 0 / 0.62);
   --color-fg:            #EDF2F5;
   --color-fg-muted:      #A7B2BC;
-  --color-fg-subtle:     #7D8A95;
+  --color-fg-subtle:     #828F9A;   /* was #7D8A95 — only 4.40:1 on --color-surface */
   --color-border:        #313D47;
   --color-border-strong: #46545F;
-  --color-brand:         #E4505C;   /* lightened for AA on dark */
+  /* Lightened from #E4505C: that passed on --color-bg (4.59:1) but failed on
+     --color-surface (4.15:1), and cards are surfaces. #E85D68 passes both. */
+  --color-brand:         #E85D68;
   --color-brand-hover:   #EE6C77;
-  --color-brand-active:  #D8434F;
+  --color-brand-active:  #DE4F5A;   /* was #D8434F — brand-fg on it was 4.29:1 */
   --color-brand-soft:    #3A1B1F;
+  /* I-027: a filled button uses brand-fg ON brand, not brand on background.
+     White on #E4505C measures 3.75:1 — below the 4.5:1 needed for 15px text.
+     Dark ink on the lightened red measures 4.97:1 and still reads as a red
+     button. Verified with scripts/check-contrast.mjs. */
+  --color-brand-fg:      #1A1013;
   --color-ink:           #EDF2F5;
   --color-success:       #4FBF8A;
   --color-success-soft:  #14311F;
