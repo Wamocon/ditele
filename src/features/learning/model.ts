@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+// `features/arena/model.ts` holds to the same rule this file does — pure types
+// and helpers, no server imports — so importing it here is safe for the Client
+// Components that read `LearningActivity`.
+import type { LockReason } from "@/features/arena/model";
+
 /**
  * The learning domain model — types and pure helpers, with **no server imports**.
  *
@@ -34,7 +39,13 @@ export interface LearningActivity {
   description: string;
   position: number;
   state: string;
-  lockReasons: string[];
+  /**
+   * The enriched shape, not `string[]`. WS-8's G8 work added
+   * `required_task_id` / `_kind` / `_title` so a locked task can link to the
+   * hunt that unlocks it; typing this as `string[]` is what let the mismatch
+   * in `shared/data/learning.ts` compile for the whole Arena phase.
+   */
+  lockReasons: LockReason[];
   availableFrom: string | null;
   dueAt: string | null;
   expectedMinutes: number;

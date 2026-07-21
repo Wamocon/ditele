@@ -76,6 +76,30 @@ const ROLES = [
     ],
   },
   {
+    // ⭐ A learner who still has something LOCKED, and the reason this role
+    // exists at all.
+    //
+    // `learner@ditele.local` completed the hunt in WS-8's slice, so every task
+    // is open for her and `lock_reasons` is `[]` on every row. Every browser
+    // check in this phase used that account — and so the one code path the
+    // phase actually added, the enriched lock reason, was never once rendered.
+    // It was broken: `/learn/courses/[id]` threw its error boundary and
+    // `/learn/tasks` showed a confident "Keine Aufgaben" to a learner with
+    // three of them.
+    //
+    // Sofia has not played the hunt, so the gated task is locked for her.
+    // **Keep it that way.** If a future seed accepts her hunt submission, this
+    // role stops testing anything and the next regression of this kind ships.
+    name: "locked-learner",
+    email: "learner3@ditele.local",
+    paths: [
+      { p: "/learn" },
+      { p: `/learn/courses/${COURSE}`, arena: true },
+      { p: "/learn/tasks", arena: true },
+      { p: "/learn/arena" },
+    ],
+  },
+  {
     name: "trainer",
     email: "trainer@ditele.local",
     paths: [
@@ -218,6 +242,24 @@ for (const role of ROLES) {
       errors.length === 0,
       errors.slice(0, 2).join(" | ").slice(0, 200),
     );
+
+    // ⭐ The locked learner's two screens carry the claim this phase exists to
+    // make. Asserting "the page rendered" is not enough on either of them: an
+    // empty task list renders perfectly and is completely wrong.
+    if (role.name === "locked-learner" && route.p === "/learn/tasks") {
+      check(
+        `${label} · the task list is not silently empty`,
+        !mainText.includes("Keine Aufgaben"),
+        mainText.slice(0, 120),
+      );
+    }
+    if (role.name === "locked-learner" && route.p.startsWith("/learn/courses/")) {
+      check(
+        `${label} · the locked task offers its unlock link (G8)`,
+        /freizuschalten/i.test(mainText),
+        mainText.slice(0, 200),
+      );
+    }
 
     if (route.arena) arenaRoutes.push({ role, route, url });
     page.off("console", onConsole);

@@ -438,6 +438,8 @@
       "lockReasonSchedule": "Diese Aufgabe wird zu einem späteren Zeitpunkt freigeschaltet.",
       "lockReasonPrerequisite": "Schließe zuerst die vorherigen Aufgaben ab.",
       "lockReasonCohort": "Deine Gruppe hat noch nicht begonnen.",
+      "lockPlayHunt": "Jagd spielen, um freizuschalten",
+      "lockPlayHuntNamed": "»{title}« spielen, um freizuschalten",
       "emptyTitle": "Dieser Kurs hat noch keine Inhalte",
       "emptyDescription": "Sobald die Trainerin oder der Trainer Inhalte veröffentlicht, erscheinen sie hier.",
       "emptyStage": "In dieser Stufe gibt es noch keine Aufgaben."

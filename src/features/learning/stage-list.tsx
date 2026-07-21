@@ -8,8 +8,10 @@ import {
   Clock,
   Lock,
   RotateCcw,
+  Swords,
 } from "lucide-react";
 import { Badge, StatusBadge, cn } from "@/shared/ui";
+import { huntPrerequisite, huntTaskHref, type LockReason } from "@/features/arena/model";
 import type { LearningActivity, LearningStage } from "./model";
 import { format, type LearnStrings } from "./i18n";
 import { formatDate } from "./format";
@@ -24,17 +26,27 @@ import { formatDate } from "./format";
  */
 
 /**
- * `lock_reasons` are raw database strings and the seeded course has none, so the
- * exact vocabulary is unconfirmed. Matching on a substring means a reason we
- * have not seen still produces a real German sentence instead of an enum —
- * a user must never be shown `not_yet_available`.
+ * Substring matching, so a reason code nobody has seen still produces a real
+ * German sentence instead of an enum — a user must never be shown
+ * `not_yet_available`.
+ *
+ * ⚠️ The real code for an unmet task prerequisite is **`required_task`**, not
+ * `prerequisite` (ISSUES.md I-037 — both design documents name a code that does
+ * not exist). It matched none of the branches below and fell through to the
+ * generic default, so the one lock reason this phase actually produces was the
+ * one with the vaguest message. `required` is now matched explicitly.
  */
-function lockReasonText(reason: string, strings: LearnStrings["course"]): string {
-  const value = reason.toLowerCase();
+function lockReasonText(reason: LockReason | undefined, strings: LearnStrings["course"]): string {
+  const value = (reason?.code ?? "").toLowerCase();
   if (value.includes("schedul") || value.includes("available") || value.includes("time")) {
     return strings.lockReasonSchedule;
   }
-  if (value.includes("prereq") || value.includes("sequen") || value.includes("previous")) {
+  if (
+    value.includes("required") ||
+    value.includes("prereq") ||
+    value.includes("sequen") ||
+    value.includes("previous")
+  ) {
     return strings.lockReasonPrerequisite;
   }
   if (value.includes("cohort") || value.includes("enrol")) return strings.lockReasonCohort;
@@ -78,6 +90,9 @@ export function TaskListItem({
     activity.dueAt ? format(strings.dueAt, { date: formatDate(activity.dueAt, locale) }) : "",
   ].filter(Boolean);
 
+  // The hunt that unlocks this task, if a hunt is what it is waiting on.
+  const hunt = activity.locked ? huntPrerequisite(activity.lockReasons) : null;
+
   const body = (
     <>
       <ActivityIcon activity={activity} />
@@ -96,10 +111,43 @@ export function TaskListItem({
         {activity.locked ? (
           // Show WHY it is locked. Greying a row out and saying nothing is the
           // most common way a learner concludes the platform is broken.
-          <p className="text-[13px] leading-5 text-(--color-fg-subtle)">
-            {courseTitle ? `${courseTitle} · ` : ""}
-            {lockReasonText(activity.lockReasons[0] ?? "", strings)}
-          </p>
+          <>
+            <p className="text-[13px] leading-5 text-(--color-fg-subtle)">
+              {courseTitle ? `${courseTitle} · ` : ""}
+              {lockReasonText(activity.lockReasons[0], strings)}
+            </p>
+            {hunt && (
+              /**
+               * ⭐ G8, the half that never landed — `05_…` calls this "the whole
+               * feature the user described as a link on the locked tasks that
+               * redirects to gamification mode".
+               *
+               * WS-8 enriched the lock reason with `required_task_id` and
+               * shipped `huntTaskHref` to build this link, but
+               * `features/learning/**` is WS-2's tree, so the only place the
+               * link was ever rendered was WS-11's Arena hub. A learner looking
+               * at the locked task itself — which is where they actually meet
+               * the wall — got a grey row and a sentence.
+               *
+               * Rendered only in the locked branch: the unlocked row is itself
+               * an `<a>`, and nesting an anchor inside an anchor is invalid.
+               */
+              <Link
+                href={huntTaskHref(locale, hunt.requiredTaskId ?? "") as Route}
+                className={cn(
+                  "mt-1 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-(--radius-sm)",
+                  "px-2 text-[13px] font-semibold leading-5 text-(--color-brand)",
+                  "underline-offset-4 hover:bg-(--color-brand-soft) hover:underline"
+                )}
+              >
+                <Swords className="size-4 shrink-0" aria-hidden />
+                {hunt.requiredTaskTitle
+                  ? format(strings.lockPlayHuntNamed, { title: hunt.requiredTaskTitle })
+                  : strings.lockPlayHunt}
+                <span aria-hidden>→</span>
+              </Link>
+            )}
+          </>
         ) : (
           meta.length > 0 && (
             <p className="text-[13px] leading-5 text-(--color-fg-subtle) tabular-nums">
@@ -117,7 +165,17 @@ export function TaskListItem({
   if (activity.locked) {
     return (
       <li>
-        <div className={cn(shared, "bg-(--color-surface) opacity-80")} aria-disabled>
+        {/* ⚠️ This was `opacity-80`, and it had to go the moment the row gained
+            an action. Opacity applies to the whole subtree and cannot be undone
+            by a child, so it would have dimmed the "play the hunt" link and its
+            focus ring along with the text — and a contrast audit reading
+            computed colours would not have noticed, because the element's own
+            opacity is still 1. The muted foreground below says the same thing
+            about the *text* without touching the control. */}
+        <div
+          className={cn(shared, "bg-(--color-surface) text-(--color-fg-muted)")}
+          aria-disabled
+        >
           {body}
         </div>
       </li>

@@ -67,6 +67,32 @@ export function toLockReason(value: unknown): LockReason | null {
   if (typeof value === "string") {
     return { code: value, requiredTaskId: null, requiredTaskKind: null, requiredTaskTitle: null };
   }
+
+  /**
+   * ⭐ **Idempotent on purpose, and it was not.** An already-normalised
+   * `LockReason` carries `requiredTaskId`; the schema below reads
+   * `required_task_id`. Both keys are `nullish`, so re-normalising a normalised
+   * reason **parsed successfully and silently returned nulls** — no error, no
+   * warning, just a lock reason that had forgotten which task it was waiting on.
+   *
+   * That is exactly what happened once `shared/data/learning.ts` started
+   * normalising at the boundary: `huntPrerequisite` then found no
+   * `requiredTaskId` and the unlock link stopped rendering, while the lock
+   * text beside it kept working. A normaliser that is not idempotent is a trap
+   * for its second caller, so this one now recognises its own output.
+   */
+  if (value && typeof value === "object" && "requiredTaskId" in value) {
+    const already = value as Partial<LockReason>;
+    if (typeof already.code === "string") {
+      return {
+        code: already.code,
+        requiredTaskId: already.requiredTaskId ?? null,
+        requiredTaskKind: already.requiredTaskKind ?? null,
+        requiredTaskTitle: already.requiredTaskTitle ?? null,
+      };
+    }
+  }
+
   const parsed = LockReasonSchema.safeParse(value);
   if (!parsed.success) return null;
   return {

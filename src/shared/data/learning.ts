@@ -1,6 +1,9 @@
 import "server-only";
 
 import { z } from "zod";
+// Pure, client-safe helpers (no server imports) — the same normaliser the Arena
+// hub uses, so the two screens cannot disagree about what a lock reason is.
+import { toLockReasons } from "@/features/arena/model";
 import { createServerClient } from "@/shared/database/server";
 import { uiStrings } from "@/shared/i18n/ui-strings";
 import { fromSupabase, err, ok, type Result } from "./result";
@@ -84,7 +87,30 @@ const ActivityRow = z.object({
   description: text,
   position: int,
   state: text,
-  lock_reasons: z.array(z.string()).nullish().transform((v) => v ?? []),
+  /**
+   * 🚨 **This was `z.array(z.string())`, and it took the course page down for
+   * every learner who had a locked task.**
+   *
+   * `app_private.learner_snapshot_task_lock_reasons` returns OBJECTS —
+   * `{code, required_task_id, required_task_kind, required_task_title}` — and
+   * has since WS-8 enriched it for G8. A `z.string()` element therefore fails
+   * to parse, the whole activity row fails with it, and the two screens
+   * degraded in different and equally bad ways: `/learn/courses/[id]` rendered
+   * "Etwas ist schiefgelaufen", and `/learn/tasks` rendered **"Keine
+   * Aufgaben"** — a confident empty state, for a learner with three tasks.
+   *
+   * ⚠️ **It was not the Arena phase that broke this. The Arena phase switched
+   * it on.** The RPC has always returned objects; `public.prerequisites` had
+   * zero rows before WS-8, and every seeded schedule was already open, so no
+   * learner had ever had a lock reason and the mismatch had never once been
+   * evaluated. It went unseen through the whole Arena phase for the same
+   * reason: every browser check ran as `learner@ditele.local`, the one learner
+   * who had completed the hunt and therefore had nothing locked.
+   *
+   * Parsed permissively on purpose. `toLockReasons` accepts both shapes, so a
+   * future migration that simplifies the return cannot break this again.
+   */
+  lock_reasons: z.array(z.unknown()).nullish().transform((v) => toLockReasons(v ?? [])),
   available_from: z.string().nullish().transform((v) => v ?? null),
   due_at: z.string().nullish().transform((v) => v ?? null),
   expected_minutes: int,
@@ -229,7 +255,7 @@ export async function listMyLearningCourses(
   const result = await rpcListMyLearningCourses(locale);
   if (!result.ok) return result;
 
-  const parsed = parse(z.array(CourseSummaryRow), result.data, "Meine Kurse");
+  const parsed = parse(z.array(CourseSummaryRow), result.data, "Meine Kurse", locale);
   if (!parsed.ok) return parsed;
 
   return ok(
@@ -258,7 +284,7 @@ export async function getMyLearningCourse(
   const result = await rpcGetMyLearningCourse(courseId, locale);
   if (!result.ok) return result;
 
-  const parsed = parse(CourseDetailRow, result.data, "Kursdetail");
+  const parsed = parse(CourseDetailRow, result.data, "Kursdetail", locale);
   if (!parsed.ok) return parsed;
   const row = parsed.data;
 
@@ -314,7 +340,7 @@ export async function getMyLearningTask(
   const result = await rpcGetMyLearningTask(taskId);
   if (!result.ok) return result;
 
-  const parsed = parse(TaskRow, result.data, "Aufgabe");
+  const parsed = parse(TaskRow, result.data, "Aufgabe", locale);
   if (!parsed.ok) return parsed;
   const row = parsed.data;
 
@@ -357,7 +383,8 @@ export async function getMyLearningTask(
  * Returns the newest attempt for the task, or nulls when none has been started.
  */
 export async function getAttemptForTask(
-  taskId: string
+  taskId: string,
+  locale: string
 ): Promise<Result<{ attempt: AttemptState | null; draft: DraftState | null }>> {
   const supabase = await createServerClient();
 
@@ -375,7 +402,7 @@ export async function getAttemptForTask(
   const attemptRow = attemptResult.data[0];
   if (!attemptRow) return ok({ attempt: null, draft: null });
 
-  const parsedAttempt = parse(AttemptRow, attemptRow, "Versuch");
+  const parsedAttempt = parse(AttemptRow, attemptRow, "Versuch", locale);
   if (!parsedAttempt.ok) return parsedAttempt;
   const a = parsedAttempt.data;
 
@@ -422,7 +449,7 @@ export async function getAttemptForTask(
     });
   }
 
-  const parsedDraft = parse(DraftRow, draftRow, "Entwurf");
+  const parsedDraft = parse(DraftRow, draftRow, "Entwurf", locale);
   if (!parsedDraft.ok) return parsedDraft;
   const d = parsedDraft.data;
 
@@ -451,7 +478,7 @@ export async function getTaskWorkspace(
 ): Promise<Result<TaskWorkspace>> {
   const [taskResult, attemptResult] = await Promise.all([
     getMyLearningTask(taskId, locale),
-    getAttemptForTask(taskId),
+    getAttemptForTask(taskId, locale),
   ]);
   if (!taskResult.ok) return taskResult;
   if (!attemptResult.ok) return attemptResult;
@@ -476,6 +503,7 @@ async function rpcCall<T>(name: string, args: Record<string, unknown>): Promise<
 const firstRow = <T>(value: unknown): unknown => (Array.isArray(value) ? (value as T[])[0] : value);
 
 export async function startAttempt(args: {
+  locale: string;
   taskId: string;
   enrollmentId: string;
 }): Promise<Result<StartedAttempt>> {
@@ -489,7 +517,7 @@ export async function startAttempt(args: {
   });
   if (!result.ok) return result;
 
-  const parsed = parse(StartAttemptRow, firstRow(result.data), "Versuch starten");
+  const parsed = parse(StartAttemptRow, firstRow(result.data), "Versuch starten", args.locale);
   if (!parsed.ok) return parsed;
 
   return ok({
@@ -510,6 +538,7 @@ export async function startAttempt(args: {
  * row, so hint usage is recorded *before* the hint is revealed (WF-2).
  */
 export async function saveAttemptDraft(args: {
+  locale: string;
   attemptId: string;
   answerText: string;
   selectedOptionIds: string[];
@@ -529,7 +558,7 @@ export async function saveAttemptDraft(args: {
   });
   if (!result.ok) return result;
 
-  const parsed = parse(SaveDraftRow, firstRow(result.data), "Entwurf speichern");
+  const parsed = parse(SaveDraftRow, firstRow(result.data), "Entwurf speichern", args.locale);
   if (!parsed.ok) return parsed;
 
   return ok({
@@ -548,6 +577,7 @@ export async function saveAttemptDraft(args: {
  * because it is a deliberate choice, not an oversight (RPC_CONTRACTS.md §8).
  */
 async function createExternalEvidence(args: {
+  locale: string;
   attemptId: string;
   title: string;
   sourceUri: string;
@@ -566,7 +596,7 @@ async function createExternalEvidence(args: {
   });
   if (!result.ok) return result;
 
-  const parsed = parse(EvidenceRow, firstRow(result.data), "Evidenz");
+  const parsed = parse(EvidenceRow, firstRow(result.data), "Evidenz", args.locale);
   if (!parsed.ok) return parsed;
   return ok(parsed.data.id);
 }
@@ -577,6 +607,7 @@ async function createExternalEvidence(args: {
  * one (`22023 verified evidence is required for this task`, ISSUES.md I-008).
  */
 export async function submitAttempt(args: {
+  locale: string;
   attemptId: string;
   answerText: string;
   selectedOptionIds: string[];
@@ -586,6 +617,7 @@ export async function submitAttempt(args: {
   const evidenceRefs: string[] = [];
   if (args.evidence && args.evidence.sourceUri.trim().length > 0) {
     const evidence = await createExternalEvidence({
+      locale: args.locale,
       attemptId: args.attemptId,
       title: args.evidence.title.trim() || args.evidence.sourceUri,
       sourceUri: args.evidence.sourceUri.trim(),
@@ -605,7 +637,7 @@ export async function submitAttempt(args: {
   });
   if (!result.ok) return result;
 
-  const parsed = parse(SubmissionRow, firstRow(result.data), "Abgabe");
+  const parsed = parse(SubmissionRow, firstRow(result.data), "Abgabe", args.locale);
   if (!parsed.ok) return parsed;
   return ok({ submissionId: parsed.data.id, state: parsed.data.state });
 }
