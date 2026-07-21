@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { Button, Select, Textarea } from "@/shared/ui";
-import { assignEnrollmentAction, decideEnrollmentAction, idleState } from "./actions";
+import { assignEnrollmentAction, decideEnrollmentAction } from "./actions";
+import { idleState } from "./action-state";
 import { ActionMessage, InlineConfirm, SubmitButton } from "./form-ui";
 import type { AdminDict } from "./i18n";
 

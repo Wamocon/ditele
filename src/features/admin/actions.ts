@@ -20,19 +20,13 @@ import {
   type CohortState,
 } from "@/shared/data/admin";
 import { fromDateTimeLocalValue } from "./format";
+import { ISSUE_STATES, type ActionState, type CreateUserState } from "./action-state";
 
 /**
  * ⚠️ Layer 2 of three (MASTER_PLAN §9.3). The `(admin)` layout guard stops a
  * *render*; it does not protect a POST. Every action below re-checks the role
  * before it touches anything, and the database's RLS is still the real boundary.
  */
-
-export interface ActionState {
-  status: "idle" | "success" | "error";
-  message: string;
-}
-
-export const idleState: ActionState = { status: "idle", message: "" };
 
 const success = (message: string): ActionState => ({ status: "success", message });
 const failure = (message: string): ActionState => ({ status: "error", message });
@@ -106,11 +100,6 @@ export async function assignEnrollmentAction(
 }
 
 /* ── Users ──────────────────────────────────────────────────────────────── */
-
-export interface CreateUserState extends ActionState {
-  /** Set on success so the form can link straight to the new account. */
-  userId?: string;
-}
 
 export async function createUserAction(
   _prev: CreateUserState,
@@ -262,8 +251,6 @@ export async function updateCohortScheduleAction(
 
 /* ── Support issues ─────────────────────────────────────────────────────── */
 
-const ISSUE_STATES = ["open", "triaged", "in_progress", "resolved", "rejected"] as const;
-
 export async function updateSupportIssueStateAction(
   _prev: ActionState,
   formData: FormData
@@ -281,8 +268,6 @@ export async function updateSupportIssueStateAction(
     return success("Status gesetzt.");
   });
 }
-
-export { ISSUE_STATES };
 
 /* ── Own profile ────────────────────────────────────────────────────────── */
 

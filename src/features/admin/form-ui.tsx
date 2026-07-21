@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { Button, type ButtonProps } from "@/shared/ui";
-import type { ActionState } from "./actions";
+import type { ActionState } from "./action-state";
 
 /**
  * Local form primitives for WS-6.

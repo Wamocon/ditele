@@ -2,12 +2,8 @@
 
 import { useActionState } from "react";
 import { Button, Input, Select } from "@/shared/ui";
-import {
-  idleState,
-  resetUserPasswordAction,
-  setUserActiveAction,
-  setUserRoleAction,
-} from "./actions";
+import { resetUserPasswordAction, setUserActiveAction, setUserRoleAction } from "./actions";
+import { idleState } from "./action-state";
 import { ActionMessage, InlineConfirm, SubmitButton } from "./form-ui";
 import type { AdminDict } from "./i18n";
 import { roleLabel } from "./i18n";

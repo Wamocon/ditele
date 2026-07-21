@@ -4,12 +4,11 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useActionState } from "react";
 import { Input, Select } from "@/shared/ui";
-import { createUserAction, type CreateUserState } from "./actions";
+import { createUserAction } from "./actions";
+import { initialCreateUserState } from "./action-state";
 import { ActionMessage, SubmitButton } from "./form-ui";
 import type { AdminDict } from "./i18n";
 import { roleLabel } from "./i18n";
-
-const initial: CreateUserState = { status: "idle", message: "" };
 
 /**
  * ⚠️ `SUPABASE_SERVICE_ROLE_KEY` never reaches this file. The form posts to a
@@ -25,7 +24,7 @@ export function CreateUserForm({
   locale: string;
   t: AdminDict;
 }) {
-  const [state, formAction] = useActionState(createUserAction, initial);
+  const [state, formAction] = useActionState(createUserAction, initialCreateUserState);
 
   return (
     <form action={formAction} className="flex max-w-xl flex-col gap-4">

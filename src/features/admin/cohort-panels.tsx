@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { Button, Input, Textarea } from "@/shared/ui";
-import { idleState, transitionCohortAction, updateCohortScheduleAction } from "./actions";
+import { transitionCohortAction, updateCohortScheduleAction } from "./actions";
+import { idleState } from "./action-state";
 import { ActionMessage, InlineConfirm, SubmitButton } from "./form-ui";
 import type { AdminDict } from "./i18n";
 
