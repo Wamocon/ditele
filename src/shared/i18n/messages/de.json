@@ -784,6 +784,33 @@
       "minutesShort": "Min."
     }
   },
+  "arena": {
+    "sandbox": {
+      "frameLabel": "Testumgebung",
+      "frameHint": "Diese Anwendung enthält absichtlich eingebaute Fehler. Finde sie und melde sie in deinem Fehlerbericht.",
+      "scenarioMeta": "Szenario {code} · Fassung {version}",
+      "notFoundTitle": "Szenario nicht gefunden",
+      "notFoundDescription": "Zu dieser Kennung gibt es keine freigegebene Testumgebung, oder sie gehört nicht zu einem deiner Kurse.",
+      "emptyTitle": "Diese Testumgebung zeigt noch nichts an",
+      "emptyDescription": "Das Szenario ist angelegt, aber es wurden noch keine Oberflächen hinterlegt. Wende dich an deine Trainerin oder deinen Trainer.",
+      "configErrorTitle": "Diese Testumgebung ist fehlerhaft konfiguriert",
+      "configErrorDescription": "Sie wird absichtlich nicht angezeigt: eine halb dargestellte Oberfläche wäre von einem eingebauten Fehler nicht zu unterscheiden.",
+      "loadErrorTitle": "Testumgebung konnte nicht geladen werden",
+      "authoringLabel": "Autorenmodus",
+      "defectsDisabledLabel": "Fehler deaktiviert — Referenzansicht",
+      "defectsEnabledLabel": "Fehler aktiv",
+      "captureLabel": "Bereich aufnehmen",
+      "captureRunningLabel": "Aufnahme läuft …",
+      "captureHint": "Nimmt den Bereich der Testumgebung als Bild auf, das du an deinen Bericht anhängen kannst.",
+      "captureUnsupportedLabel": "Dieser Browser kann den Bildschirm nicht aufnehmen. Lade stattdessen einen eigenen Screenshot hoch.",
+      "captureDeniedLabel": "Die Aufnahme wurde abgebrochen. Du kannst es erneut versuchen oder einen eigenen Screenshot hochladen.",
+      "captureFailedLabel": "Die Aufnahme hat nicht funktioniert. Lade stattdessen einen eigenen Screenshot hoch.",
+      "captureReadyLabel": "Aufnahme erstellt.",
+      "captureDownloadLabel": "Bild herunterladen",
+      "captureDiscardLabel": "Verwerfen",
+      "capturePreviewAlt": "Aufnahme der Testumgebung"
+    }
+  },
   "trainer": {
     "reviewTitle": "Abgabe prüfen",
     "awaiting": "Wartet auf Review",
