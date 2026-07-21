@@ -378,7 +378,11 @@ const reviewLink = trainer.page
   .locator('a[href*="/trainer/submissions/"]')
   .filter({ hasText: /Checkout-Jagd/i })
   .or(trainer.page.locator('tr:has-text("Checkout-Jagd") a[href*="/trainer/submissions/"]'))
-  .first();
+  // ⚠️ `.last()`: the queue is deliberately OLDEST-FIRST, and older hunt rows on
+  // this database predate the report this run just filed — one of them has no
+  // structured findings at all, so reviewing it measures the panel empty state
+  // and reports the verdict control as missing.
+  .last();
 let reviewUrl = null;
 if ((await reviewLink.count()) > 0) {
   await reviewLink.click();
@@ -401,6 +405,105 @@ check("the ground-truth panel renders", /Fehlerjagd|Abgleich/i.test(reviewText),
 check("it shows hunt progress (n von m gefunden)", /\d+\s+von\s+\d+\s+gefunden/i.test(reviewText),
   (/\d+\s+von\s+\d+\s+gefunden/i.exec(reviewText) ?? [""])[0]);
 check("it offers a planted-bug match, not a verdict", /Treffer|Abgleich/i.test(reviewText));
+
+/* ── 6. the trainer rules on the finding, then accepts ───────────────────── */
+
+step(6, "verdict, then acceptance");
+
+// ⭐ Set the verdict BEFORE accepting. That ordering is the one WS-11's award
+// engine reads (it looks at the verdicts as they stand at acceptance), and
+// WS-13's I-051 fix is what makes the other ordering pay too.
+const confirmVerdict = trainer.page.getByRole("button", { name: /^Bestätigen$/i }).first();
+if ((await confirmVerdict.count()) > 0) {
+  const codeSelect = trainer.page.locator("select").filter({ hasText: /QTY|TOTAL|EMAIL|SHIPPING/i }).first();
+  if ((await codeSelect.count()) > 0) {
+    await codeSelect.selectOption({ index: 1 }).catch(() => {});
+  }
+  await confirmVerdict.click().catch(() => {});
+  await trainer.page.waitForTimeout(3500);
+  const afterVerdict = await trainer.page.locator("main").first().innerText();
+  check(
+    "the trainer can record a verdict on the finding",
+    /BESTÄTIGT|Bestätigt|\d+ VON \d+ GEFUNDEN/i.test(afterVerdict),
+    (/\d+ VON \d+ GEFUNDEN/i.exec(afterVerdict) ?? [""])[0],
+  );
+} else {
+  check("the trainer can record a verdict on the finding", false, "no Bestätigen control found");
+}
+
+// The rubric has to be scored before `decide_submission` will accept (I-016:
+// `p_criterion_scores` must be a non-empty array covering every required
+// criterion, and a blank comment is refused).
+for (const numberInput of await trainer.page.locator('input[type="number"]').all()) {
+  await numberInput.fill("3").catch(() => {});
+}
+const comment = trainer.page.locator("textarea").first();
+if ((await comment.count()) > 0) {
+  await comment.fill("Guter Fund, sauber dokumentiert. Angenommen.").catch(() => {});
+}
+
+const acceptButton = trainer.page.getByRole("button", { name: /^Annehmen$|^Akzeptieren$/i }).first();
+let accepted = false;
+if ((await acceptButton.count()) > 0) {
+  await acceptButton.click().catch(() => {});
+  await trainer.page.waitForTimeout(800);
+  // The ConfirmDialog's commit is "Ja, Entscheidung senden" — not a second
+  // "Annehmen". Guessing it cost a run.
+  const confirmAccept = trainer.page.getByRole("button", { name: /Ja, Entscheidung senden/i }).last();
+  await confirmAccept.click().catch(() => {});
+  await trainer.page.waitForTimeout(6000);
+  // ⚠️ Assert by EFFECT, not by the text left on screen. A successful decision
+  // returns the trainer to the queue, so the review page they were reading is
+  // gone — and a regex over it reports failure while the accept plainly worked,
+  // which is what the unlock and the XP two checks below were already proving.
+  const afterAccept = await trainer.page.locator("main").first().innerText();
+  const backOnQueue = /\/trainer\/submissions\/?$/.test(new URL(trainer.page.url()).pathname);
+  accepted = backOnQueue || /ANGENOMMEN|angenommen/i.test(afterAccept.slice(0, 600));
+}
+check("the trainer accepts the submission", accepted);
+
+/* ── 7. the gated task unlocks, and the reward lands ─────────────────────── */
+
+step(7, "the gate opens and the reward lands");
+
+await learner.page.goto(`${BASE}/de/learn/courses/${COURSE}`, { waitUntil: "networkidle" });
+await learner.page
+  .waitForFunction(() => (document.querySelector("main")?.innerText ?? "").length > 40, { timeout: 20_000 })
+  .catch(() => {});
+
+const gatedNowOpen = await learner.page
+  .locator(`a[href*="/learn/tasks/${GATED_TASK}"]`)
+  .count();
+check(
+  "the gated task is now a real link — the prerequisite is satisfied",
+  gatedNowOpen > 0,
+  `${gatedNowOpen} link(s) to the gated task`,
+);
+
+await learner.page.goto(`${BASE}/de/learn/arena`, { waitUntil: "networkidle" });
+await learner.page
+  .waitForFunction(() => (document.querySelector("main")?.innerText ?? "").length > 40, { timeout: 20_000 })
+  .catch(() => {});
+const hub = await learner.page.locator("main").first().innerText();
+const xp = /(\d+)\s*XP/.exec(hub);
+check("XP has landed on the learner's hub", xp !== null && Number(xp[1]) > 0, xp?.[0] ?? hub.slice(0, 80));
+check(
+  "a badge is shown (or an honest empty state, if none is earned yet)",
+  /Abzeichen/i.test(hub),
+  (/\d+ Abzeichen/i.exec(hub) ?? [""])[0],
+);
+
+/* ── 8. the admin sees the row ───────────────────────────────────────────── */
+
+step(8, "the admin progress row");
+const adminSession = await open(ADMIN);
+await adminSession.page.goto(`${BASE}/de/admin/progress`, { waitUntil: "networkidle" });
+await adminSession.page
+  .waitForFunction(() => (document.querySelector("main")?.innerText ?? "").length > 40, { timeout: 20_000 })
+  .catch(() => {});
+const board = await adminSession.page.locator("main").first().innerText();
+check("the journey learner appears on the admin board", /Nina|Sofia|Elias|Mara|Jonas|Lena/.test(board));
+check("the board reports plan-relative days", /Tag\s+\d+/.test(board));
 
 await browser.close();
 
