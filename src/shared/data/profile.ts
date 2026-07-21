@@ -218,12 +218,20 @@ export interface CourseSummary {
  * `get_public_catalog_course` returns no resolved title — the locale has to be
  * picked out of `localizations[]` with a fallback to `default_locale`
  * (RPC_CONTRACTS.md §2).
+ *
+ * ⚠️ It also returns a **one-element array**, not the single object
+ * RPC_CONTRACTS.md §2 describes. Measured against the live database; see
+ * ISSUES.md I-015. Both shapes are accepted here so a corrected RPC would not
+ * break this page.
  */
 export async function getCourseSummary(courseId: string, locale: string): Promise<Result<CourseSummary>> {
   const result = await getPublicCatalogCourse({ courseId });
   if (!result.ok) return fail(result);
 
-  const parsed = CatalogCourseSchema.safeParse(result.data);
+  const payload = Array.isArray(result.data) ? result.data[0] : result.data;
+  if (!payload) return err({ code: "PGRST116", message: "Nicht gefunden.", retryable: false });
+
+  const parsed = CatalogCourseSchema.safeParse(payload);
   if (!parsed.success) return shapeError("Der Kurs");
 
   const course = parsed.data;

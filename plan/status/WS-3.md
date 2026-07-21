@@ -18,14 +18,14 @@ Updated: 2026-07-21 · Chat: **#1**
 - `/learn/questions/new` — context picker, validation, values survive an error
 - `/learn/questions/[questionId]` — thread, system rows, honest no-reply notice
 - `/learn/profile` — account, theme, notification preferences, password, sign out
+- `/learn/enroll/[courseId]` — course summary, request form, existing-request status
 
 **Half-finished:**
 - Nothing.
 
 **Next, in order:**
-1. `/learn/enroll/[courseId]`
-2. `/learn/history`
-3. `/learn/certificates`
+1. `/learn/history`
+2. `/learn/certificates`
 
 **⭐ Things I learned that are written down nowhere else:**
 
@@ -92,7 +92,12 @@ Updated: 2026-07-21 · Chat: **#1**
    the client component. Symptom to recognise: page renders the `loading.tsx`
    skeleton in the HTML and the content only appears after hydration.
 
-10. **`de.json` and `ISSUES.md` lose writes.** Both are shared, and a
+10. **`get_public_catalog_course` returns a one-element ARRAY**, not the single
+    object `RPC_CONTRACTS.md` §2 documents. A `zod` object schema fails at the
+    boundary and the page shows its error state with no hint why. Logged as
+    I-015 — **WS-1 calls the same RPC on `/catalog/[slug]`.**
+
+11. **`de.json` and `ISSUES.md` lose writes.** Both are shared, and a
    read-modify-write from another chat lands on top of yours. My first
    `ISSUES.md` row vanished within seconds. Always write, then **read back and
    confirm**. See I-013.
@@ -111,7 +116,7 @@ Updated: 2026-07-21 · Chat: **#1**
 | `/learn/questions/new` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/learn/questions/[questionId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/learn/profile` | ✅ | ✅ | ✅ | n/a | ✅ | ✅ | ✅ | ✅ |
-| `/learn/enroll/[courseId]` | ⬜ | | | | | | | |
+| `/learn/enroll/[courseId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/learn/history` | ⬜ | | | | | | | |
 | `/learn/certificates` | ⬜ | | | | | | | |
 
