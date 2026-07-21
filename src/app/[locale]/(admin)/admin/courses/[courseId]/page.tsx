@@ -1,19 +1,56 @@
+import type { Route } from "next";
+import Link from "next/link";
 import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import { Button, ErrorState } from "@/shared/ui";
+import { requireRole } from "@/shared/auth/guard";
+import { getAdminCourse } from "@/shared/data/content";
+import { adminStrings } from "@/features/content/i18n";
+import { CourseDetail } from "@/features/content/components/course-detail";
+import { pickLocalized } from "@/features/content/model";
 
-/**
- * STUB — owned by WS-5. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
- */
-export default function Page() {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ locale: string; courseId: string }>;
+}) {
+  const { locale, courseId } = await params;
+  await requireRole(["admin"], locale);
+
+  const strings = adminStrings(locale);
+  const result = await getAdminCourse(courseId);
+
+  if (!result.ok) {
+    return (
+      <>
+        <PageHeader title={strings.course.title} />
+        <ErrorState message={result.error.message} />
+      </>
+    );
+  }
+
+  const course = result.data;
+  const title =
+    pickLocalized(
+      Object.fromEntries(course.localizations.map((entry) => [entry.locale, entry.title])),
+      locale
+    ) || course.slug;
+
   return (
     <>
-      <PageHeader title="Kurs bearbeiten" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-5</p>
-      </Card>
+      <PageHeader
+        title={title}
+        description={course.slug}
+        breadcrumbs={[
+          { label: strings.courses.title, href: `/${locale}/admin/courses` },
+          { label: title },
+        ]}
+        actions={
+          <Link href={`/${locale}/admin/courses` as Route}>
+            <Button variant="outline">{strings.course.back}</Button>
+          </Link>
+        }
+      />
+      <CourseDetail locale={locale} course={course} />
     </>
   );
 }
