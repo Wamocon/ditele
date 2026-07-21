@@ -60,16 +60,20 @@ function ActivityIcon({ activity }: { activity: LearningActivity }) {
   }
 }
 
-function TaskListItem({
+export function TaskListItem({
   activity,
   locale,
   strings,
+  /** Shown on `/learn/tasks`, where rows are pulled out of their course. */
+  courseTitle,
 }: {
   activity: LearningActivity;
   locale: string;
   strings: LearnStrings["course"];
+  courseTitle?: string;
 }) {
   const meta = [
+    courseTitle ?? "",
     activity.expectedMinutes > 0 ? format(strings.minutes, { count: activity.expectedMinutes }) : "",
     activity.dueAt ? format(strings.dueAt, { date: formatDate(activity.dueAt, locale) }) : "",
   ].filter(Boolean);
@@ -93,6 +97,7 @@ function TaskListItem({
           // Show WHY it is locked. Greying a row out and saying nothing is the
           // most common way a learner concludes the platform is broken.
           <p className="text-[13px] leading-5 text-[--color-fg-subtle]">
+            {courseTitle ? `${courseTitle} · ` : ""}
             {lockReasonText(activity.lockReasons[0] ?? "", strings)}
           </p>
         ) : (
