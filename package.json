@@ -33,6 +33,8 @@
   "dependencies": {
     "@supabase/ssr": "0.12.3",
     "@supabase/supabase-js": "2.110.7",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "lucide-react": "1.25.0",
     "next": "16.2.10",
     "pdf-lib": "1.17.1",
@@ -40,11 +42,13 @@
     "react-dom": "19.2.7",
     "server-only": "0.0.1",
     "sharp": "0.34.5",
+    "tailwind-merge": "^3.6.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
     "@playwright/test": "1.61.1",
+    "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.1",
@@ -56,6 +60,7 @@
     "eslint-config-next": "16.2.10",
     "jsdom": "29.1.1",
     "supabase": "2.109.1",
+    "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",
     "vitest": "4.1.10"
   },

@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DiTeLe V3 design tokens — MASTER_PLAN §6.
+   Never hardcode a colour, radius or duration outside this file.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Brand ─────────────────────────────────────── */
+  --color-brand:         #BB2734;   /* WAMOCON red — primary */
+  --color-brand-hover:   #A11F2B;
+  --color-brand-active:  #8A1B24;
+  --color-brand-soft:    #FDECEE;
+  --color-brand-fg:      #FFFFFF;
+  --color-ink:           #243036;   /* WAMOCON navy — the dot pair */
+
+  /* ── Surfaces (light) ──────────────────────────── */
+  --color-bg:            #FFFFFF;
+  --color-surface:       #F7F8FA;
+  --color-surface-2:     #EFF1F4;
+  --color-overlay:       rgb(36 48 54 / 0.48);
+
+  /* ── Text (light) ──────────────────────────────── */
+  --color-fg:            #243036;
+  --color-fg-muted:      #5C6878;
+  --color-fg-subtle:     #A7AEB8;
+
+  /* ── Lines (light) ─────────────────────────────── */
+  --color-border:        #E2E5EA;
+  --color-border-strong: #C8CCD3;
+
+  /* ── Semantic ──────────────────────────────────── */
+  --color-success:       #16794B;
+  --color-success-soft:  #EAF8F1;
+  --color-warning:       #A95D05;
+  --color-warning-soft:  #FFF5DF;
+  --color-danger:        #B42331;
+  --color-danger-soft:   #FFF0F1;
+  --color-info:          #175EC8;
+  --color-info-soft:     #EAF2FF;
+
+  /* ── Radius ────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* ── Elevation ─────────────────────────────────── */
+  --shadow-sm:    0 1px 2px rgb(36 48 54 / 0.06);
+  --shadow-md:    0 4px 16px rgb(36 48 54 / 0.08);
+  --shadow-lg:    0 12px 32px rgb(36 48 54 / 0.12);
+  --shadow-brand: 0 6px 20px rgb(187 39 52 / 0.24);
+
+  /* ── Motion ────────────────────────────────────── */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ── Layout ────────────────────────────────────── */
+  --header-height: 64px;
+  --tabbar-height: 62px;
+  --content-max:   1200px;
+
+  /* ── Type families (wired from next/font in fonts.ts) ── */
+  --font-heading: var(--font-heading);
+  --font-body:    var(--font-body);
+}
+
+:root[data-theme="dark"] {
+  --color-bg:            #151C21;
+  --color-surface:       #1C252C;
+  --color-surface-2:     #26313A;
+  --color-overlay:       rgb(0 0 0 / 0.62);
+  --color-fg:            #EDF2F5;
+  --color-fg-muted:      #A7B2BC;
+  --color-fg-subtle:     #7D8A95;
+  --color-border:        #313D47;
+  --color-border-strong: #46545F;
+  --color-brand:         #E4505C;   /* lightened for AA on dark */
+  --color-brand-hover:   #EE6C77;
+  --color-brand-active:  #D8434F;
+  --color-brand-soft:    #3A1B1F;
+  --color-ink:           #EDF2F5;
+  --color-success:       #4FBF8A;
+  --color-success-soft:  #14311F;
+  --color-warning:       #E5A445;
+  --color-warning-soft:  #3D2E14;
+  --color-danger:        #FF7C87;
+  --color-danger-soft:   #40191E;
+  --color-info:          #75A8F5;
+  --color-info-soft:     #172A44;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.32);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.36);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.44);
+}
+
+/* ═══ Base ══════════════════════════════════════════════════════════════ */
+
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  /* Thin overlay scrollbar — MASTER_PLAN §7.3. Firefox. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), Georgia, serif;
+}
+
+/* Every number in a table, stat, timer or score lines up. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reading measure for task and lesson prose. */
+.prose-measure {
+  max-width: 68ch;
+}
+
+/* WebKit / Chromium — overlay style, 4px */
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 999px;
+  transition: background var(--duration-base) var(--ease-out);
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--color-brand); }
+
+.scroll-area { overflow-y: auto; overscroll-behavior: contain; }
+
+/* Focus is always visible. Never remove this without a replacement. */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ═══ Motion — the whole animation vocabulary, MASTER_PLAN §6.6 ═════════ */
+
+@keyframes fade-in      { from { opacity: 0 } to { opacity: 1 } }
+@keyframes fade-in-up   { from { opacity: 0; transform: translateY(8px) }  to { opacity: 1; transform: none } }
+@keyframes fade-in-down { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } }
+@keyframes scale-in     { from { opacity: 0; transform: scale(.96) }       to { opacity: 1; transform: none } }
+@keyframes slide-in-right { from { transform: translateX(100%) } to { transform: none } }
+@keyframes slide-up     { from { transform: translateY(100%) } to { transform: none } }
+@keyframes shimmer      { from { background-position: -200% 0 } to { background-position: 200% 0 } }
+@keyframes pulse-ring   { 0% { box-shadow: 0 0 0 0 rgb(187 39 52 / .38) } 70%,100% { box-shadow: 0 0 0 12px rgb(187 39 52 / 0) } }
+@keyframes progress-fill { from { width: 0 } }
+
+.animate-fade-in       { animation: fade-in var(--duration-base) var(--ease-out) both; }
+.animate-fade-in-up    { animation: fade-in-up var(--duration-slow) var(--ease-out) both; }
+.animate-fade-in-down  { animation: fade-in-down var(--duration-base) var(--ease-out) both; }
+.animate-scale-in      { animation: scale-in var(--duration-base) var(--ease-out) both; }
+.animate-slide-in-right{ animation: slide-in-right var(--duration-slow) var(--ease-out) both; }
+.animate-slide-up      { animation: slide-up var(--duration-slow) var(--ease-out) both; }
+.animate-pulse-ring    { animation: pulse-ring 2s infinite; }
+.animate-progress-fill { animation: progress-fill 600ms var(--ease-out) both; }
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-2) 25%,
+    var(--color-surface) 50%,
+    var(--color-surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+/* List/grid stagger — capped at 240ms so long lists never feel slow. */
+.stagger > * { animation: fade-in-up var(--duration-slow) var(--ease-out) both; }
+.stagger > *:nth-child(1) { animation-delay: 0ms }
+.stagger > *:nth-child(2) { animation-delay: 40ms }
+.stagger > *:nth-child(3) { animation-delay: 80ms }
+.stagger > *:nth-child(4) { animation-delay: 120ms }
+.stagger > *:nth-child(5) { animation-delay: 160ms }
+.stagger > *:nth-child(6) { animation-delay: 200ms }
+.stagger > *:nth-child(n+7) { animation-delay: 240ms }
+
+/* Mandatory. Non-negotiable. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

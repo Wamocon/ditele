@@ -22,3 +22,6 @@
 
 # generated QA output that is not curated evidence
 /artifacts/tmp/
+
+# Per-workstream dev build output (NEXT_DIST_DIR)
+.next-*
