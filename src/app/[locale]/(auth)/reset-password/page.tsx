@@ -1,19 +1,40 @@
-import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import type { Metadata } from "next";
 
-/**
- * STUB — owned by WS-1. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
- */
-export default function Page() {
+import { getDict } from "../../(public)/_lib/i18n";
+import { ResetForm } from "../_components/reset-form";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const dict = getDict(locale);
+  return { title: `${dict.auth.reset.title} · DiTeLe`, description: dict.auth.reset.subtitle };
+}
+
+export default async function ResetPasswordPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = getDict(locale);
+
   return (
-    <>
-      <PageHeader title="Passwort vergessen" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-1</p>
-      </Card>
-    </>
+    <ResetForm
+      locale={locale}
+      labels={{
+        title: dict.auth.reset.title,
+        subtitle: dict.auth.reset.subtitle,
+        email: dict.auth.shared.emailLabel,
+        emailPlaceholder: dict.auth.shared.emailPlaceholder,
+        submit: dict.auth.reset.submit,
+        sentTitle: dict.auth.reset.sentTitle,
+        sentBody: dict.auth.reset.sentBody,
+        remembered: dict.auth.reset.remembered,
+        backToLogin: dict.auth.shared.backToLogin,
+      }}
+    />
   );
 }

@@ -1,19 +1,63 @@
-import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import type { Metadata } from "next";
+import type { Route } from "next";
+import Link from "next/link";
 
-/**
- * STUB — owned by WS-1. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
- */
-export default function Page() {
+import { Button } from "@/shared/ui";
+import { getDict } from "../../(public)/_lib/i18n";
+import { hasAuthSession } from "../_lib/auth-session";
+import { AuthHeading } from "../_components/auth-parts";
+import { UpdatePasswordForm } from "../_components/update-password-form";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const dict = getDict(locale);
+  return { title: `${dict.auth.update.title} · DiTeLe`, description: dict.auth.update.subtitle };
+}
+
+export default async function UpdatePasswordPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = getDict(locale);
+
+  // The recovery link lands on /auth/callback, which exchanges the code for a
+  // session and forwards here. No session means the link is spent or expired —
+  // say so, instead of showing a form that cannot possibly work.
+  if (!(await hasAuthSession())) {
+    return (
+      <>
+        <AuthHeading title={dict.auth.update.noSessionTitle} subtitle={dict.auth.update.noSessionBody} />
+        <Link href={`/${locale}/reset-password` as Route}>
+          <Button size="lg" fullWidth>
+            {dict.auth.update.requestNew}
+          </Button>
+        </Link>
+      </>
+    );
+  }
+
   return (
-    <>
-      <PageHeader title="Neues Passwort" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-1</p>
-      </Card>
-    </>
+    <UpdatePasswordForm
+      locale={locale}
+      labels={{
+        title: dict.auth.update.title,
+        subtitle: dict.auth.update.subtitle,
+        password: dict.auth.update.newLabel,
+        passwordHint: dict.auth.register.passwordHint,
+        confirm: dict.auth.register.confirmLabel,
+        submit: dict.auth.update.submit,
+        successTitle: dict.auth.update.successTitle,
+        successBody: dict.auth.update.successBody,
+        toLogin: dict.auth.shared.backToLogin,
+        showPassword: dict.auth.shared.showPassword,
+        hidePassword: dict.auth.shared.hidePassword,
+      }}
+    />
   );
 }

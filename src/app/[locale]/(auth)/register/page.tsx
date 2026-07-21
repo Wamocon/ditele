@@ -1,19 +1,49 @@
-import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-/**
- * STUB — owned by WS-1. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
- */
-export default function Page() {
+import { getPrincipal, postAuthDestination } from "@/shared/data/session";
+import { getDict } from "../../(public)/_lib/i18n";
+import { RegisterForm } from "../_components/register-form";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const dict = getDict(locale);
+  return { title: `${dict.auth.register.title} · DiTeLe`, description: dict.auth.register.subtitle };
+}
+
+export default async function RegisterPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+
+  const session = await getPrincipal();
+  if (session) redirect(`/${locale}${postAuthDestination(session.uiRole)}`);
+
+  const dict = getDict(locale);
   return (
-    <>
-      <PageHeader title="Registrieren" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-1</p>
-      </Card>
-    </>
+    <RegisterForm
+      locale={locale}
+      labels={{
+        title: dict.auth.register.title,
+        subtitle: dict.auth.register.subtitle,
+        name: dict.auth.register.nameLabel,
+        namePlaceholder: dict.auth.register.namePlaceholder,
+        email: dict.auth.shared.emailLabel,
+        emailPlaceholder: dict.auth.shared.emailPlaceholder,
+        password: dict.auth.shared.passwordLabel,
+        passwordHint: dict.auth.register.passwordHint,
+        confirm: dict.auth.register.confirmLabel,
+        submit: dict.auth.register.submit,
+        hasAccount: dict.auth.register.hasAccount,
+        loginLink: dict.auth.register.loginLink,
+        showPassword: dict.auth.shared.showPassword,
+        hidePassword: dict.auth.shared.hidePassword,
+        terms: dict.auth.register.terms,
+        checkInboxTitle: dict.auth.register.checkInboxTitle,
+        checkInboxBody: dict.auth.register.checkInboxBody,
+      }}
+    />
   );
 }

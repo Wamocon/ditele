@@ -1,11 +1,5 @@
-import { SkeletonCard } from "@/shared/ui";
+import { AuthSkeleton } from "../_components/auth-skeleton";
 
 export default function Loading() {
-  return (
-    <div className="flex flex-col gap-4">
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-    </div>
-  );
+  return <AuthSkeleton fields={4} />;
 }
