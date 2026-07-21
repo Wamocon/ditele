@@ -1,19 +1,56 @@
+import type { Route } from "next";
+import Link from "next/link";
 import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import { Button, ErrorState } from "@/shared/ui";
+import { getStudioWorkspace } from "@/shared/data/content";
+import { requireRole } from "@/shared/auth/guard";
+import { adminStrings, format } from "@/features/content/i18n";
+import { Studio } from "@/features/content/components/studio";
 
 /**
- * STUB — owned by WS-5. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
+ * ⭐ The Content Studio — the largest screen in the app, and the one the whole
+ * authoring workflow runs through. Owned by WS-5.
  */
-export default function Page() {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ locale: string; courseId: string; versionId: string }>;
+}) {
+  const { locale, courseId, versionId } = await params;
+  await requireRole(["admin"], locale);
+
+  const strings = adminStrings(locale);
+  const result = await getStudioWorkspace(versionId, locale);
+
+  if (!result.ok) {
+    return (
+      <>
+        <PageHeader title={strings.studio.title} />
+        <ErrorState message={result.error.message} />
+      </>
+    );
+  }
+
+  const workspace = result.data;
+  const versionLabel = format(strings.studio.versionLabel, { number: workspace.versionNumber });
+
   return (
     <>
-      <PageHeader title="Content-Studio" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-5</p>
-      </Card>
+      <PageHeader
+        title={workspace.courseTitle}
+        description={versionLabel}
+        breadcrumbs={[
+          { label: strings.courses.title, href: `/${locale}/admin/courses` },
+          { label: workspace.courseTitle, href: `/${locale}/admin/courses/${courseId}` },
+          { label: versionLabel },
+        ]}
+        actions={
+          <Link href={`/${locale}/admin/courses/${courseId}` as Route}>
+            <Button variant="outline">{strings.studio.back}</Button>
+          </Link>
+        }
+      />
+      <Studio locale={locale} workspace={workspace} strings={strings} />
     </>
   );
 }

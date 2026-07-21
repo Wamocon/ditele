@@ -1,0 +1,14 @@
+import { createClient } from "@supabase/supabase-js";
+import { createChunks } from "@supabase/ssr";
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const db = createClient(url, anon, { auth: { persistSession: false } });
+const { data: s } = await db.auth.signInWithPassword({ email: "admin@ditele.local", password: "123123123" });
+const key = `sb-${new URL(url).hostname.split(".")[0]}-auth-token`;
+const value = "base64-" + Buffer.from(JSON.stringify(s.session), "utf8").toString("base64url");
+const cookie = createChunks(key, value).map(c => `${c.name}=${encodeURIComponent(c.value)}`).join("; ");
+const path = process.argv[2];
+const r = await fetch(`http://127.0.0.1:3105/de${path}`, { headers: { cookie } });
+const html = await r.text();
+const text = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g," ").replace(/\s+/g, " ").trim();
+console.log("status", r.status, "· length", html.length);
+console.log(text.slice(0, Number(process.argv[3] ?? 1800)));
