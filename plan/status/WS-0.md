@@ -5,11 +5,16 @@ Started: 2026-07-21 · Port: 3100 · Dist: `.next-ws0` · Account: see §Credent
 ---
 
 ## RESUME HERE
-Updated: 2026-07-21 (Task 0 + Task 1a complete) · Chat: #1 for this workstream
+Updated: 2026-07-21 (Tasks 0, 1a, 1b, 1c complete) · Chat: #1 for this workstream
 
 **State:** IN PROGRESS
 
 **Done and committed:**
+- **Task 1b + 1c — `plan/status/RPC_CONTRACTS.md` written** ✅ 🚨
+  48 RPCs + 99 tables introspected from the live DB. Argument names from the
+  PostgREST OpenAPI document; return shapes from really calling each RPC as each
+  role. RLS measured per role. **Read that file before writing any data code.**
+  Probe scripts kept at `scripts/ws0-introspect-rpc.mjs`, `ws0-probe{,2,3}.mjs`.
 - **Task 1a — Backend + login VERIFIED** ✅ 🔑
   - Health 200/200. All 4 accounts log in. **Password is `123123123`, not the
     `Ditele-Local-2026!` in the master plan.** Full detail in §Credentials below.
@@ -28,11 +33,12 @@ Updated: 2026-07-21 (Task 0 + Task 1a complete) · Chat: #1 for this workstream
 - Nothing.
 
 **Next, in order:**
-1. **Task 1b** — introspect real RPC signatures → `plan/status/RPC_CONTRACTS.md`.
-3. **Task 1c** — count rows in core tables; record what each role can actually
-   read through RLS.
-4. **Task 1d** — write and run `scripts/seed-mock.mjs` (service-role client).
-5. Task 2 purge → Task 3 deps → Task 4 design system → Task 5 shell + 42 stubs
+1. **Task 1d** — write and run `scripts/seed-mock.mjs`. ⚠️ **It must authenticate
+   as `admin@ditele.local`, NOT use the service-role client** — the service role
+   has zero table grants on this deployment (see below). Target the MASTER_PLAN
+   §4.5 table: 3 courses, 4 stages each, 8–10 tasks, 2 cohorts, 6–8 learners,
+   mixed enrolments, 10–15 submissions, 5–6 questions, notifications, ratings.
+2. Task 2 purge → Task 3 deps → Task 4 design system → Task 5 shell + 42 stubs
    → Task 6 auth/data layer → Task 7 smoke test → GATE §6.9.
 
 **Things I learned that are written down nowhere else:**
@@ -45,6 +51,16 @@ Updated: 2026-07-21 (Task 0 + Task 1a complete) · Chat: #1 for this workstream
   `123123123`. Trust the last seed file, never the first.
 - All four accounts show a `last_sign_in_at` of 2026-07-20, so somebody *had*
   logged in before — the credentials were never actually broken, only mis-documented.
+- **`supabase.from(t).select("*", { count: "exact", head: true })` silently fails
+  against this PostgREST build** — it returns an error object with an `undefined`
+  code and an empty message, which is indistinguishable from a network fault.
+  Use `.select("*", { count: "exact" }).limit(1)` instead. Cost me one debug cycle.
+- **`PGRST202` ("could not find the function in the schema cache") almost never
+  means the function is missing.** It means the argument set did not match an
+  overload. Check `RPC_CONTRACTS.md` before concluding an RPC does not exist.
+- The master plan's claim that "service role sees 99 tables + 48 RPCs" came from
+  reading the OpenAPI document, which lists what is *exposed*, not what the
+  caller is *permitted* to touch. Those are different questions.
 
 **Blocked on:**
 - Nothing.
@@ -85,11 +101,48 @@ node --env-file=.env.local scripts/ws0-verify-backend.mjs
 
 ---
 
-## Tables with data
-_pending Task 1c_
+## Tables with data (measured 2026-07-21, before seeding)
 
-## RLS findings per role
-_pending Task 1c_
+The database is **nearly empty**. Full table in `RPC_CONTRACTS.md` §11.
+
+> 1 organization · 1 course · 1 content version · 1 stage · 1 task (2 options,
+> 1 hint) · 1 cohort · 2 memberships · 1 enrollment · 1 attempt · 1 notification ·
+> 4 profiles · 5 user_roles
+>
+> **0 submissions · 0 reviews · 0 questions · 0 ratings · 0 certificates ·
+> 0 support_issues** — every list screen renders its empty state today.
+
+## RLS findings per role — measured, not assumed
+
+Full matrix in **`RPC_CONTRACTS.md` §10**. The five that change how you build:
+
+1. ⭐ **A student cannot read `tasks`, `stages`, `task_hints` or `content_versions`
+   directly — every one returns 0 rows.** Learning content is reachable *only*
+   through the `SECURITY DEFINER` RPCs. A direct `.from("tasks")` returns `[]`,
+   which looks like "no data" instead of "forbidden". **WS-2/WS-3: always use
+   `get_my_learning_task` / `get_my_learning_course`.**
+2. **A trainer sees 0 `enrollments` and 0 `attempts`** — WS-4's progress screen
+   cannot be built from those tables under a trainer session.
+3. **`anon` sees exactly `courses` + `course_localizations`** (granted at
+   migration `…095000` line 286). The public catalog must use `get_public_catalog`.
+4. **`audit_events` is admin-only** (1 row), invisible to student and trainer.
+5. **`attempts`**: student sees 1, trainer and admin see 0 — ownership-scoped.
+
+### 🚨 The service-role key cannot touch tables on this deployment
+
+`SUPABASE_SERVICE_ROLE_KEY` returns `42501 permission denied` on **every** table.
+`20260717095000_authorization_rls_and_workflows.sql:285-287` grants table
+privileges to `anon` and `authenticated` and **never to `service_role`**.
+
+| Service role via… | Works? |
+|---|---|
+| Auth Admin API (`listUsers`, `createUser`, `updateUserById`) | ✅ yes |
+| PostgREST tables / RPCs | ❌ `42501` |
+
+**WS-6:** user create / password reset / deactivate still work (Auth Admin API).
+Reading `profiles` and writing `user_roles` must use the **admin's authenticated
+session**, not the service client. Verified: an admin session *can* insert and
+delete rows.
 
 ## Components delivered
 _pending Task 4 / Wave 0b_
