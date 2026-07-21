@@ -45,7 +45,7 @@ See `plan/06_ARENA_WORKSTREAMS.md` §2. Prompts: `04_PROMPTS_AND_HANDOFF.md` §2
 
 | WS | Scope | Wave | Status | Chat / account | Blocked until |
 |---|---|---|---|---|---|
-| **WS-8** | Foundation: hunt schema, relative scheduling, lock-reason enrichment | A ⛔ gate | IN PROGRESS | chat #1 | — **start here** |
+| **WS-8** | Foundation: hunt schema, relative scheduling, lock-reason enrichment | A ⛔ gate | HANDOFF READY | chat #1 | — all 8 steps built + verified; **coordinator to walk §6 by hand** |
 | **WS-9** | Sandbox **engine** + authoring contract + 1 reference scenario | B | NOT STARTED | | WS-8 gate passes |
 | **WS-10** | The ticket: description, labels, screenshots, trainer ground-truth panel | B | NOT STARTED | | WS-8 gate passes |
 | **WS-11** | Rewards: award engine, XP, levels, badges, streaks, Arena hub | C | NOT STARTED | | WS-9 **and** WS-10 DONE |

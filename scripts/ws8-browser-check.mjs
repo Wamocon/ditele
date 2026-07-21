@@ -69,13 +69,35 @@ const context = await browser.newContext({ viewport: { width: 1280, height: 900 
 await context.addCookies(await cookiesFor("learner@ditele.local"));
 const page = await context.newPage();
 
+// Track FAILED RESPONSES by URL, not console text. A console error for a bad
+// resource reads only "Failed to load resource: … 404" with no URL in it, so
+// filtering console text can never tell one 404 from another.
+const failedRequests = [];
+page.on("response", (r) => {
+  if (r.status() >= 400) failedRequests.push(`${r.status()} ${r.url()}`);
+});
+// Genuine JS errors (not resource loads) still matter, so keep those too.
 const consoleErrors = [];
 page.on("console", (m) => {
-  if (m.type() === "error") consoleErrors.push(m.text());
+  if (m.type() === "error" && !/Failed to load resource/.test(m.text())) {
+    consoleErrors.push(m.text());
+  }
 });
 
+/**
+ * `networkidle` is the wrong wait for these pages: the task workspace keeps a
+ * connection open (streaming render plus autosave), so idle never arrives and
+ * the check dies at 45 s looking like a hung server. Wait for the DOM, then for
+ * `<main>` to actually have text in it — which is also the gap RELEASE.md
+ * records against smoke.mjs, that a 200 with an empty body reads as a pass.
+ */
 async function visit(path) {
-  await page.goto(`${BASE}${path}`, { waitUntil: "networkidle", timeout: 45000 });
+  await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded", timeout: 45000 });
+  await page
+    .waitForFunction(() => (document.body?.innerText ?? "").trim().length > 200, null, {
+      timeout: 30000,
+    })
+    .catch(() => {});
   return (await page.locator("body").innerText()).replace(/\s+/g, " ");
 }
 
@@ -109,17 +131,27 @@ record("REGRESSION: the student dashboard still renders", dashText.length > 200)
 
 // ─── 375px, the width WS-7 fixed once already ───────────────────────────────
 await page.setViewportSize({ width: 375, height: 720 });
-await page.goto(`${BASE}/de/learn/tasks/${HUNT_TASK}`, { waitUntil: "networkidle" });
+await visit(`/de/learn/tasks/${HUNT_TASK}`);
 const overflow = await page.evaluate(
   () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
 );
 record("the hunt workspace has no horizontal scroll at 375px", !overflow);
 
+// One console error is expected and is NOT swept under the rug: Next.js
+// prefetches every nav link in the viewport, so the Arena entry WS-8 was told
+// to add (06_… §8 step 8) fires an RSC prefetch at /de/learn/arena — WS-11's
+// route, which does not exist yet. That is ISSUES.md I-043, and it means a 404
+// on EVERY student page, not merely a dead link if you click it. Filtered by
+// exact URL so any OTHER console error still fails this check.
+const KNOWN_404 = /\/learn\/arena/;
+const unexpectedRequests = failedRequests.filter((e) => !KNOWN_404.test(e));
 record(
-  "no console errors on the hunt workspace",
-  consoleErrors.length === 0,
-  consoleErrors[0] ?? "",
+  "no failed requests beyond the known I-043 arena prefetch",
+  unexpectedRequests.length === 0,
+  unexpectedRequests[0]
+    ?? `(${failedRequests.length} known arena prefetch 404s ignored)`,
 );
+record("no JavaScript errors on the student routes", consoleErrors.length === 0, consoleErrors[0] ?? "");
 
 await browser.close();
 
