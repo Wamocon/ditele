@@ -1009,6 +1009,8 @@
       "confirmWord": "LÖSCHEN",
       "readOnlyNotice": "Diese Version ist veröffentlicht und kann nicht mehr geändert werden.",
       "searchPlaceholder": "Suchen…",
+      "previous": "Zurück",
+      "next": "Weiter",
       "filterAll": "Alle",
       "loadError": "Die Daten konnten nicht geladen werden."
     },

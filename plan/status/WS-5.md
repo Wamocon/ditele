@@ -10,20 +10,40 @@ Updated: 2026-07-21 · Chat: **#1**
 **State:** IN PROGRESS
 
 **Done and committed:**
-- Nothing yet. Research phase complete — see "Things I learned" below, it is the
-  whole reason this workstream is buildable.
+- `ef028e1` — `src/shared/data/content.ts` (reads, authoring DML, lifecycle),
+  `src/features/content/**` (model + readiness + i18n + actions + 5 components),
+  **`/admin/courses/[courseId]/versions/[versionId]` — the Content Studio.**
+  Renders in all four version states against real data; checklist mirrors the
+  database's own readiness assertion; stage add/edit/delete/reorder, task
+  editor (kind, minutes, target URL, 3 localizations, hints, skills,
+  assessment + options), lifecycle bar with archive-impact interlock.
+- German keys: the whole `admin.*` block in `messages/de.json` is already
+  written for **all six routes**, including the ones not built yet.
 
 **Half-finished:**
-- Nothing.
+- Nothing. Tree is green: `tsc` clean, `eslint` clean on my paths,
+  `smoke.mjs` 47/47.
 
 **Next, in order:**
-1. `src/shared/data/content.ts` — reads + writes + lifecycle
-2. `/admin/courses/[courseId]/versions/[versionId]` — Content Studio
-3. `/admin/courses` — course list
-4. `/admin/courses/new`
-5. `/admin/courses/[courseId]`
-6. `/admin` — dashboard
-7. `/admin/tasks` — task inventory
+1. `/admin/courses` — course list (keys: `admin.courses.*`)
+2. `/admin/courses/new` (keys: `admin.courseNew.*`)
+3. `/admin/courses/[courseId]` (keys: `admin.course.*`)
+4. `/admin` — dashboard (keys: `admin.dashboard.*`)
+5. `/admin/tasks` — task inventory (keys: `admin.taskInventory.*`)
+
+Every data function these need already exists in `content.ts`:
+`listAdminCourses`, `getAdminCourse`, `listAdminTasks`, `getAdminDashboard`,
+`createCourse`, `updateCourseMeta`, `setCourseState`, `upsertCourseLocalization`,
+`createVersion` — plus the matching actions in `features/content/actions.ts`.
+
+**How to check your work:**
+```bash
+NEXT_DIST_DIR=.next-ws5 DITELE_APP_ORIGIN=http://127.0.0.1:3105 npm run dev -- --port 3105
+node --env-file=.env.local scripts/ws5-routes.mjs     # every WS-5 route incl. the studio
+MSYS_NO_PATHCONV=1 node --env-file=.env.local scripts/ws5-peek.mjs "/admin/courses" 2000
+```
+`ws5-routes.mjs` reports a route still showing the WS-0 stub as a FAIL, so the
+remaining work is visible at a glance.
 
 **Blocked on:**
 - Nothing.
