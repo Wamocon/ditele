@@ -159,7 +159,21 @@ export const isAttemptLocked = (state: string | undefined) =>
 
 /* ── The defect report ───────────────────────────────────────────────────── */
 
-/** Round-tripped through `attempt_drafts.evidence_draft` so the form survives a reload. */
+/**
+ * Round-tripped through `attempt_drafts.evidence_draft` so the form survives a
+ * reload.
+ *
+ * **WS-10 added the last four fields** to give the report full Jira parity
+ * (05_… §G3+G4). Every one of them is `.default()`ed, which is what makes the
+ * change safe against a live database: `evidence_draft` is `jsonb` and holds
+ * drafts written before these fields existed, so parsing an old draft fills the
+ * new keys rather than failing and blanking a learner's work.
+ *
+ * They are deliberately **not** in `isDefectComplete`. The five original fields
+ * are what a trainer needs in order to act; making a label mandatory would
+ * block a submit that used to succeed, which is exactly the silent regression
+ * this phase is most exposed to.
+ */
 export const DefectReportSchema = z.object({
   summary: z.string().default(""),
   severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
@@ -167,6 +181,14 @@ export const DefectReportSchema = z.object({
   steps: z.string().default(""),
   expected: z.string().default(""),
   actual: z.string().default(""),
+  /** Free-text context. `steps`/`expected`/`actual` stay separate — they are the teaching. */
+  description: z.string().default(""),
+  /** `bug_categories` codes. The canonical list is `features/arena/ticket/labels.ts`. */
+  labels: z.array(z.string()).default([]),
+  /** Browser + viewport, prefilled from `navigator` and editable. */
+  environment: z.string().default(""),
+  /** `evidence_uploads.id` values for attached screenshots. */
+  screenshotIds: z.array(z.string()).default([]),
 });
 
 export type DefectReport = z.infer<typeof DefectReportSchema>;
@@ -178,4 +200,8 @@ export const EMPTY_DEFECT: DefectReport = {
   steps: "",
   expected: "",
   actual: "",
+  description: "",
+  labels: [],
+  environment: "",
+  screenshotIds: [],
 };
