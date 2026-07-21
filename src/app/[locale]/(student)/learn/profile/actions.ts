@@ -109,11 +109,12 @@ export async function saveNotificationPreferenceAction(
 ): Promise<ProfileFormState> {
   const locale = String(formData.get("locale") ?? "de");
   await guard(locale);
-  const t = (await getWs3Messages(locale)).learn.profile;
+  const messages = await getWs3Messages(locale);
+  const t = messages.learn.profile;
 
   const family = String(formData.get("family") ?? "");
   if (!isFamily(family)) {
-    return { error: "Unbekannte Benachrichtigungsart.", success: null, fieldErrors: {} };
+    return { error: messages.learn.shared.invalidRequest, success: null, fieldErrors: {} };
   }
 
   const result = await saveNotificationFamilyPreference({

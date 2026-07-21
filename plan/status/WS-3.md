@@ -122,16 +122,35 @@ Updated: 2026-07-21 · Chat: **#1**
 
 ## Routes
 
+**Legend.** ✅ = verified by loading the route as a signed-in account and reading
+what came back. **⚙ = built to the spec but not eyeballed in a browser** — no
+browser was available in this session, so the responsive, dark-mode and keyboard
+columns are honest "built correctly, unverified", not "checked". **WS-7's sweep
+still has to look at these.** Overstating them would hide exactly the work WS-7
+exists to do.
+
 | Route | Built | Real data | Loading | Empty | Error | 375px | Dark | Keyboard |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| `/learn/notifications` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/learn/questions` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/learn/questions/new` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/learn/questions/[questionId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/learn/profile` | ✅ | ✅ | ✅ | n/a | ✅ | ✅ | ✅ | ✅ |
-| `/learn/enroll/[courseId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/learn/history` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/learn/certificates` | ✅ | ⚠️ empty | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/learn/notifications` | ✅ | ✅ | ✅ | ✅ | ✅ | ⚙ | ⚙ | ⚙ |
+| `/learn/questions` | ✅ | ✅ | ✅ | ✅ | ✅ | ⚙ | ⚙ | ⚙ |
+| `/learn/questions/new` | ✅ | ✅ | ✅ | ✅ | ✅ | ⚙ | ⚙ | ⚙ |
+| `/learn/questions/[questionId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ⚙ | ⚙ | ⚙ |
+| `/learn/profile` | ✅ | ✅ | ✅ | n/a | ✅ | ⚙ | ⚙ | ⚙ |
+| `/learn/enroll/[courseId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ⚙ | ⚙ | ⚙ |
+| `/learn/history` | ✅ | ✅ | ✅ | ✅ | ✅ | ⚙ | ⚙ | ⚙ |
+| `/learn/certificates` | ✅ | ⚠️ 0 rows exist | ✅ | ✅ | ✅ | ⚙ | ⚙ | ⚙ |
+
+**What "verified" means per column, so the next chat can trust or redo it:**
+- *Real data* — loaded as `learner1@ditele.local` (the account that actually has
+  questions and notifications) and read the rendered text.
+- *Empty* — loaded as `learner@ditele.local`, which has 0 questions and 0
+  certificates, and confirmed the empty state rather than a blank page.
+- *Error* — the not-found path was forced with a foreign question id and a
+  non-existent course id; both render their own state, not a crash.
+- *375px / Dark / Keyboard* — built to the rules (mobile-first flex/grid, no
+  fixed widths, `DataTable` switches to cards below `md`, only `globals.css`
+  tokens so dark mode follows automatically, every tap target ≥44px,
+  `:focus-visible` comes from `globals.css`). **Not opened in a browser.**
 
 ## Data functions added
 
@@ -163,9 +182,19 @@ Updated: 2026-07-21 · Chat: **#1**
 ## Gates
 
 - [x] `npx tsc --noEmit` — no errors in WS-3 files
-- [x] `npx eslint` on WS-3 paths — clean
+- [x] `npx eslint .` — clean (the single warning is in WS-5's `scripts/ws5-probe3.mjs`)
 - [x] `node scripts/smoke.mjs` — **47/47 routes OK**
-- [x] committed
+- [x] committed after every route
+
+**Verified by hand, beyond the gates:**
+- `mark_notification_read` really flips `read_at` and bumps `row_version`; the
+  page re-renders with one fewer unread.
+- `update_own_profile` and `set_notification_family_preferences` both accept the
+  exact arguments this layer sends; `expected_version: 0` creates the three
+  missing preference rows at version 1.
+- `/en/...` and `/ru/...` render WS-3's screens in German (no key is missing,
+  nothing crashes) while dates follow the requested locale — `21/07/2026` under
+  `/en`. `en.json` and `ru.json` are untouched, as instructed.
 
 > ⚠️ `tsc --noEmit` on the whole tree is **not** green: other chats have
 > in-flight errors in `(auth)/_components/*` and `features/content/model.ts`.

@@ -6,6 +6,7 @@ import {
   markEveryNotificationRead,
   markOneNotificationRead,
 } from "@/shared/data/notifications";
+import { getWs3Messages } from "@/features/questions/i18n";
 
 /**
  * A layout guard does not protect a POST (MASTER_PLAN §9.3), so every action
@@ -28,7 +29,9 @@ export async function markReadAction(
   await guard(locale);
 
   const id = String(formData.get("notificationId") ?? "");
-  if (!id) return { error: "Ungültige Benachrichtigung." };
+  if (!id) {
+    return { error: (await getWs3Messages(locale)).learn.shared.invalidRequest };
+  }
 
   const result = await markOneNotificationRead(id);
   if (!result.ok) return { error: result.error.message };

@@ -71,7 +71,8 @@ export default async function EnrollPage({
             {course.estimatedMinutes !== null && (
               <span className="inline-flex items-center gap-1.5">
                 <Clock className="size-4" aria-hidden />
-                <span className="tabular">{course.estimatedMinutes}</span> min
+                <span className="tabular">{course.estimatedMinutes}</span>{" "}
+                {messages.learn.shared.minutesShort}
               </span>
             )}
             {course.taskCount !== null && (

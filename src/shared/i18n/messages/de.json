@@ -739,7 +739,9 @@
       "saving": "Wird gespeichert…",
       "unknownCourse": "Unbekannter Kurs",
       "unknownTask": "Unbekannte Aufgabe",
-      "unknownPerson": "Unbekannt"
+      "unknownPerson": "Unbekannt",
+      "invalidRequest": "Die Anfrage war ungültig. Bitte lade die Seite neu.",
+      "minutesShort": "Min."
     }
   },
   "trainer": {

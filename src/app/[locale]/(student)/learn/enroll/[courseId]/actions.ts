@@ -22,10 +22,12 @@ export async function requestEnrollmentAction(
   // A layout guard does not protect a POST.
   await requireRole(["student", "trainer", "admin"], locale);
 
-  const courseId = String(formData.get("courseId") ?? "");
-  if (!courseId) return { error: "Unbekannter Kurs.", success: null };
+  const messages = await getWs3Messages(locale);
+  const t = messages.learn.enroll;
 
-  const t = (await getWs3Messages(locale)).learn.enroll;
+  const courseId = String(formData.get("courseId") ?? "");
+  if (!courseId) return { error: messages.learn.shared.invalidRequest, success: null };
+
   const note = String(formData.get("note") ?? "");
 
   const result = await requestCourseEnrollment({ courseId, requestNote: note });
