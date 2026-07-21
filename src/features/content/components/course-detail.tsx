@@ -137,6 +137,45 @@ export function CourseDetail({
         </div>
       </Card>
 
+      {/* ── availability ──────────────────────────────────────────────────
+          The lifecycle bar governs a *version* (draft → in review → published).
+          This governs the *course*: whether the catalogue offers it at all. Two
+          separate axes — a published version on an inactive course is invisible,
+          which is exactly what an admin wants while preparing the next intake. */}
+      {!archived && (
+        <Card className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>{s.sectionAvailability}</CardTitle>
+            <StatusBadge state={course.state} locale={locale} />
+          </div>
+          <p className="text-[13px] leading-5 text-(--color-fg-muted)">{s.availabilityHint}</p>
+          <div>
+            {course.state === "active" ? (
+              <Button
+                variant="outline"
+                loading={pending}
+                onClick={() =>
+                  run(() =>
+                    setCourseStateAction({ locale, courseId: course.id, state: "inactive" })
+                  )
+                }
+              >
+                {s.deactivate}
+              </Button>
+            ) : (
+              <Button
+                loading={pending}
+                onClick={() =>
+                  run(() => setCourseStateAction({ locale, courseId: course.id, state: "active" }))
+                }
+              >
+                {s.activate}
+              </Button>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* ── localizations ─────────────────────────────────────────────── */}
       <Card className="flex flex-col gap-4">
         <div>

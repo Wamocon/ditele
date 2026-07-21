@@ -731,6 +731,13 @@ export async function updateSupportIssueState(args: {
 
 /* ── Own profile (admin) ────────────────────────────────────────────────── */
 
+export interface ProfileBadge {
+  id: string;
+  awardedAt: string;
+  code: string;
+  label: string;
+}
+
 export interface OwnProfile {
   userId: string;
   displayName: string;
@@ -739,6 +746,13 @@ export interface OwnProfile {
   email: string | null;
   roleCode: string | null;
   rowVersion: number;
+  /** Storage key in the public `avatars` bucket, or null for initials. */
+  avatarObjectKey: string | null;
+  createdAt: string;
+  lastSeenAt: string | null;
+  state: string;
+  /** Empty until badge rules exist — the page says so rather than hiding it. */
+  badges: ProfileBadge[];
 }
 
 export async function getOwnProfile(userId: string): Promise<Result<OwnProfile>> {
@@ -747,7 +761,7 @@ export async function getOwnProfile(userId: string): Promise<Result<OwnProfile>>
   const [profileRes, roleRes, authRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("user_id, display_name, locale, timezone, row_version")
+      .select("user_id, display_name, locale, timezone, row_version, avatar_object_key, created_at, last_seen_at, state")
       .eq("user_id", userId)
       .maybeSingle(),
     supabase
@@ -762,6 +776,15 @@ export async function getOwnProfile(userId: string): Promise<Result<OwnProfile>>
   if (profileRes.error) return err(mapPostgrestError(profileRes.error));
   if (!profileRes.data) return err({ code: "PGRST116", message: "Nicht gefunden.", retryable: false });
 
+  // Badges are read here rather than in a second call so the profile page stays
+  // one round trip. The tables exist but no badge rules are defined yet, so this
+  // is normally empty — the page says so honestly instead of hiding the section.
+  const awards = await supabase
+    .from("badge_awards")
+    .select("id, awarded_at, badges(code, labels)")
+    .eq("learner_id", userId)
+    .order("awarded_at", { ascending: false });
+
   return ok({
     userId: profileRes.data.user_id,
     displayName: profileRes.data.display_name,
@@ -770,6 +793,16 @@ export async function getOwnProfile(userId: string): Promise<Result<OwnProfile>>
     email: authRes.data.user?.email ?? null,
     roleCode: roleRes.data?.[0]?.roles?.code ?? null,
     rowVersion: profileRes.data.row_version,
+    avatarObjectKey: profileRes.data.avatar_object_key ?? null,
+    createdAt: profileRes.data.created_at,
+    lastSeenAt: profileRes.data.last_seen_at ?? null,
+    state: profileRes.data.state,
+    badges: (awards.data ?? []).map((a) => ({
+      id: a.id,
+      awardedAt: a.awarded_at,
+      code: a.badges?.code ?? "?",
+      label: (a.badges?.labels as Record<string, string> | null)?.de ?? a.badges?.code ?? "?",
+    })),
   });
 }
 

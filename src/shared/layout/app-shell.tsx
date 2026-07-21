@@ -53,9 +53,21 @@ async function moreLabelFor(locale: string): Promise<string> {
   return nav.more ?? "Mehr";
 }
 
+/** Accessible name for the footer nav landmark. */
+async function footerNavLabelFor(locale: string): Promise<string> {
+  const active = isLocale(locale) ? locale : defaultLocale;
+  const messages = await getMessages(active);
+  const common = messages.common as Record<string, string | undefined>;
+  return common.footerNav ?? "Fußzeilennavigation";
+}
+
 export async function AppShell({ locale, role, displayName, email, unreadCount, children, bleed = false }: AppShellProps) {
   const items = await localiseNav(locale, role ? navForRole(role) : PUBLIC_NAV);
   const moreLabel = await moreLabelFor(locale);
+  // The footer always shows the public links, whatever the role — so it needs
+  // its own localised copy rather than reusing `items`.
+  const footerItems = await localiseNav(locale, PUBLIC_NAV);
+  const footerNavLabel = await footerNavLabelFor(locale);
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -72,7 +84,7 @@ export async function AppShell({ locale, role, displayName, email, unreadCount, 
         {bleed ? children : <Container className="py-6 lg:py-8">{children}</Container>}
       </main>
 
-      <AppFooter locale={locale} />
+      <AppFooter locale={locale} items={footerItems} navLabel={footerNavLabel} />
       {role && <MobileTabBar locale={locale} role={role} items={items} moreLabel={moreLabel} />}
     </div>
   );

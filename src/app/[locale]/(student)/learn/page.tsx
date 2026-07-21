@@ -8,7 +8,15 @@ import { listMyLearningCourses, type LearningCourseSummary } from "@/shared/data
 import { ContinueCard, CourseCard, ProgressRing, StatTile } from "@/features/learning/course-ui";
 import { format, learnStrings } from "@/features/learning/i18n";
 
-export const metadata: Metadata = { title: "Übersicht · DiTeLe" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const s = learnStrings(locale);
+  return { title: `${s.dashboard.title} · DiTeLe`, description: s.dashboard.description };
+}
 
 /**
  * The course the "Weiter lernen" card should point at.
@@ -38,7 +46,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     return (
       <>
         <PageHeader title={s.dashboard.title} />
-        <ErrorState message={result.error.message} />
+        <ErrorState message={result.error.message} locale={locale} />
       </>
     );
   }

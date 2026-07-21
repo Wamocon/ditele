@@ -11,7 +11,15 @@ import {
 import { TaskListItem } from "@/features/learning/stage-list";
 import { learnStrings } from "@/features/learning/i18n";
 
-export const metadata: Metadata = { title: "Aufgaben · DiTeLe" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const s = learnStrings(locale);
+  return { title: `${s.tasks.title} · DiTeLe`, description: s.tasks.description };
+}
 
 /**
  * Every task from every enrolled course in one list, open work first.
@@ -46,7 +54,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     return (
       <>
         <PageHeader title={s.tasks.title} />
-        <ErrorState message={courses.error.message} />
+        <ErrorState message={courses.error.message} locale={locale} />
       </>
     );
   }

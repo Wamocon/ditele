@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { createServerClient } from "@/shared/database/server";
+import { uiStrings } from "@/shared/i18n/ui-strings";
 import { fromSupabase, err, ok, type Result } from "./result";
 import {
   getMyLearningCourse as rpcGetMyLearningCourse,
@@ -201,12 +202,21 @@ const SubmissionRow = z.object({
 
 /* ── Reads ───────────────────────────────────────────────────────────────── */
 
-function parse<T>(schema: z.ZodType<T>, value: unknown, what: string): Result<T> {
+/**
+ * `what` names the shape for the server log; it never reaches the screen.
+ *
+ * It used to: the message read `Die Daten für „Kursdetail“ haben ein
+ * unerwartetes Format.` and rendered verbatim inside the error boundary, so a
+ * learner on /en or /ru hit a German sentence built from an internal row name.
+ * The user-facing half now comes from `learn.shared.loadError`.
+ */
+function parse<T>(schema: z.ZodType<T>, value: unknown, what: string, locale: string): Result<T> {
   const parsed = schema.safeParse(value);
   if (!parsed.success) {
+    console.error(`[learning] unexpected shape for "${what}"`, parsed.error.issues);
     return err({
       code: "SHAPE",
-      message: `Die Daten für „${what}“ haben ein unerwartetes Format.`,
+      message: uiStrings(locale).learnShared.loadError,
       retryable: false,
     });
   }

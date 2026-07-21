@@ -30,7 +30,7 @@ export default async function QuestionsPage({ params }: { params: Promise<{ loca
     return (
       <>
         <PageHeader title={t.title} description={t.description} actions={askAction} />
-        <ErrorState title={messages.learn.shared.loadErrorTitle} message={result.error.message} />
+        <ErrorState title={messages.learn.shared.loadErrorTitle} message={result.error.message} locale={locale} />
       </>
     );
   }

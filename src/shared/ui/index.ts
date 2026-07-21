@@ -23,4 +23,5 @@ export { useReducedMotion } from "./use-reduced-motion";
 export { Spotlight, type SpotlightProps } from "./spotlight";
 export { Reveal, type RevealProps } from "./reveal";
 export { CountUp, type CountUpProps } from "./count-up";
+export { StepList, SectionLabel, type Step, type StepState, type StepListProps } from "./step-list";
 export { VideoEmbed, detectProvider, type VideoProvider } from "./video-embed";

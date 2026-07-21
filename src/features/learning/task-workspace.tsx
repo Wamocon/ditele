@@ -12,9 +12,12 @@ import {
   CardTitle,
   ConfirmDialog,
   Field,
+  SectionLabel,
   StatusBadge,
+  StepList,
   Textarea,
   cn,
+  type Step,
 } from "@/shared/ui";
 import {
   EMPTY_DEFECT,
@@ -187,6 +190,56 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
     }
     return answerText.trim().length > 0 ? null : s.validationAnswer;
   }, [task.assessment, selectedOptionIds, isPractice, defect, answerText, s]);
+
+  /**
+   * The four steps of a task, each derived from state we actually hold.
+   *
+   * Deliberately not modelling "watched the video" or "read the script": there
+   * is no persistence behind either, so those rows could only ever guess. A
+   * checklist that guesses is worse than a shorter one that does not — the
+   * learner stops trusting every row once one of them is wrong.
+   */
+  const steps = useMemo<Step[]>(() => {
+    const state = attempt?.state;
+
+    /**
+     * How far along this attempt is, as a single monotonic index.
+     *
+     * Deriving each row from its own independent boolean looked simpler but
+     * produced impossible lists: an *accepted* attempt is read-only, so the
+     * form fields are empty and the `validation` gate reported "answer not
+     * written" — giving a checklist where step 2 was still in progress while
+     * steps 3 and 4 were already done. One index cannot contradict itself.
+     *
+     * `revision_required` deliberately falls back to 1. The trainer has sent it
+     * back, so the answer genuinely is the open step again; the status badge
+     * beside it carries the "revision required" meaning.
+     */
+    const reached =
+      attempt === null
+        ? 0
+        : state === "accepted"
+          ? 4
+          : state === "submitted" || state === "resubmitted"
+            ? 3
+            : state === "revision_required"
+              ? 1
+              : validation === null
+                ? 2
+                : 1;
+
+    return [
+      { id: "started", label: s.stepStarted, hint: s.stepStartedHint },
+      { id: "answer", label: s.stepAnswer, hint: s.stepAnswerHint },
+      { id: "submitted", label: s.stepSubmitted, hint: s.stepSubmittedHint },
+      { id: "reviewed", label: s.stepReviewed, hint: s.stepReviewedHint },
+    ].map((row, i) => ({
+      ...row,
+      // Everything before the index is done, the row at it is where you are,
+      // everything after is still ahead. At most one "current", always.
+      state: i < reached ? "done" : i === reached ? "current" : "pending",
+    }));
+  }, [attempt, validation, s]);
 
   const onRequestSubmit = () => {
     setShowErrors(true);
@@ -490,16 +543,35 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
           {task.videoUrl && <VideoEmbed url={task.videoUrl} title={task.title} />}
 
           {task.documentUrl && (
-            <a
-              href={task.documentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 text-[15px] font-semibold transition-colors hover:border-(--color-brand) hover:bg-(--color-surface-2)"
-            >
-              <FileText className="size-5 shrink-0 text-(--color-brand)" aria-hidden />
-              <span className="flex-1">Skript (PDF) öffnen</span>
-              <ExternalLink className="size-4 shrink-0 text-(--color-fg-muted)" aria-hidden />
-            </a>
+            /* Material row: a tinted type tile, the name with its format
+               underneath, and the action as a pill on the right. The tile makes
+               the file type identifiable before the label is read. */
+            <div className="flex flex-col gap-2">
+              <SectionLabel>{s.materialsTitle}</SectionLabel>
+              <a
+                href={task.documentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 rounded-(--radius-lg) border border-(--color-border) bg-(--color-bg) p-3 transition-colors hover:border-(--color-border-strong) hover:bg-(--color-surface)"
+              >
+                <span
+                  aria-hidden
+                  className="flex size-10 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-danger-soft) text-(--color-danger)"
+                >
+                  <FileText className="size-5" />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-[14px] font-semibold leading-5">
+                    {s.documentOpen}
+                  </span>
+                  <span className="text-[12.5px] leading-5 text-(--color-fg-muted)">PDF</span>
+                </span>
+                <span className="flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-(--color-border) px-3 text-[13px] font-semibold transition-colors group-hover:border-(--color-brand) group-hover:text-(--color-brand)">
+                  {s.materialOpen}
+                  <ExternalLink className="size-3.5" aria-hidden />
+                </span>
+              </a>
+            </div>
           )}
 
           {isPractice && task.targetUrl && <IframePanel src={task.targetUrl} strings={s} />}
@@ -533,6 +605,13 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
             activeTab === "answer" ? "flex" : "hidden lg:flex"
           )}
         >
+          {/* Where the learner is on this task, before the form itself. Steps
+              are derived from real attempt state — see the `steps` memo. */}
+          <Card className="flex flex-col gap-3">
+            <SectionLabel>{s.stepsTitle}</SectionLabel>
+            <StepList steps={steps} label={s.stepsTitle} />
+          </Card>
+
           {attempt === null ? (
             <Card className="flex flex-col gap-3">
               <CardTitle>{s.notStartedTitle}</CardTitle>

@@ -42,7 +42,7 @@ export default async function QuestionThreadPage({
             }
           />
         ) : (
-          <ErrorState title={messages.learn.shared.loadErrorTitle} message={result.error.message} />
+          <ErrorState title={messages.learn.shared.loadErrorTitle} message={result.error.message} locale={locale} />
         )}
       </>
     );

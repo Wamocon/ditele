@@ -7,7 +7,15 @@ import { listMyLearningCourses } from "@/shared/data/learning";
 import { CourseCard } from "@/features/learning/course-ui";
 import { learnStrings } from "@/features/learning/i18n";
 
-export const metadata: Metadata = { title: "Meine Kurse · DiTeLe" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const s = learnStrings(locale);
+  return { title: `${s.courses.title} · DiTeLe`, description: s.courses.description };
+}
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -18,7 +26,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     return (
       <>
         <PageHeader title={s.courses.title} />
-        <ErrorState message={result.error.message} />
+        <ErrorState message={result.error.message} locale={locale} />
       </>
     );
   }

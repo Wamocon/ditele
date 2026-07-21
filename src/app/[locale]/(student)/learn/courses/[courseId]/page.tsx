@@ -6,7 +6,15 @@ import { ProgressBar } from "@/features/learning/course-ui";
 import { StageList } from "@/features/learning/stage-list";
 import { format, learnStrings } from "@/features/learning/i18n";
 
-export const metadata: Metadata = { title: "Kursdetail · DiTeLe" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const s = learnStrings(locale);
+  return { title: `${s.course.breadcrumb} · DiTeLe` };
+}
 
 export default async function Page({
   params,
@@ -21,7 +29,7 @@ export default async function Page({
     return (
       <>
         <PageHeader title={s.course.breadcrumb} />
-        <ErrorState message={result.error.message} />
+        <ErrorState message={result.error.message} locale={locale} />
       </>
     );
   }

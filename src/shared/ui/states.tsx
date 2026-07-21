@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
+import { uiStrings } from "@/shared/i18n/ui-strings";
 import { cn } from "./cn";
 import { Button } from "./button";
 
@@ -82,14 +83,28 @@ export interface ErrorStateProps {
   /** Omit to render without a retry button (e.g. a 403). */
   onRetry?: () => void;
   className?: string;
+  /**
+   * Active locale. Supplies the title, the message and the retry label from
+   * `errors.*` / `common.*` when the caller does not pass them explicitly.
+   *
+   * Optional so the ~50 call sites outside the learner tree keep their current
+   * German output until they are localised in turn; without it this component
+   * rendered "Etwas ist schiefgelaufen" and "Erneut versuchen" on /en and /ru.
+   */
+  locale?: string;
 }
 
 export function ErrorState({
-  title = "Etwas ist schiefgelaufen",
-  message = "Die Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+  title,
+  message,
   onRetry,
   className,
+  locale,
 }: ErrorStateProps) {
+  const s = uiStrings(locale);
+  const resolvedTitle = title ?? s.errors.title;
+  const resolvedMessage = message ?? s.errors.description;
+
   return (
     <div
       role="alert"
@@ -99,11 +114,11 @@ export function ErrorState({
         className
       )}
     >
-      <p className="text-[18px] font-semibold leading-6 text-(--color-danger)">{title}</p>
-      <p className="max-w-prose text-[13px] leading-5 text-(--color-fg-muted)">{message}</p>
+      <p className="text-[18px] font-semibold leading-6 text-(--color-danger)">{resolvedTitle}</p>
+      <p className="max-w-prose text-[13px] leading-5 text-(--color-fg-muted)">{resolvedMessage}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry} className="mt-1">
-          Erneut versuchen
+          {s.common.retry}
         </Button>
       )}
     </div>

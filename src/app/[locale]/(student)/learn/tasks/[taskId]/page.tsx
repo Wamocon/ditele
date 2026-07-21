@@ -5,7 +5,15 @@ import { getTaskWorkspace } from "@/shared/data/learning";
 import { TaskWorkspace } from "@/features/learning/task-workspace";
 import { learnStrings } from "@/features/learning/i18n";
 
-export const metadata: Metadata = { title: "Aufgabe · DiTeLe" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const s = learnStrings(locale);
+  return { title: `${s.task.breadcrumb} · DiTeLe` };
+}
 
 /**
  * ⭐⭐ The task workspace route — WS-2's signature screen.
@@ -28,7 +36,7 @@ export default async function Page({
     return (
       <>
         <PageHeader title={s.task.breadcrumb} />
-        <ErrorState message={result.error.message} />
+        <ErrorState message={result.error.message} locale={locale} />
       </>
     );
   }

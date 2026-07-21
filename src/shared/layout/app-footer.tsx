@@ -2,13 +2,28 @@ import type { Route } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Container } from "./container";
-import { PUBLIC_NAV } from "./nav-config";
+import type { NavItem } from "./nav-config";
+
+export interface AppFooterProps {
+  locale: string;
+  /**
+   * The public links, already resolved through the active locale by AppShell.
+   *
+   * This used to read `PUBLIC_NAV` directly, which meant the footer rendered
+   * the hardcoded German `label` ("Kurse", "Über uns", "Datenschutz") on every
+   * page in every locale — the header next to it was translated, the footer
+   * under it was not.
+   */
+  items: NavItem[];
+  /** Accessible name for the footer nav, from `common.footerNav`. */
+  navLabel: string;
+}
 
 /**
  * Hidden below lg — a footer under a fixed tab bar is unreachable dead weight.
  * Its links move into the "Mehr" sheet on mobile.
  */
-export function AppFooter({ locale }: { locale: string }) {
+export function AppFooter({ locale, items, navLabel }: AppFooterProps) {
   const year = new Date().getFullYear();
 
   return (
@@ -37,9 +52,9 @@ export function AppFooter({ locale }: { locale: string }) {
             height={43}
             className="theme-dark-only h-[43px] w-auto"
           />
-          <nav aria-label="Fußzeilennavigation">
+          <nav aria-label={navLabel}>
             <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              {PUBLIC_NAV.filter((i) => i.path !== "").map((item) => (
+              {items.filter((i) => i.path !== "").map((item) => (
                 <li key={item.path}>
                   <Link
                     href={`/${locale}${item.path}` as Route}

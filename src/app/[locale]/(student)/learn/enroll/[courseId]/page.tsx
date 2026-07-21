@@ -46,6 +46,7 @@ export default async function EnrollPage({
           <ErrorState
             title={messages.learn.shared.loadErrorTitle}
             message={courseResult.error.message}
+            locale={locale}
           />
         )}
       </>
