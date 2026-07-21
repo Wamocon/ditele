@@ -1,19 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { ErrorState } from "@/shared/ui";
+import { RouteError } from "./_components/route-error";
 
-export default function Error({
-  error,
-  reset,
-}: {
+export default function Error(props: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    // digest is the correlation id you quote in a bug report.
-    console.error(error);
-  }, [error]);
-
-  return <ErrorState message={error.message} onRetry={reset} />;
+  return <RouteError {...props} />;
 }

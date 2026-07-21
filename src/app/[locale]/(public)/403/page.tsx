@@ -1,19 +1,56 @@
-import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import type { Metadata } from "next";
+import type { Route } from "next";
+import Link from "next/link";
+import { ShieldAlert } from "lucide-react";
+
+import { Button } from "@/shared/ui";
+import { getPrincipal } from "@/shared/data/session";
+import { getDict } from "../_lib/i18n";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const dict = getDict(locale);
+  return { title: `${dict.public.forbidden.title} · DiTeLe`, robots: { index: false } };
+}
 
 /**
- * STUB — owned by WS-1. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
+ * Where `requireRole()` sends anyone whose role does not match the route
+ * (MASTER_PLAN §9.3, SEC-1). Friendly, branded, and always offers a way out.
  */
-export default function Page() {
+export default async function ForbiddenPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = getDict(locale).public.forbidden;
+  const session = await getPrincipal();
+
   return (
-    <>
-      <PageHeader title="Kein Zugriff" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-1</p>
-      </Card>
-    </>
+    <div className="mx-auto flex max-w-[520px] flex-col items-center gap-4 py-16 text-center">
+      <span className="flex size-14 items-center justify-center rounded-full bg-[--color-danger-soft] text-[--color-danger]">
+        <ShieldAlert className="size-7" aria-hidden />
+      </span>
+
+      <p className="tabular text-[40px] font-bold leading-[44px] text-[--color-brand]">403</p>
+      <h1 className="text-[22px] font-semibold leading-7">{t.title}</h1>
+      <p className="text-[15px] leading-6 text-[--color-fg-muted]">{t.body}</p>
+
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+        <Link href={`/${locale}` as Route}>
+          <Button>{t.home}</Button>
+        </Link>
+        {/* Signing in as someone else is the actual fix when a guard bounced you. */}
+        {session && (
+          <Link href={`/${locale}/login` as Route}>
+            <Button variant="outline">{t.login}</Button>
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }

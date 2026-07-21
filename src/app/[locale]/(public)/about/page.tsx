@@ -1,19 +1,59 @@
-import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import type { Metadata } from "next";
 
-/**
- * STUB — owned by WS-1. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
- */
-export default function Page() {
+import { PageHeader } from "@/shared/layout";
+import { Card, CardTitle, CardDescription } from "@/shared/ui";
+import { getDict } from "../_lib/i18n";
+import { ProseSection } from "../_components/static-page";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const dict = getDict(locale);
+  return { title: `${dict.public.about.title} · DiTeLe`, description: dict.public.about.lead };
+}
+
+export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = getDict(locale).public.about;
+
+  const approach = [
+    { title: t.approach1Title, body: t.approach1Body },
+    { title: t.approach2Title, body: t.approach2Body },
+    { title: t.approach3Title, body: t.approach3Body },
+  ];
+
   return (
     <>
-      <PageHeader title="Über uns" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-1</p>
-      </Card>
+      <PageHeader title={t.title} description={t.lead} />
+
+      <div className="flex flex-col gap-8">
+        <ProseSection title={t.missionTitle}>
+          <p>{t.missionBody}</p>
+        </ProseSection>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-[22px] font-semibold leading-7">{t.approachTitle}</h2>
+          <div className="grid gap-4 md:grid-cols-3 lg:gap-5">
+            {approach.map((item) => (
+              <Card key={item.title} className="flex flex-col gap-2">
+                <CardTitle>{item.title}</CardTitle>
+                <CardDescription className="text-[15px] leading-6">{item.body}</CardDescription>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <ProseSection title={t.audienceTitle}>
+          <p>{t.audienceBody}</p>
+        </ProseSection>
+
+        <ProseSection title={t.contactTitle}>
+          <p>{t.contactBody}</p>
+        </ProseSection>
+      </div>
     </>
   );
 }
