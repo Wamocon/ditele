@@ -29,7 +29,12 @@ async function signIn(email) {
   return client;
 }
 
-const learner = await signIn("learner@ditele.local");
+// learner1, NOT learner@. learner@ has already had a hunt accepted by
+// ws8-roundtrip.mjs, so their gate is legitimately open and asserting "locked"
+// against them would fail for the right reason — which is a confusing way to
+// report success. learner1 is enrolled in the same cohort and has done no
+// hunt, so they hold the pre-unlock state permanently.
+const learner = await signIn("learner1@ditele.local");
 
 const { data: course, error } = await learner.rpc("get_my_learning_course", {
   p_course_id: COURSE,
