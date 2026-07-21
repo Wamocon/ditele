@@ -148,7 +148,10 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
           {steps.map((step, index) => (
             <Reveal key={step.title} delayMs={index * 40}>
               <li className="flex h-full flex-col gap-2 rounded-[--radius-lg] border border-[--color-border] bg-[--color-bg] p-4 lg:p-5">
-                <span className="tabular flex size-8 items-center justify-center rounded-full bg-[--color-brand] text-[13px] font-semibold text-[--color-brand-fg]">
+                {/* Navy, not red: white on --color-brand is only ~3.4:1 in dark
+                    mode, and 13px bold does not count as large text. Ink against
+                    the page background is 13.4:1 in both themes. */}
+                <span className="tabular flex size-8 items-center justify-center rounded-full bg-[--color-ink] text-[13px] font-semibold text-[--color-bg]">
                   {index + 1}
                 </span>
                 <h3 className="text-[18px] font-semibold leading-6">{step.title}</h3>
