@@ -152,20 +152,20 @@ export default async function Page({
               {p.notifyNoTrainer}
             </span>
           ) : (
-          // ⚠️ `flagLearnerAction` crosses into a Client Component, and a
-          // FUNCTION prop is legal here only because it is a Server Action —
-          // React serialises it as a reference. A plain function would be
-          // refused at render with a digest-only error in a production build,
-          // which reaches the browser as "Etwas ist schiefgelaufen" and nothing
-          // else. WS-11 lost time to exactly that; see plan/status/WS-11.md
-          // learning 4.
-          <ProgressNotify
-            enrollmentId={row.enrollmentId}
-            learnerName={row.learnerName}
-            locale={locale}
-            dict={dict}
-            action={flagLearnerAction}
-          />
+            // ⚠️ `flagLearnerAction` crosses into a Client Component, and a
+            // FUNCTION prop is legal here only because it is a Server Action —
+            // React serialises it as a reference. A plain function would be
+            // refused at render with a digest-only error in a production build,
+            // which reaches the browser as "Etwas ist schiefgelaufen" and
+            // nothing else. WS-11 lost time to exactly that; see
+            // plan/status/WS-11.md learning 4.
+            <ProgressNotify
+              enrollmentId={row.enrollmentId}
+              learnerName={row.learnerName}
+              locale={locale}
+              dict={dict}
+              action={flagLearnerAction}
+            />
           )
         }
       />
