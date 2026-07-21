@@ -119,7 +119,7 @@ export function PreferenceForm({
   return (
     <form
       action={action}
-      className="flex flex-col gap-3 border-b border-[--color-border] py-4 last:border-0 md:flex-row md:items-center md:justify-between"
+      className="flex flex-col gap-3 border-b border-(--color-border) py-4 last:border-0 md:flex-row md:items-center md:justify-between"
     >
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="family" value={preference.family} />

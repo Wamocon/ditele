@@ -46,11 +46,11 @@ export default async function Page({
       <div className="flex flex-col gap-6">
         {/* Progress stays in view while the learner scans the curriculum — on
             desktop, where there is room for it without eating the viewport. */}
-        <div className="z-10 flex flex-col gap-3 rounded-[--radius-lg] border border-[--color-border] bg-[--color-bg] p-4 lg:sticky lg:top-[calc(var(--header-height)+8px)] lg:p-5">
+        <div className="z-10 flex flex-col gap-3 rounded-(--radius-lg) border border-(--color-border) bg-(--color-bg) p-4 lg:sticky lg:top-[calc(var(--header-height)+8px)] lg:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[13px] font-semibold leading-5 tabular-nums">{progressLabel}</p>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
                 {s.course.cohortLabel}: {course.cohortName}
               </span>
               <StatusBadge state={course.cohortState} />

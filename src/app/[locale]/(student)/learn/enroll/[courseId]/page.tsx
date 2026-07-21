@@ -35,7 +35,7 @@ export default async function EnrollPage({
           <EmptyState
             title={t.notFoundTitle}
             description={t.notFoundDescription}
-            icon={<BookOpen className="size-6 text-[--color-fg-subtle]" aria-hidden />}
+            icon={<BookOpen className="size-6 text-(--color-fg-subtle)" aria-hidden />}
             action={
               <LinkButton href={`/${locale}/catalog`} variant="outline">
                 {t.toCatalog}
@@ -61,13 +61,13 @@ export default async function EnrollPage({
 
       <div className="flex flex-col gap-6">
         <Card as="section">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {t.courseLabel}
           </p>
           <CardTitle className="mt-1 text-[22px] leading-7">{course.title}</CardTitle>
           {course.summary && <CardDescription className="mt-2">{course.summary}</CardDescription>}
 
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-[13px] text-[--color-fg-muted]">
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-[13px] text-(--color-fg-muted)">
             {course.estimatedMinutes !== null && (
               <span className="inline-flex items-center gap-1.5">
                 <Clock className="size-4" aria-hidden />
@@ -151,12 +151,12 @@ function EnrollmentStatus({
       </p>
 
       {enrollment.decision_reason && (
-        <p className="mt-3 max-w-[68ch] text-[13px] leading-5 text-[--color-fg-muted]">
+        <p className="mt-3 max-w-[68ch] text-[13px] leading-5 text-(--color-fg-muted)">
           <span className="font-semibold">{t.reason}:</span> {enrollment.decision_reason}
         </p>
       )}
 
-      <p className="mt-3 tabular text-[13px] leading-5 text-[--color-fg-muted]">
+      <p className="mt-3 tabular text-[13px] leading-5 text-(--color-fg-muted)">
         {formatDate(enrollment.decided_at ?? enrollment.created_at, locale)}
       </p>
 

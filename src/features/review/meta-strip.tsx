@@ -16,20 +16,20 @@ export function MetaStrip({ items, className }: { items: MetaItem[]; className?:
   return (
     <dl
       className={cn(
-        "grid grid-cols-2 gap-px overflow-hidden rounded-[--radius-lg] border border-[--color-border] bg-[--color-border]",
+        "grid grid-cols-2 gap-px overflow-hidden rounded-(--radius-lg) border border-(--color-border) bg-(--color-border)",
         "sm:grid-cols-3 lg:grid-cols-6",
         className
       )}
     >
       {items.map((item) => (
-        <div key={item.label} className="flex flex-col gap-0.5 bg-[--color-bg] px-4 py-3">
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+        <div key={item.label} className="flex flex-col gap-0.5 bg-(--color-bg) px-4 py-3">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {item.label}
           </dt>
           <dd
             className={cn(
               "truncate text-[15px] leading-6 tabular",
-              item.emphasis ? "font-semibold text-[--color-brand]" : "text-[--color-fg]"
+              item.emphasis ? "font-semibold text-(--color-brand)" : "text-(--color-fg)"
             )}
             title={item.value}
           >

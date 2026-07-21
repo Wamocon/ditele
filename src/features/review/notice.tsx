@@ -18,10 +18,10 @@ export function Notice({
     <p
       role="status"
       className={cn(
-        "mb-6 flex items-center gap-2 rounded-[--radius-md] px-4 py-3 text-[15px] leading-6",
+        "mb-6 flex items-center gap-2 rounded-(--radius-md) px-4 py-3 text-[15px] leading-6",
         tone === "success"
-          ? "bg-[--color-success-soft] text-[--color-success]"
-          : "bg-[--color-info-soft] text-[--color-info]",
+          ? "bg-(--color-success-soft) text-(--color-success)"
+          : "bg-(--color-info-soft) text-(--color-info)",
         className
       )}
     >

@@ -35,10 +35,10 @@ export function AppHeader({ locale, role, displayName }: AppHeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 h-[--header-height] backdrop-blur-[12px]",
+        "sticky top-0 z-40 h-(--header-height) backdrop-blur-[12px]",
         "bg-[color-mix(in_srgb,var(--color-bg)_85%,transparent)]",
-        "transition-[border-color,box-shadow] duration-[--duration-base]",
-        scrolled ? "border-b border-[--color-border]" : "border-b border-transparent"
+        "transition-[border-color,box-shadow] duration-(--duration-base)",
+        scrolled ? "border-b border-(--color-border)" : "border-b border-transparent"
       )}
     >
       <Container className="flex h-full items-center justify-between gap-4">
@@ -77,14 +77,14 @@ export function AppHeader({ locale, role, displayName }: AppHeaderProps) {
                     href={href as Route}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "relative flex h-[--header-height] items-center px-3 text-[15px] font-semibold",
-                      "transition-colors duration-[--duration-base]",
-                      active ? "text-[--color-brand]" : "text-[--color-fg] hover:text-[--color-brand]"
+                      "relative flex h-(--header-height) items-center px-3 text-[15px] font-semibold",
+                      "transition-colors duration-(--duration-base)",
+                      active ? "text-(--color-brand)" : "text-(--color-fg) hover:text-(--color-brand)"
                     )}
                   >
                     {item.label}
                     {active && (
-                      <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[--color-brand]" />
+                      <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-(--color-brand)" />
                     )}
                   </Link>
                 </li>
@@ -97,7 +97,7 @@ export function AppHeader({ locale, role, displayName }: AppHeaderProps) {
           <ThemeToggle />
           {role ? (
             <span
-              className="flex size-9 items-center justify-center rounded-full bg-[--color-brand] text-[13px] font-semibold text-[--color-brand-fg]"
+              className="flex size-9 items-center justify-center rounded-full bg-(--color-brand) text-[13px] font-semibold text-(--color-brand-fg)"
               title={displayName ?? "Konto"}
             >
               {initials(displayName)}
@@ -105,7 +105,7 @@ export function AppHeader({ locale, role, displayName }: AppHeaderProps) {
           ) : (
             <Link
               href={`/${locale}/login`}
-              className="flex h-9 items-center rounded-[--radius-md] bg-[--color-brand] px-3 text-[13px] font-semibold text-[--color-brand-fg] hover:bg-[--color-brand-hover]"
+              className="flex h-9 items-center rounded-(--radius-md) bg-(--color-brand) px-3 text-[13px] font-semibold text-(--color-brand-fg) hover:bg-(--color-brand-hover)"
             >
               Anmelden
             </Link>

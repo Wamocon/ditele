@@ -44,16 +44,16 @@ export default async function FaqPage({ params }: { params: Promise<{ locale: st
         {entries.map((entry) => (
           <details
             key={entry.q}
-            className="group rounded-[--radius-lg] border border-[--color-border] bg-[--color-bg] open:shadow-[--shadow-sm]"
+            className="group rounded-(--radius-lg) border border-(--color-border) bg-(--color-bg) open:shadow-(--shadow-sm)"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-[15px] font-semibold leading-6 marker:content-none lg:px-5">
               {entry.q}
               <ChevronDown
-                className="size-4 shrink-0 text-[--color-fg-muted] transition-transform duration-[--duration-base] group-open:rotate-180"
+                className="size-4 shrink-0 text-(--color-fg-muted) transition-transform duration-(--duration-base) group-open:rotate-180"
                 aria-hidden
               />
             </summary>
-            <p className="prose-measure px-4 pb-4 text-[15px] leading-6 text-[--color-fg-muted] lg:px-5">
+            <p className="prose-measure px-4 pb-4 text-[15px] leading-6 text-(--color-fg-muted) lg:px-5">
               {entry.a}
             </p>
           </details>

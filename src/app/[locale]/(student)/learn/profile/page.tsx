@@ -57,12 +57,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
         <Section title={t.sectionAccount}>
           <div className="mb-5 flex items-center gap-3">
             <span
-              className="flex size-12 items-center justify-center rounded-full bg-[--color-brand-soft] text-[15px] font-semibold text-[--color-brand]"
+              className="flex size-12 items-center justify-center rounded-full bg-(--color-brand-soft) text-[15px] font-semibold text-(--color-brand)"
               aria-hidden
             >
               {initials(profile.display_name)}
             </span>
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">{t.avatarNotice}</p>
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{t.avatarNotice}</p>
           </div>
 
           <AccountForm
@@ -152,7 +152,7 @@ function Section({
     <Card as="section">
       <h2 className="text-[22px] font-semibold leading-7">{title}</h2>
       {description && (
-        <p className="mt-1 max-w-prose text-[13px] leading-5 text-[--color-fg-muted]">
+        <p className="mt-1 max-w-prose text-[13px] leading-5 text-(--color-fg-muted)">
           {description}
         </p>
       )}

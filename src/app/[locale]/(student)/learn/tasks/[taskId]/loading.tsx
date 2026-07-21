@@ -9,10 +9,10 @@ export default function Loading() {
         <div className="flex flex-col gap-4">
           <Skeleton className="h-5 w-32" />
           <SkeletonText lines={4} className="max-w-[68ch]" />
-          <Skeleton className="h-[360px] w-full rounded-[--radius-lg]" />
+          <Skeleton className="h-[360px] w-full rounded-(--radius-lg)" />
         </div>
         <div className="mt-6 flex flex-col gap-4 lg:mt-0">
-          <Skeleton className="h-[420px] w-full rounded-[--radius-lg]" />
+          <Skeleton className="h-[420px] w-full rounded-(--radius-lg)" />
         </div>
       </div>
     </div>

@@ -36,7 +36,7 @@ export function CreateUserForm({
       {state.status === "success" && state.userId && (
         <Link
           href={`/${locale}/admin/users/${state.userId}` as Route}
-          className="text-[15px] font-semibold text-[--color-brand] underline underline-offset-4"
+          className="text-[15px] font-semibold text-(--color-brand) underline underline-offset-4"
         >
           {t.userDetail.title}
         </Link>
@@ -45,7 +45,7 @@ export function CreateUserForm({
       <label className="flex flex-col gap-1.5">
         <span className="text-[13px] font-semibold leading-4">
           {t.userNew.email}
-          <span className="ml-0.5 text-[--color-brand]" aria-hidden>
+          <span className="ml-0.5 text-(--color-brand)" aria-hidden>
             *
           </span>
         </span>
@@ -55,7 +55,7 @@ export function CreateUserForm({
       <label className="flex flex-col gap-1.5">
         <span className="text-[13px] font-semibold leading-4">
           {t.userNew.displayName}
-          <span className="ml-0.5 text-[--color-brand]" aria-hidden>
+          <span className="ml-0.5 text-(--color-brand)" aria-hidden>
             *
           </span>
         </span>
@@ -65,12 +65,12 @@ export function CreateUserForm({
       <label className="flex flex-col gap-1.5">
         <span className="text-[13px] font-semibold leading-4">
           {t.userNew.password}
-          <span className="ml-0.5 text-[--color-brand]" aria-hidden>
+          <span className="ml-0.5 text-(--color-brand)" aria-hidden>
             *
           </span>
         </span>
         <Input name="password" type="password" autoComplete="new-password" required minLength={12} />
-        <span className="text-[13px] leading-5 text-[--color-fg-muted]">
+        <span className="text-[13px] leading-5 text-(--color-fg-muted)">
           {t.userNew.passwordHint}
         </span>
       </label>
@@ -78,7 +78,7 @@ export function CreateUserForm({
       <label className="flex flex-col gap-1.5">
         <span className="text-[13px] font-semibold leading-4">
           {t.userNew.role}
-          <span className="ml-0.5 text-[--color-brand]" aria-hidden>
+          <span className="ml-0.5 text-(--color-brand)" aria-hidden>
             *
           </span>
         </span>

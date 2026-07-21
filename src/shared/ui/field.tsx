@@ -32,10 +32,10 @@ export function Field({ label, hint, error, required, className, children }: Fie
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={id} className="text-[13px] font-semibold leading-4 text-[--color-fg]">
+      <label htmlFor={id} className="text-[13px] font-semibold leading-4 text-(--color-fg)">
         {label}
         {required && (
-          <span className="ml-0.5 text-[--color-brand]" aria-hidden>
+          <span className="ml-0.5 text-(--color-brand)" aria-hidden>
             *
           </span>
         )}
@@ -50,12 +50,12 @@ export function Field({ label, hint, error, required, className, children }: Fie
       })}
 
       {hint && !error && (
-        <p id={hintId} className="text-[13px] leading-5 text-[--color-fg-muted]">
+        <p id={hintId} className="text-[13px] leading-5 text-(--color-fg-muted)">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errorId} className="text-[13px] leading-5 text-[--color-danger]">
+        <p id={errorId} className="text-[13px] leading-5 text-(--color-danger)">
           {error}
         </p>
       )}

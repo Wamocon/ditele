@@ -49,7 +49,7 @@ export default async function Page({
         <ErrorState title={t("trainer.review.notFoundTitle")} message={detail.error.message} />
         <Link
           href={queueHref as Route}
-          className="mt-4 inline-flex min-h-11 items-center text-[15px] font-semibold text-[--color-brand] underline-offset-4 hover:underline"
+          className="mt-4 inline-flex min-h-11 items-center text-[15px] font-semibold text-(--color-brand) underline-offset-4 hover:underline"
         >
           {t("trainer.shared.backToQueue")}
         </Link>
@@ -150,14 +150,14 @@ function TaskPanel({ review, t }: { review: ReviewDetail; t: Translate }) {
           dangerouslySetInnerHTML={{ __html: review.taskInstructionsHtml }}
         />
       ) : (
-        <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+        <p className="text-[13px] leading-5 text-(--color-fg-muted)">
           {t("trainer.review.noInstructions")}
         </p>
       )}
 
       {review.assessmentQuestion && (
-        <div className="flex flex-col gap-1 rounded-[--radius-md] bg-[--color-surface] p-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+        <div className="flex flex-col gap-1 rounded-(--radius-md) bg-(--color-surface) p-3">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {t("trainer.review.assessmentQuestion")}
           </span>
           <p className="text-[15px] leading-6">{review.assessmentQuestion}</p>
@@ -165,15 +165,15 @@ function TaskPanel({ review, t }: { review: ReviewDetail; t: Translate }) {
       )}
 
       {review.targetUrl && (
-        <div className="flex flex-col gap-2 rounded-[--radius-md] border border-[--color-border] p-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+        <div className="flex flex-col gap-2 rounded-(--radius-md) border border-(--color-border) p-3">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {t("trainer.review.practiceTarget")}
           </span>
           <a
             href={review.targetUrl}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex min-h-11 items-center break-all text-[13px] text-[--color-brand] underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center break-all text-[13px] text-(--color-brand) underline-offset-4 hover:underline"
           >
             {t("trainer.review.openTarget")}
           </a>
@@ -181,11 +181,11 @@ function TaskPanel({ review, t }: { review: ReviewDetail; t: Translate }) {
       )}
 
       <div className="flex flex-col gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
           {t("trainer.review.hintsUsed")}
         </span>
         {review.hintsUsed.length === 0 ? (
-          <p className="text-[13px] leading-5 text-[--color-fg-muted]">{t("trainer.review.noHints")}</p>
+          <p className="text-[13px] leading-5 text-(--color-fg-muted)">{t("trainer.review.noHints")}</p>
         ) : (
           <ol className="flex list-decimal flex-col gap-1 pl-5 text-[13px] leading-5">
             {review.hintsUsed.map((hint, index) => (
@@ -214,7 +214,7 @@ function AnswerPanel({
       {review.answerText ? (
         <p className="max-w-[68ch] whitespace-pre-wrap text-[15px] leading-6">{review.answerText}</p>
       ) : (
-        <p className="text-[13px] leading-5 text-[--color-fg-muted]">{t("trainer.review.noAnswer")}</p>
+        <p className="text-[13px] leading-5 text-(--color-fg-muted)">{t("trainer.review.noAnswer")}</p>
       )}
 
       {review.selectedOptions.length > 0 && (
@@ -224,7 +224,7 @@ function AnswerPanel({
               <Badge tone={option.selected ? "success" : "neutral"} dot>
                 {option.selected ? t("trainer.review.selected") : t("trainer.review.notSelected")}
               </Badge>
-              <span className={option.selected ? "font-semibold" : "text-[--color-fg-muted]"}>
+              <span className={option.selected ? "font-semibold" : "text-(--color-fg-muted)"}>
                 {option.label}
               </span>
             </li>
@@ -233,11 +233,11 @@ function AnswerPanel({
       )}
 
       <div className="flex flex-col gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
           {t("trainer.review.evidence")}
         </span>
         {review.evidence.length === 0 ? (
-          <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+          <p className="text-[13px] leading-5 text-(--color-fg-muted)">
             {t("trainer.review.noEvidence")}
           </p>
         ) : (
@@ -245,10 +245,10 @@ function AnswerPanel({
             {review.evidence.map((item) => (
               <li
                 key={item.id}
-                className="flex flex-col gap-1 rounded-[--radius-md] border border-[--color-border] p-3"
+                className="flex flex-col gap-1 rounded-(--radius-md) border border-(--color-border) p-3"
               >
                 <span className="text-[15px] font-semibold leading-5">{item.title}</span>
-                <span className="text-[13px] text-[--color-fg-muted]">
+                <span className="text-[13px] text-(--color-fg-muted)">
                   {formatDateTime(item.capturedAt, locale)}
                 </span>
                 {item.sourceUri && (
@@ -256,7 +256,7 @@ function AnswerPanel({
                     href={item.sourceUri}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="inline-flex min-h-11 items-center break-all text-[13px] text-[--color-brand] underline-offset-4 hover:underline"
+                    className="inline-flex min-h-11 items-center break-all text-[13px] text-(--color-brand) underline-offset-4 hover:underline"
                   >
                     {t("trainer.review.openEvidence")}
                   </a>
@@ -268,8 +268,8 @@ function AnswerPanel({
       </div>
 
       {review.pastDecisions.length > 0 && (
-        <div className="flex flex-col gap-2 border-t border-[--color-border] pt-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+        <div className="flex flex-col gap-2 border-t border-(--color-border) pt-3">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {t("trainer.review.previousDecisions")}
           </span>
           <ul className="flex flex-col gap-2">
@@ -277,7 +277,7 @@ function AnswerPanel({
               <li key={decision.id} className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge state={decision.decision} />
-                  <span className="text-[13px] text-[--color-fg-muted]">
+                  <span className="text-[13px] text-(--color-fg-muted)">
                     {decision.reviewerName} · {formatDateTime(decision.createdAt, locale)}
                   </span>
                 </div>

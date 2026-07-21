@@ -61,7 +61,7 @@ export function AccessPanel({
   // An admin locking themselves out is unrecoverable without a second admin.
   if (isSelf && !isDeactivated) {
     return (
-      <p className="text-[13px] leading-5 text-[--color-fg-muted]">{t.userDetail.selfProtected}</p>
+      <p className="text-[13px] leading-5 text-(--color-fg-muted)">{t.userDetail.selfProtected}</p>
     );
   }
 

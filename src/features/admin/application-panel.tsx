@@ -47,7 +47,7 @@ export function ApplicationPanel({
       />
     );
   }
-  return <p className="text-[13px] leading-5 text-[--color-fg-muted]">{t.decidedNotice}</p>;
+  return <p className="text-[13px] leading-5 text-(--color-fg-muted)">{t.decidedNotice}</p>;
 }
 
 function DecideControls({
@@ -110,7 +110,7 @@ function AssignControls({
   const [state, formAction] = useActionState(assignEnrollmentAction, idleState);
 
   if (cohorts.length === 0) {
-    return <p className="text-[13px] leading-5 text-[--color-fg-muted]">{t.noCohortForCourse}</p>;
+    return <p className="text-[13px] leading-5 text-(--color-fg-muted)">{t.noCohortForCourse}</p>;
   }
 
   return (

@@ -8,7 +8,7 @@ export default function Loading() {
         <Skeleton className="h-4 w-64" />
         <Skeleton className="h-8 w-80" />
       </div>
-      <div className="rounded-[--radius-lg] border border-[--color-border] p-4 lg:p-5">
+      <div className="rounded-(--radius-lg) border border-(--color-border) p-4 lg:p-5">
         <Skeleton className="mb-3 h-5 w-40" />
         <Skeleton className="mb-4 h-6 w-full max-w-lg" />
         <SkeletonText lines={4} />

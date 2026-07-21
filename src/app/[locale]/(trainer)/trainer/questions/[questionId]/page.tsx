@@ -43,7 +43,7 @@ export default async function Page({
         <ErrorState title={t("trainer.questions.notFoundTitle")} message={result.error.message} />
         <Link
           href={listHref as Route}
-          className="mt-4 inline-flex min-h-11 items-center text-[15px] font-semibold text-[--color-brand] underline-offset-4 hover:underline"
+          className="mt-4 inline-flex min-h-11 items-center text-[15px] font-semibold text-(--color-brand) underline-offset-4 hover:underline"
         >
           {t("trainer.questions.backToQuestions")}
         </Link>
@@ -94,12 +94,12 @@ export default async function Page({
               <li
                 key={message.id}
                 className={cn(
-                  "flex flex-col gap-1 rounded-[--radius-md] p-3",
+                  "flex flex-col gap-1 rounded-(--radius-md) p-3",
                   message.kind === "system"
-                    ? "border border-dashed border-[--color-border-strong]"
+                    ? "border border-dashed border-(--color-border-strong)"
                     : message.isTrainer
-                      ? "bg-[--color-brand-soft]"
-                      : "bg-[--color-surface]"
+                      ? "bg-(--color-brand-soft)"
+                      : "bg-(--color-surface)"
                 )}
               >
                 <div className="flex flex-wrap items-center gap-2">
@@ -107,7 +107,7 @@ export default async function Page({
                   {message.kind === "system" && (
                     <Badge tone="neutral">{t("trainer.questions.systemMessage")}</Badge>
                   )}
-                  <span className="text-[13px] text-[--color-fg-muted]">
+                  <span className="text-[13px] text-(--color-fg-muted)">
                     {formatDateTime(message.createdAt, locale)}
                   </span>
                 </div>

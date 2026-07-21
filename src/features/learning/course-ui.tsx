@@ -27,7 +27,7 @@ export function ProgressBar({
   const percent = progressPercent(done, total);
   return (
     <div
-      className={cn("h-1.5 w-full overflow-hidden rounded-full bg-[--color-surface-2]", className)}
+      className={cn("h-1.5 w-full overflow-hidden rounded-full bg-(--color-surface-2)", className)}
       role="progressbar"
       aria-valuenow={percent}
       aria-valuemin={0}
@@ -35,7 +35,7 @@ export function ProgressBar({
       aria-label={label}
     >
       <div
-        className="h-full animate-progress-fill rounded-full bg-[--color-brand]"
+        className="h-full animate-progress-fill rounded-full bg-(--color-brand)"
         style={{ width: `${percent}%` }}
       />
     </div>
@@ -75,7 +75,7 @@ export function ProgressRing({
           r={radius}
           fill="none"
           strokeWidth={stroke}
-          className="stroke-[--color-surface-2]"
+          className="stroke-(--color-surface-2)"
         />
         <circle
           cx={size / 2}
@@ -86,7 +86,7 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={circumference * (1 - percent / 100)}
-          className="stroke-[--color-brand]"
+          className="stroke-(--color-brand)"
         />
       </svg>
       <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold tabular-nums">
@@ -134,7 +134,7 @@ export function ContinueCard({
         : strings.continueStart;
 
   return (
-    <Card className="relative overflow-hidden border-[--color-brand] shadow-[--shadow-brand]">
+    <Card className="relative overflow-hidden border-(--color-brand) shadow-(--shadow-brand)">
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="brand">{strings.continueEyebrow}</Badge>
@@ -143,7 +143,7 @@ export function ContinueCard({
 
         <div className="flex items-start gap-4">
           <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">{course.title}</p>
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{course.title}</p>
             <p className="text-[22px] font-semibold leading-7 lg:text-[26px] lg:leading-8">
               {done ? strings.continueAllDone : course.nextTaskTitle}
             </p>
@@ -155,7 +155,7 @@ export function ContinueCard({
           />
         </div>
 
-        <p className="text-[13px] leading-5 text-[--color-fg-muted] tabular-nums">
+        <p className="text-[13px] leading-5 text-(--color-fg-muted) tabular-nums">
           {format(strings.continueProgress, {
             done: course.completedActivities,
             total: course.totalActivities,
@@ -165,10 +165,10 @@ export function ContinueCard({
         <Link
           href={href}
           className={cn(
-            "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[--radius-md] px-6",
-            "bg-[--color-brand] text-[15px] font-semibold text-[--color-brand-fg]",
-            "transition-[background-color,transform] duration-[--duration-base] ease-[--ease-out]",
-            "hover:bg-[--color-brand-hover] active:scale-[0.97] sm:w-auto sm:self-start"
+            "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-(--radius-md) px-6",
+            "bg-(--color-brand) text-[15px] font-semibold text-(--color-brand-fg)",
+            "transition-[background-color,transform] duration-(--duration-base) ease-(--ease-out)",
+            "hover:bg-(--color-brand-hover) active:scale-[0.97] sm:w-auto sm:self-start"
           )}
         >
           {action}
@@ -200,7 +200,7 @@ export function CourseCard({
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <CardTitle className="truncate">{course.title}</CardTitle>
-          <p className="text-[13px] leading-5 text-[--color-fg-muted] tabular-nums">
+          <p className="text-[13px] leading-5 text-(--color-fg-muted) tabular-nums">
             {progressLabel}
           </p>
         </div>
@@ -224,7 +224,7 @@ export function CourseCard({
 
       <Link
         href={`/${locale}/learn/courses/${course.courseId}` as Route}
-        className="mt-auto inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-[--color-brand] hover:underline"
+        className="mt-auto inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-(--color-brand) hover:underline"
       >
         {strings.openCourse}
         <ArrowRight className="size-4" aria-hidden />
@@ -238,7 +238,7 @@ export function CourseCard({
 export function StatTile({ label, value }: { label: string; value: number }) {
   return (
     <Card className="flex flex-col gap-1">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
         {label}
       </p>
       <p className="text-[30px] font-semibold leading-9 tabular-nums">{value}</p>

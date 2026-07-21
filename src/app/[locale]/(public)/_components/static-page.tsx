@@ -19,7 +19,7 @@ export function ProseSection({
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-[22px] font-semibold leading-7">{title}</h2>
-      <div className="prose-measure flex flex-col gap-3 text-[15px] leading-6 text-[--color-fg-muted]">
+      <div className="prose-measure flex flex-col gap-3 text-[15px] leading-6 text-(--color-fg-muted)">
         {children}
       </div>
     </section>
@@ -36,9 +36,9 @@ export function PendingDataNotice({ children }: { children: string }) {
   return (
     <p
       role="note"
-      className="flex items-start gap-2 rounded-[--radius-md] border border-[--color-warning] bg-[--color-warning-soft] px-3 py-2.5 text-[13px] leading-5 text-[--color-fg]"
+      className="flex items-start gap-2 rounded-(--radius-md) border border-(--color-warning) bg-(--color-warning-soft) px-3 py-2.5 text-[13px] leading-5 text-(--color-fg)"
     >
-      <Info className="mt-0.5 size-4 shrink-0 text-[--color-warning]" aria-hidden />
+      <Info className="mt-0.5 size-4 shrink-0 text-(--color-warning)" aria-hidden />
       <span>{children}</span>
     </p>
   );

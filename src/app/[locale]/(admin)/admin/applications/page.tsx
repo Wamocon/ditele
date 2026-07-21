@@ -109,7 +109,7 @@ export default async function ApplicationsPage({
                 >
                   <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                     <div className="flex flex-col gap-0.5">
-                      <dt className="text-[13px] font-semibold leading-4 text-[--color-fg-muted]">
+                      <dt className="text-[13px] font-semibold leading-4 text-(--color-fg-muted)">
                         {t.applications.colRequested}
                       </dt>
                       <dd className="tabular text-[15px] leading-6">
@@ -117,14 +117,14 @@ export default async function ApplicationsPage({
                       </dd>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <dt className="text-[13px] font-semibold leading-4 text-[--color-fg-muted]">
+                      <dt className="text-[13px] font-semibold leading-4 text-(--color-fg-muted)">
                         {t.applications.colCohort}
                       </dt>
                       <dd className="text-[15px] leading-6">{row.cohortName ?? t.common.none}</dd>
                     </div>
                     {row.requestNote && (
                       <div className="flex flex-col gap-0.5 sm:col-span-2">
-                        <dt className="text-[13px] font-semibold leading-4 text-[--color-fg-muted]">
+                        <dt className="text-[13px] font-semibold leading-4 text-(--color-fg-muted)">
                           {t.applications.note}
                         </dt>
                         <dd className="max-w-prose text-[15px] leading-6">{row.requestNote}</dd>
@@ -132,7 +132,7 @@ export default async function ApplicationsPage({
                     )}
                     {row.decisionReason && (
                       <div className="flex flex-col gap-0.5 sm:col-span-2">
-                        <dt className="text-[13px] font-semibold leading-4 text-[--color-fg-muted]">
+                        <dt className="text-[13px] font-semibold leading-4 text-(--color-fg-muted)">
                           {t.applications.reason}
                         </dt>
                         <dd className="max-w-prose text-[15px] leading-6">{row.decisionReason}</dd>

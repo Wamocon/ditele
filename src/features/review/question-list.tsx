@@ -31,7 +31,7 @@ export function QuestionList({
       cell: (row) => (
         <Link
           href={href(row.id)}
-          className="font-semibold text-[--color-fg] underline-offset-4 hover:text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-fg) underline-offset-4 hover:text-(--color-brand) hover:underline"
         >
           {row.subject}
         </Link>
@@ -62,7 +62,7 @@ export function QuestionList({
       cell: (row) => (
         <Link
           href={href(row.id)}
-          className="inline-flex min-h-11 items-center font-semibold text-[--color-brand] underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 items-center font-semibold text-(--color-brand) underline-offset-4 hover:underline"
         >
           {t("trainer.questions.open")}
         </Link>

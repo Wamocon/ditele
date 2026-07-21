@@ -32,17 +32,17 @@ export function RouteError({
   return (
     <div
       role="alert"
-      className="mx-auto flex max-w-[520px] flex-col items-center gap-4 rounded-[--radius-lg] border border-[--color-border] bg-[--color-bg] px-6 py-12 text-center"
+      className="mx-auto flex max-w-[520px] flex-col items-center gap-4 rounded-(--radius-lg) border border-(--color-border) bg-(--color-bg) px-6 py-12 text-center"
     >
-      <span className="flex size-12 items-center justify-center rounded-full bg-[--color-danger-soft] text-[--color-danger]">
+      <span className="flex size-12 items-center justify-center rounded-full bg-(--color-danger-soft) text-(--color-danger)">
         <AlertTriangle className="size-6" aria-hidden />
       </span>
 
       <h1 className="text-[22px] font-semibold leading-7">{dict.public.error.title}</h1>
-      <p className="text-[15px] leading-6 text-[--color-fg-muted]">{dict.public.error.body}</p>
+      <p className="text-[15px] leading-6 text-(--color-fg-muted)">{dict.public.error.body}</p>
 
       {error.digest && (
-        <p className="tabular text-[13px] text-[--color-fg-subtle]">
+        <p className="tabular text-[13px] text-(--color-fg-subtle)">
           {dict.public.error.reference}: <code>{error.digest}</code>
         </p>
       )}

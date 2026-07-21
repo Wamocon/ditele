@@ -5,29 +5,29 @@ import { cn } from "./cn";
 const button = cva(
   [
     "inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold",
-    "transition-[background-color,box-shadow,transform,color] duration-[--duration-base] ease-[--ease-out]",
+    "transition-[background-color,box-shadow,transform,color] duration-(--duration-base) ease-(--ease-out)",
     "active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50",
   ],
   {
     variants: {
       variant: {
         primary:
-          "bg-[--color-brand] text-[--color-brand-fg] shadow-[--shadow-sm] hover:bg-[--color-brand-hover] active:bg-[--color-brand-active]",
+          "bg-(--color-brand) text-(--color-brand-fg) shadow-(--shadow-sm) hover:bg-(--color-brand-hover) active:bg-(--color-brand-active)",
         secondary:
-          "bg-[--color-surface-2] text-[--color-fg] hover:bg-[--color-border]",
+          "bg-(--color-surface-2) text-(--color-fg) hover:bg-(--color-border)",
         outline:
-          "border border-[--color-border-strong] bg-transparent text-[--color-fg] hover:bg-[--color-surface]",
-        ghost: "bg-transparent text-[--color-fg] hover:bg-[--color-surface]",
+          "border border-(--color-border-strong) bg-transparent text-(--color-fg) hover:bg-(--color-surface)",
+        ghost: "bg-transparent text-(--color-fg) hover:bg-(--color-surface)",
         danger:
-          "bg-[--color-danger] text-white shadow-[--shadow-sm] hover:brightness-110",
-        link: "bg-transparent text-[--color-brand] underline-offset-4 hover:underline",
+          "bg-(--color-danger) text-white shadow-(--shadow-sm) hover:brightness-110",
+        link: "bg-transparent text-(--color-brand) underline-offset-4 hover:underline",
       },
       size: {
         // min-h-11 = 44px — the mandatory mobile touch target.
-        sm: "h-9 min-h-9 rounded-[--radius-sm] px-3 text-[13px]",
-        md: "h-11 min-h-11 rounded-[--radius-md] px-4 text-[15px]",
-        lg: "h-12 min-h-12 rounded-[--radius-md] px-6 text-[15px]",
-        icon: "size-11 min-h-11 rounded-[--radius-md]",
+        sm: "h-9 min-h-9 rounded-(--radius-sm) px-3 text-[13px]",
+        md: "h-11 min-h-11 rounded-(--radius-md) px-4 text-[15px]",
+        lg: "h-12 min-h-12 rounded-(--radius-md) px-6 text-[15px]",
+        icon: "size-11 min-h-11 rounded-(--radius-md)",
       },
       fullWidth: { true: "w-full", false: "" },
     },

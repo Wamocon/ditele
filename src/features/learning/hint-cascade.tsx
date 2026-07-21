@@ -35,7 +35,7 @@ export function HintCascade({
   const revealed = new Set(revealedIds);
 
   if (hints.length === 0) {
-    return <p className="text-[13px] leading-5 text-[--color-fg-muted]">{strings.hintNone}</p>;
+    return <p className="text-[13px] leading-5 text-(--color-fg-muted)">{strings.hintNone}</p>;
   }
 
   // Only the next unrevealed hint is offered — that is what makes it a cascade
@@ -44,7 +44,7 @@ export function HintCascade({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[13px] leading-5 text-[--color-fg-muted]">{strings.hintsDescription}</p>
+      <p className="text-[13px] leading-5 text-(--color-fg-muted)">{strings.hintsDescription}</p>
 
       <ol className="flex flex-col gap-2">
         {hints.map((hint, index) => {
@@ -55,9 +55,9 @@ export function HintCascade({
             return (
               <li
                 key={hint.id}
-                className="animate-fade-in-up rounded-[--radius-md] border border-[--color-warning] bg-[--color-warning-soft] px-4 py-3"
+                className="animate-fade-in-up rounded-(--radius-md) border border-(--color-warning) bg-(--color-warning-soft) px-4 py-3"
               >
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-warning]">
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-warning)">
                   {format(strings.hintRevealed, { number: index + 1 })}
                 </p>
                 <p className="text-[15px] leading-6">{hint.content}</p>

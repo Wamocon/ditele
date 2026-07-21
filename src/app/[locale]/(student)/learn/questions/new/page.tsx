@@ -38,7 +38,7 @@ export default async function NewQuestionPage({
         <EmptyState
           title={t.emptyTitle}
           description={t.emptyDescription}
-          icon={<MessageCircle className="size-6 text-[--color-fg-subtle]" aria-hidden />}
+          icon={<MessageCircle className="size-6 text-(--color-fg-subtle)" aria-hidden />}
           action={
             <LinkButton href={`/${locale}/learn/courses`} variant="outline">
               {messages.nav.courses}

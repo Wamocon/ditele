@@ -54,7 +54,7 @@ export function ConfirmDialog({
         // Backdrop click: the dialog element itself is the backdrop.
         if (event.target === ref.current && !busy) onCancel();
       }}
-      className="m-auto w-[min(30rem,calc(100vw-2rem))] bg-transparent p-0 text-[--color-fg] backdrop:bg-[--color-overlay]"
+      className="m-auto w-[min(30rem,calc(100vw-2rem))] bg-transparent p-0 text-(--color-fg) backdrop:bg-(--color-overlay)"
       aria-labelledby="confirm-title"
     >
       <Card className={cn("flex flex-col gap-4", open && "animate-scale-in")}>
@@ -63,7 +63,7 @@ export function ConfirmDialog({
             {title}
           </h2>
           {description && (
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">{description}</p>
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{description}</p>
           )}
         </div>
 

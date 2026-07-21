@@ -87,8 +87,8 @@ export function QuestionActions({
 
   if (isArchived) {
     return (
-      <Card className="bg-[--color-surface]">
-        <p className="text-[15px] leading-6 text-[--color-fg-muted]">{labels.isArchived}</p>
+      <Card className="bg-(--color-surface)">
+        <p className="text-[15px] leading-6 text-(--color-fg-muted)">{labels.isArchived}</p>
       </Card>
     );
   }
@@ -97,7 +97,7 @@ export function QuestionActions({
     <Card className="flex flex-col gap-4">
       {canClaim && !canAnswer && (
         <div className="flex flex-col gap-3">
-          <p className="text-[15px] leading-6 text-[--color-fg-muted]">{labels.claimHint}</p>
+          <p className="text-[15px] leading-6 text-(--color-fg-muted)">{labels.claimHint}</p>
           <Button
             type="button"
             loading={isPending}
@@ -111,7 +111,7 @@ export function QuestionActions({
       )}
 
       {!canClaim && !canAnswer && (
-        <p className="text-[15px] leading-6 text-[--color-fg-muted]">{labels.notYours}</p>
+        <p className="text-[15px] leading-6 text-(--color-fg-muted)">{labels.notYours}</p>
       )}
 
       {canAnswer && (
@@ -175,7 +175,7 @@ export function QuestionActions({
         }
       >
         {trainers.length === 0 ? (
-          <p className="text-[13px] leading-5 text-[--color-fg-muted]">{labels.transferNoTrainers}</p>
+          <p className="text-[13px] leading-5 text-(--color-fg-muted)">{labels.transferNoTrainers}</p>
         ) : (
           <div className="flex flex-col gap-3">
             <Field label={labels.transferTo} required>

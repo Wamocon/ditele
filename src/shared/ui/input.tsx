@@ -2,16 +2,16 @@ import { forwardRef, type InputHTMLAttributes, type SelectHTMLAttributes, type T
 import { cn } from "./cn";
 
 const base = [
-  "w-full rounded-[--radius-md] border bg-[--color-bg] text-[15px] text-[--color-fg]",
-  "placeholder:text-[--color-fg-subtle]",
-  "transition-[border-color,box-shadow] duration-[--duration-fast]",
-  "disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-[--color-surface]",
+  "w-full rounded-(--radius-md) border bg-(--color-bg) text-[15px] text-(--color-fg)",
+  "placeholder:text-(--color-fg-subtle)",
+  "transition-[border-color,box-shadow] duration-(--duration-fast)",
+  "disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-(--color-surface)",
 ].join(" ");
 
 const tone = (invalid?: boolean) =>
   invalid
-    ? "border-[--color-danger] focus-visible:outline-[--color-danger]"
-    : "border-[--color-border-strong]";
+    ? "border-(--color-danger) focus-visible:outline-(--color-danger)"
+    : "border-(--color-border-strong)";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean;

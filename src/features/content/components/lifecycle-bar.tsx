@@ -81,7 +81,7 @@ export function LifecycleBar({
           return (
             <li key={step.state} className="flex items-center gap-2">
               {index > 0 && (
-                <span className="text-[--color-fg-subtle]" aria-hidden>
+                <span className="text-(--color-fg-subtle)" aria-hidden>
                   ›
                 </span>
               )}
@@ -89,9 +89,9 @@ export function LifecycleBar({
                 aria-current={current ? "step" : undefined}
                 className={cn(
                   "rounded-full px-2.5 py-1 font-semibold",
-                  current && "bg-[--color-brand-soft] text-[--color-brand]",
-                  done && !current && "text-[--color-success]",
-                  !done && !current && "text-[--color-fg-subtle]"
+                  current && "bg-(--color-brand-soft) text-(--color-brand)",
+                  done && !current && "text-(--color-success)",
+                  !done && !current && "text-(--color-fg-subtle)"
                 )}
               >
                 {s[step.key]}
@@ -102,7 +102,7 @@ export function LifecycleBar({
       </ol>
 
       {state.status === "error" && (
-        <p role="alert" className="rounded-[--radius-md] bg-[--color-danger-soft] px-3 py-2 text-[13px] text-[--color-danger]">
+        <p role="alert" className="rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px] text-(--color-danger)">
           {state.message}
         </p>
       )}
@@ -112,7 +112,7 @@ export function LifecycleBar({
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-[13px] font-semibold">{s.checklist}</p>
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">{s.checklistHint}</p>
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{s.checklistHint}</p>
           </div>
           <ReadinessList checks={checks} strings={strings} />
           <div>
@@ -131,7 +131,7 @@ export function LifecycleBar({
       {versionState === "in_review" && (
         <div className="flex flex-col gap-3">
           {approved ? (
-            <p className="rounded-[--radius-md] bg-[--color-success-soft] px-3 py-2 text-[13px] text-[--color-success]">
+            <p className="rounded-(--radius-md) bg-(--color-success-soft) px-3 py-2 text-[13px] text-(--color-success)">
               {s.approvedNotice}
             </p>
           ) : (
@@ -202,7 +202,7 @@ export function LifecycleBar({
       {/* ── published: archive, impact first ──────────────────────────── */}
       {versionState === "published" && (
         <div className="flex flex-col gap-3">
-          <p className="text-[13px] leading-5 text-[--color-fg-muted]">{s.archiveImpactHint}</p>
+          <p className="text-[13px] leading-5 text-(--color-fg-muted)">{s.archiveImpactHint}</p>
 
           {!impact ? (
             <div>
@@ -234,7 +234,7 @@ export function LifecycleBar({
                   ] as const
                 ).map(([label, value]) => (
                   <div key={label} className="flex flex-col">
-                    <dt className="text-[--color-fg-muted]">{label}</dt>
+                    <dt className="text-(--color-fg-muted)">{label}</dt>
                     <dd className="tabular text-[18px] font-semibold">{value}</dd>
                   </div>
                 ))}

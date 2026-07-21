@@ -22,15 +22,15 @@ export function ReadinessList({
       {checks.map((check) => (
         <li key={check.key} className="flex items-start gap-2 text-[13px] leading-5">
           {check.ok ? (
-            <Check className="mt-0.5 size-4 shrink-0 text-[--color-success]" aria-hidden />
+            <Check className="mt-0.5 size-4 shrink-0 text-(--color-success)" aria-hidden />
           ) : (
-            <X className="mt-0.5 size-4 shrink-0 text-[--color-danger]" aria-hidden />
+            <X className="mt-0.5 size-4 shrink-0 text-(--color-danger)" aria-hidden />
           )}
-          <span className={check.ok ? "text-[--color-fg-muted]" : "text-[--color-fg]"}>
+          <span className={check.ok ? "text-(--color-fg-muted)" : "text-(--color-fg)"}>
             <span className="sr-only">{check.ok ? "Erfüllt: " : "Offen: "}</span>
             {strings.lifecycle[check.key]}
             {!check.ok && check.detail && (
-              <span className="text-[--color-fg-muted]"> — {check.detail}</span>
+              <span className="text-(--color-fg-muted)"> — {check.detail}</span>
             )}
           </span>
         </li>

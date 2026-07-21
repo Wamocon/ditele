@@ -63,7 +63,7 @@ export default async function Page({
         row.versionId ? (
           <Link
             href={`/${locale}/admin/courses/${row.courseId}/versions/${row.versionId}` as Route}
-            className="font-medium hover:text-[--color-brand] hover:underline"
+            className="font-medium hover:text-(--color-brand) hover:underline"
           >
             {row.title}
           </Link>
@@ -77,7 +77,7 @@ export default async function Page({
       cell: (row) => (
         <Link
           href={`/${locale}/admin/courses/${row.courseId}` as Route}
-          className="text-[13px] text-[--color-fg-muted] hover:text-[--color-brand] hover:underline"
+          className="text-[13px] text-(--color-fg-muted) hover:text-(--color-brand) hover:underline"
         >
           {row.courseTitle}
         </Link>
@@ -86,7 +86,7 @@ export default async function Page({
     {
       key: "stage",
       header: s.columnStage,
-      cell: (row) => <span className="text-[13px] text-[--color-fg-muted]">{row.stageTitle}</span>,
+      cell: (row) => <span className="text-[13px] text-(--color-fg-muted)">{row.stageTitle}</span>,
     },
     {
       key: "kind",
@@ -106,7 +106,7 @@ export default async function Page({
             <StatusBadge state={row.versionState} />
           </span>
         ) : (
-          <span className="text-[13px] text-[--color-fg-muted]">{strings.shared.never}</span>
+          <span className="text-[13px] text-(--color-fg-muted)">{strings.shared.never}</span>
         ),
     },
     {

@@ -58,17 +58,17 @@ export function ConfirmDialog({
       }}
       aria-labelledby="confirm-title"
       className={[
-        "m-0 w-full max-w-[440px] bg-transparent p-0 backdrop:bg-[--color-overlay]",
+        "m-0 w-full max-w-[440px] bg-transparent p-0 backdrop:bg-(--color-overlay)",
         "fixed bottom-0 left-0 top-auto translate-x-0 animate-slide-up",
         "md:bottom-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:animate-scale-in",
       ].join(" ")}
     >
-      <div className="flex flex-col gap-4 rounded-t-[--radius-xl] border border-[--color-border] bg-[--color-bg] p-5 shadow-[--shadow-lg] md:rounded-[--radius-lg]">
+      <div className="flex flex-col gap-4 rounded-t-(--radius-xl) border border-(--color-border) bg-(--color-bg) p-5 shadow-(--shadow-lg) md:rounded-(--radius-lg)">
         <div className="flex flex-col gap-1.5">
           <h2 id="confirm-title" className="text-[22px] font-semibold leading-7">
             {title}
           </h2>
-          <p className="text-[15px] leading-6 text-[--color-fg-muted]">{description}</p>
+          <p className="text-[15px] leading-6 text-(--color-fg-muted)">{description}</p>
         </div>
 
         {children}

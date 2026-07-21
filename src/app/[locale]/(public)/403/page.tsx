@@ -32,13 +32,13 @@ export default async function ForbiddenPage({
 
   return (
     <div className="mx-auto flex max-w-[520px] flex-col items-center gap-4 py-16 text-center">
-      <span className="flex size-14 items-center justify-center rounded-full bg-[--color-danger-soft] text-[--color-danger]">
+      <span className="flex size-14 items-center justify-center rounded-full bg-(--color-danger-soft) text-(--color-danger)">
         <ShieldAlert className="size-7" aria-hidden />
       </span>
 
-      <p className="tabular text-[40px] font-bold leading-[44px] text-[--color-brand]">403</p>
+      <p className="tabular text-[40px] font-bold leading-[44px] text-(--color-brand)">403</p>
       <h1 className="text-[22px] font-semibold leading-7">{t.title}</h1>
-      <p className="text-[15px] leading-6 text-[--color-fg-muted]">{t.body}</p>
+      <p className="text-[15px] leading-6 text-(--color-fg-muted)">{t.body}</p>
 
       <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
         <Link href={`/${locale}` as Route}>

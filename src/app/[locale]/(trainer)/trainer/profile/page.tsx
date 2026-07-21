@@ -71,11 +71,11 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           <h2 className="text-[18px] font-semibold leading-6">{t("trainer.profile.account")}</h2>
           <dl className="flex flex-col gap-2 text-[15px]">
             <div className="flex flex-wrap justify-between gap-2">
-              <dt className="text-[--color-fg-muted]">{t("trainer.profile.email")}</dt>
+              <dt className="text-(--color-fg-muted)">{t("trainer.profile.email")}</dt>
               <dd className="font-semibold">{session?.email ?? "—"}</dd>
             </div>
             <div className="flex flex-wrap justify-between gap-2">
-              <dt className="text-[--color-fg-muted]">{t("trainer.profile.role")}</dt>
+              <dt className="text-(--color-fg-muted)">{t("trainer.profile.role")}</dt>
               <dd className="font-semibold">{t("roles.trainer")}</dd>
             </div>
           </dl>

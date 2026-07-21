@@ -133,7 +133,7 @@ function roleColumns(t: AdminDict): Column<RoleOption>[] {
       cell: (row) => (
         <span className="flex flex-col">
           <span className="font-semibold">{roleLabel(t, row.code)}</span>
-          <span className="text-[13px] text-[--color-fg-muted]">{row.code}</span>
+          <span className="text-[13px] text-(--color-fg-muted)">{row.code}</span>
         </span>
       ),
     },

@@ -71,7 +71,7 @@ export function LoginForm({
         <div className="-mt-1 flex justify-end">
           <Link
             href={`/${locale}/reset-password` as Route}
-            className="text-[13px] font-semibold text-[--color-brand] hover:underline"
+            className="text-[13px] font-semibold text-(--color-brand) hover:underline"
           >
             {labels.forgot}
           </Link>
@@ -80,11 +80,11 @@ export function LoginForm({
         <SubmitButton>{labels.submit}</SubmitButton>
       </form>
 
-      <p className="mt-6 text-center text-[13px] text-[--color-fg-muted]">
+      <p className="mt-6 text-center text-[13px] text-(--color-fg-muted)">
         {labels.noAccount}{" "}
         <Link
           href={`/${locale}/register` as Route}
-          className="font-semibold text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-brand) hover:underline"
         >
           {labels.registerLink}
         </Link>

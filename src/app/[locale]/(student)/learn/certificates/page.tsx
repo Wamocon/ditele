@@ -45,7 +45,7 @@ export default async function CertificatesPage({
         <EmptyState
           title={t.emptyTitle}
           description={t.emptyDescription}
-          icon={<Award className="size-6 text-[--color-fg-subtle]" aria-hidden />}
+          icon={<Award className="size-6 text-(--color-fg-subtle)" aria-hidden />}
           action={
             <LinkButton href={`/${locale}/learn/courses`} variant="outline">
               {messages.nav.courses}
@@ -54,7 +54,7 @@ export default async function CertificatesPage({
         />
         <Card className="mt-6 border-dashed">
           <p className="text-[15px] font-semibold leading-6">{t.notReleasedTitle}</p>
-          <p className="mt-1 max-w-[68ch] text-[13px] leading-5 text-[--color-fg-muted]">
+          <p className="mt-1 max-w-[68ch] text-[13px] leading-5 text-(--color-fg-muted)">
             {t.notReleasedDescription}
           </p>
         </Card>
@@ -85,7 +85,7 @@ export default async function CertificatesPage({
       cell: (row) => (
         // No delivery route exists for `media_asset_id` yet, so the action is
         // shown as unavailable rather than as a link that 404s.
-        <span className="text-[13px] text-[--color-fg-muted]">
+        <span className="text-[13px] text-(--color-fg-muted)">
           {row.media_asset_id ? t.downloadUnavailable : "—"}
         </span>
       ),

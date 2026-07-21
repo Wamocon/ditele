@@ -41,7 +41,7 @@ export function PanelTabs({ tabs, desktop }: PanelTabsProps) {
           role="tablist"
           aria-orientation="horizontal"
           onKeyDown={onKeyDown}
-          className="mb-4 flex gap-1 rounded-[--radius-md] bg-[--color-surface] p-1"
+          className="mb-4 flex gap-1 rounded-(--radius-md) bg-(--color-surface) p-1"
         >
           {tabs.map((tab, index) => (
             <button
@@ -57,11 +57,11 @@ export function PanelTabs({ tabs, desktop }: PanelTabsProps) {
               tabIndex={index === active ? 0 : -1}
               onClick={() => setActive(index)}
               className={cn(
-                "min-h-11 flex-1 rounded-[--radius-sm] px-3 text-[13px] font-semibold",
-                "transition-colors duration-[--duration-fast]",
+                "min-h-11 flex-1 rounded-(--radius-sm) px-3 text-[13px] font-semibold",
+                "transition-colors duration-(--duration-fast)",
                 index === active
-                  ? "bg-[--color-bg] text-[--color-brand] shadow-[--shadow-sm]"
-                  : "text-[--color-fg-muted]"
+                  ? "bg-(--color-bg) text-(--color-brand) shadow-(--shadow-sm)"
+                  : "text-(--color-fg-muted)"
               )}
             >
               {tab.label}

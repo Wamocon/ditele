@@ -90,9 +90,9 @@ export function DecisionPanel({
 
   if (!decidable) {
     return (
-      <Card className="flex flex-col gap-2 border-[--color-border-strong] bg-[--color-surface]">
+      <Card className="flex flex-col gap-2 border-(--color-border-strong) bg-(--color-surface)">
         <h2 className="text-[18px] font-semibold leading-6">{labels.lockedTitle}</h2>
-        <p className="text-[13px] leading-5 text-[--color-fg-muted]">{labels.lockedReason}</p>
+        <p className="text-[13px] leading-5 text-(--color-fg-muted)">{labels.lockedReason}</p>
       </Card>
     );
   }
@@ -151,14 +151,14 @@ export function DecisionPanel({
 
       {criteria.length > 0 && (
         <fieldset className="flex flex-col gap-3">
-          <legend className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+          <legend className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {labels.rubric}
           </legend>
           <div className="flex flex-col gap-3">
             {criteria.map((criterion) => (
               <div
                 key={criterion.id}
-                className="flex flex-wrap items-end justify-between gap-3 rounded-[--radius-md] bg-[--color-surface] p-3"
+                className="flex flex-wrap items-end justify-between gap-3 rounded-(--radius-md) bg-(--color-surface) p-3"
               >
                 <div className="flex min-w-0 flex-col gap-1">
                   <span className="text-[15px] font-semibold leading-5">{criterion.label}</span>
@@ -185,7 +185,7 @@ export function DecisionPanel({
                     }
                     className="w-24 tabular"
                   />
-                  <span className="whitespace-nowrap text-[13px] text-[--color-fg-muted]">
+                  <span className="whitespace-nowrap text-[13px] text-(--color-fg-muted)">
                     {labels.maxPointsTemplate.replace("{max}", String(criterion.maxPoints))}
                   </span>
                 </div>
@@ -270,7 +270,7 @@ export function DecisionPanel({
         onConfirm={runTransfer}
       >
         {trainers.length === 0 ? (
-          <p className={cn("text-[13px] leading-5 text-[--color-fg-muted]")}>
+          <p className={cn("text-[13px] leading-5 text-(--color-fg-muted)")}>
             {labels.transferNoTrainers}
           </p>
         ) : (

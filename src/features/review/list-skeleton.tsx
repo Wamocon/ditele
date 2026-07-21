@@ -14,7 +14,7 @@ export function ListSkeleton({ rows = 6, filters = false }: { rows?: number; fil
       </div>
 
       {filters && (
-        <div className="flex flex-col gap-3 rounded-[--radius-lg] border border-[--color-border] p-4 sm:flex-row lg:p-5">
+        <div className="flex flex-col gap-3 rounded-(--radius-lg) border border-(--color-border) p-4 sm:flex-row lg:p-5">
           <Skeleton className="h-11 w-full sm:w-40" />
           <Skeleton className="h-11 w-full sm:w-40" />
           <Skeleton className="h-11 w-full sm:w-40" />

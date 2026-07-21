@@ -67,7 +67,7 @@ export default async function CatalogPage({
       >
         <div className="relative flex-1">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[--color-fg-subtle]"
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-(--color-fg-subtle)"
             aria-hidden
           />
           <Input
@@ -111,7 +111,7 @@ export default async function CatalogPage({
         )
       ) : (
         <>
-          <p className="tabular mb-4 text-[13px] text-[--color-fg-muted]" aria-live="polite">
+          <p className="tabular mb-4 text-[13px] text-(--color-fg-muted)" aria-live="polite">
             {total === 1 ? t.resultsOne : interpolate(t.resultsMany, { count: total })}
           </p>
 
@@ -145,7 +145,7 @@ export default async function CatalogPage({
                 <span />
               )}
 
-              <p className="tabular text-[13px] text-[--color-fg-muted]">
+              <p className="tabular text-[13px] text-(--color-fg-muted)">
                 {interpolate(t.pageOf, { page, pages })}
               </p>
 

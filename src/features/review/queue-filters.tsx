@@ -26,7 +26,7 @@ export function QueueFilters({ labels, resetHref, fields }: QueueFiltersProps) {
           <div key={field.name} className="flex min-w-0 flex-1 flex-col gap-1.5 sm:min-w-40">
             <label
               htmlFor={`filter-${field.name}`}
-              className="text-[13px] font-semibold leading-4 text-[--color-fg]"
+              className="text-[13px] font-semibold leading-4 text-(--color-fg)"
             >
               {field.label}
             </label>
@@ -46,7 +46,7 @@ export function QueueFilters({ labels, resetHref, fields }: QueueFiltersProps) {
           </Button>
           <a
             href={resetHref}
-            className="inline-flex min-h-11 items-center rounded-[--radius-md] px-3 text-[15px] font-semibold text-[--color-fg-muted] hover:bg-[--color-surface]"
+            className="inline-flex min-h-11 items-center rounded-(--radius-md) px-3 text-[15px] font-semibold text-(--color-fg-muted) hover:bg-(--color-surface)"
           >
             {labels.reset}
           </a>

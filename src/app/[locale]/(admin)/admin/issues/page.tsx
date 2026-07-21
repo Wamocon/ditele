@@ -122,7 +122,7 @@ export default async function IssuesPage({
                   <p className="max-w-prose text-[15px] leading-6">{issue.description}</p>
                   <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                     <div className="flex flex-col gap-0.5">
-                      <dt className="text-[13px] font-semibold leading-4 text-[--color-fg-muted]">
+                      <dt className="text-[13px] font-semibold leading-4 text-(--color-fg-muted)">
                         {t.issues.colReporter}
                       </dt>
                       <dd className="text-[15px] leading-6">
@@ -130,7 +130,7 @@ export default async function IssuesPage({
                       </dd>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <dt className="text-[13px] font-semibold leading-4 text-[--color-fg-muted]">
+                      <dt className="text-[13px] font-semibold leading-4 text-(--color-fg-muted)">
                         {t.issues.colCreated}
                       </dt>
                       <dd className="tabular text-[15px] leading-6">

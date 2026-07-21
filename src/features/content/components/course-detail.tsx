@@ -68,7 +68,7 @@ export function CourseDetail({
       {state.status === "error" && (
         <p
           role="alert"
-          className="rounded-[--radius-md] bg-[--color-danger-soft] px-3 py-2 text-[13px] text-[--color-danger]"
+          className="rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px] text-(--color-danger)"
         >
           {state.message}
         </p>
@@ -76,7 +76,7 @@ export function CourseDetail({
       {state.status === "ok" && (
         <p
           role="status"
-          className="rounded-[--radius-md] bg-[--color-success-soft] px-3 py-2 text-[13px] text-[--color-success]"
+          className="rounded-(--radius-md) bg-(--color-success-soft) px-3 py-2 text-[13px] text-(--color-success)"
         >
           {strings.shared.saved}
         </p>
@@ -106,7 +106,7 @@ export function CourseDetail({
             <select
               value={defaultLocale}
               onChange={(event) => setDefaultLocale(event.target.value)}
-              className="h-11 w-full rounded-[--radius-md] border border-[--color-border-strong] bg-[--color-bg] px-3 pr-8 text-[15px] text-[--color-fg]"
+              className="h-11 w-full rounded-(--radius-md) border border-(--color-border-strong) bg-(--color-bg) px-3 pr-8 text-[15px] text-(--color-fg)"
             >
               {CONTENT_LOCALES.map((contentLocale) => (
                 <option key={contentLocale} value={contentLocale}>
@@ -141,7 +141,7 @@ export function CourseDetail({
       <Card className="flex flex-col gap-4">
         <div>
           <CardTitle>{s.sectionLocalizations}</CardTitle>
-          <p className="mt-1 text-[13px] leading-5 text-[--color-fg-muted]">
+          <p className="mt-1 text-[13px] leading-5 text-(--color-fg-muted)">
             {strings.courseNew.optionalLocalesHint}
           </p>
         </div>
@@ -155,10 +155,10 @@ export function CourseDetail({
           return (
             <div
               key={contentLocale}
-              className="flex flex-col gap-3 rounded-[--radius-md] bg-[--color-surface] p-3"
+              className="flex flex-col gap-3 rounded-(--radius-md) bg-(--color-surface) p-3"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
                   {localeLabel(contentLocale, strings)}
                 </p>
                 <Badge tone={complete ? "success" : "warning"}>
@@ -241,7 +241,7 @@ export function CourseDetail({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle>{s.sectionVersions}</CardTitle>
-            <p className="mt-1 text-[13px] leading-5 text-[--color-fg-muted]">{s.versionNewHint}</p>
+            <p className="mt-1 text-[13px] leading-5 text-(--color-fg-muted)">{s.versionNewHint}</p>
           </div>
           <Button
             variant="outline"
@@ -264,7 +264,7 @@ export function CourseDetail({
         </div>
 
         {course.versions.length === 0 ? (
-          <p className="rounded-[--radius-md] border border-dashed border-[--color-border-strong] px-3 py-6 text-center text-[13px] text-[--color-fg-muted]">
+          <p className="rounded-(--radius-md) border border-dashed border-(--color-border-strong) px-3 py-6 text-center text-[13px] text-(--color-fg-muted)">
             {s.versionsEmptyDescription}
           </p>
         ) : (
@@ -272,7 +272,7 @@ export function CourseDetail({
             {course.versions.map((version) => (
               <li
                 key={version.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-[--radius-md] border border-[--color-border] p-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-(--radius-md) border border-(--color-border) p-3"
               >
                 <div className="flex flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -284,7 +284,7 @@ export function CourseDetail({
                       <Badge tone="brand">{strings.shared.edit}</Badge>
                     )}
                   </div>
-                  <p className="text-[13px] text-[--color-fg-muted]">
+                  <p className="text-[13px] text-(--color-fg-muted)">
                     {version.changeSummary || "—"} ·{" "}
                     <span className="tabular">
                       {version.stageCount} {strings.studio.stages} · {version.taskCount}{" "}
@@ -303,7 +303,7 @@ export function CourseDetail({
 
                 <Link
                   href={`/${locale}/admin/courses/${course.id}/versions/${version.id}` as Route}
-                  className="inline-flex min-h-11 items-center rounded-[--radius-md] border border-[--color-border-strong] px-4 text-[15px] font-semibold hover:bg-[--color-surface]"
+                  className="inline-flex min-h-11 items-center rounded-(--radius-md) border border-(--color-border-strong) px-4 text-[15px] font-semibold hover:bg-(--color-surface)"
                 >
                   {s.versionOpen}
                 </Link>
@@ -314,9 +314,9 @@ export function CourseDetail({
       </Card>
 
       {/* ── archive ───────────────────────────────────────────────────── */}
-      <Card className="flex flex-col gap-3 border-[--color-danger]">
+      <Card className="flex flex-col gap-3 border-(--color-danger)">
         <CardTitle>{s.sectionDanger}</CardTitle>
-        <p className="text-[13px] leading-5 text-[--color-fg-muted]">{s.archiveHint}</p>
+        <p className="text-[13px] leading-5 text-(--color-fg-muted)">{s.archiveHint}</p>
 
         {archived ? (
           <div>
@@ -331,8 +331,8 @@ export function CourseDetail({
             </Button>
           </div>
         ) : confirmArchive ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-[--radius-md] bg-[--color-danger-soft] px-3 py-2 text-[13px]">
-            <span className="text-[--color-danger]">{s.archiveConfirm}</span>
+          <div className="flex flex-wrap items-center gap-2 rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px]">
+            <span className="text-(--color-danger)">{s.archiveConfirm}</span>
             <Button
               size="sm"
               variant="danger"

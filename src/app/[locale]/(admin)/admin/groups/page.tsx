@@ -63,7 +63,7 @@ export default async function GroupsPage({
         actions={
           <Link
             href={`${basePath}/new` as Route}
-            className="inline-flex h-11 min-h-11 items-center rounded-[--radius-md] border border-[--color-border-strong] px-4 text-[15px] font-semibold hover:bg-[--color-surface]"
+            className="inline-flex h-11 min-h-11 items-center rounded-(--radius-md) border border-(--color-border-strong) px-4 text-[15px] font-semibold hover:bg-(--color-surface)"
           >
             {t.groups.create}
           </Link>
@@ -132,7 +132,7 @@ function cohortColumns(locale: string, t: AdminDict): Column<AdminCohort>[] {
       cell: (row) => (
         <Link
           href={`/${locale}/admin/groups/${row.id}` as Route}
-          className="font-semibold text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-brand) hover:underline"
         >
           {row.name}
         </Link>
@@ -141,7 +141,7 @@ function cohortColumns(locale: string, t: AdminDict): Column<AdminCohort>[] {
     {
       key: "course",
       header: t.groups.colCourse,
-      cell: (row) => <span className="text-[--color-fg-muted]">{row.courseTitle}</span>,
+      cell: (row) => <span className="text-(--color-fg-muted)">{row.courseTitle}</span>,
     },
     { key: "state", header: t.groups.colState, cell: (row) => <StatusBadge state={row.state} /> },
     {

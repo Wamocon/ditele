@@ -43,20 +43,20 @@ function lockReasonText(reason: string, strings: LearnStrings["course"]): string
 
 function ActivityIcon({ activity }: { activity: LearningActivity }) {
   const className = "size-5 shrink-0";
-  if (activity.locked) return <Lock className={cn(className, "text-[--color-fg-subtle]")} aria-hidden />;
+  if (activity.locked) return <Lock className={cn(className, "text-(--color-fg-subtle)")} aria-hidden />;
   switch (activity.state) {
     case "accepted":
     case "completed":
-      return <CheckCircle2 className={cn(className, "text-[--color-success]")} aria-hidden />;
+      return <CheckCircle2 className={cn(className, "text-(--color-success)")} aria-hidden />;
     case "submitted":
     case "resubmitted":
-      return <Clock className={cn(className, "text-[--color-info]")} aria-hidden />;
+      return <Clock className={cn(className, "text-(--color-info)")} aria-hidden />;
     case "revision_required":
-      return <RotateCcw className={cn(className, "text-[--color-warning]")} aria-hidden />;
+      return <RotateCcw className={cn(className, "text-(--color-warning)")} aria-hidden />;
     case "in_progress":
-      return <CircleDot className={cn(className, "text-[--color-brand]")} aria-hidden />;
+      return <CircleDot className={cn(className, "text-(--color-brand)")} aria-hidden />;
     default:
-      return <Circle className={cn(className, "text-[--color-fg-subtle]")} aria-hidden />;
+      return <Circle className={cn(className, "text-(--color-fg-subtle)")} aria-hidden />;
   }
 }
 
@@ -89,20 +89,20 @@ export function TaskListItem({
           )}
         </div>
         {activity.description && (
-          <p className="line-clamp-2 text-[13px] leading-5 text-[--color-fg-muted]">
+          <p className="line-clamp-2 text-[13px] leading-5 text-(--color-fg-muted)">
             {activity.description}
           </p>
         )}
         {activity.locked ? (
           // Show WHY it is locked. Greying a row out and saying nothing is the
           // most common way a learner concludes the platform is broken.
-          <p className="text-[13px] leading-5 text-[--color-fg-subtle]">
+          <p className="text-[13px] leading-5 text-(--color-fg-subtle)">
             {courseTitle ? `${courseTitle} · ` : ""}
             {lockReasonText(activity.lockReasons[0] ?? "", strings)}
           </p>
         ) : (
           meta.length > 0 && (
-            <p className="text-[13px] leading-5 text-[--color-fg-subtle] tabular-nums">
+            <p className="text-[13px] leading-5 text-(--color-fg-subtle) tabular-nums">
               {meta.join(" · ")}
             </p>
           )
@@ -112,12 +112,12 @@ export function TaskListItem({
   );
 
   const shared =
-    "flex min-h-11 items-start gap-3 rounded-[--radius-md] border border-[--color-border] px-3 py-3";
+    "flex min-h-11 items-start gap-3 rounded-(--radius-md) border border-(--color-border) px-3 py-3";
 
   if (activity.locked) {
     return (
       <li>
-        <div className={cn(shared, "bg-[--color-surface] opacity-80")} aria-disabled>
+        <div className={cn(shared, "bg-(--color-surface) opacity-80")} aria-disabled>
           {body}
         </div>
       </li>
@@ -130,8 +130,8 @@ export function TaskListItem({
         href={`/${locale}/learn/tasks/${activity.id}` as Route}
         className={cn(
           shared,
-          "bg-[--color-bg] transition-[background-color,border-color,transform] duration-[--duration-base] ease-[--ease-out]",
-          "hover:border-[--color-brand] hover:bg-[--color-surface] lg:hover:-translate-y-0.5"
+          "bg-(--color-bg) transition-[background-color,border-color,transform] duration-(--duration-base) ease-(--ease-out)",
+          "hover:border-(--color-brand) hover:bg-(--color-surface) lg:hover:-translate-y-0.5"
         )}
       >
         {body}
@@ -162,17 +162,17 @@ export function StageList({
           <details
             key={stage.id}
             open={hasOpenWork || index === 0}
-            className="group overflow-hidden rounded-[--radius-lg] border border-[--color-border] bg-[--color-bg]"
+            className="group overflow-hidden rounded-(--radius-lg) border border-(--color-border) bg-(--color-bg)"
           >
-            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-[--color-surface]">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-(--color-surface)">
               <ChevronDown
-                className="size-5 shrink-0 text-[--color-fg-muted] transition-transform duration-[--duration-base] group-open:rotate-180"
+                className="size-5 shrink-0 text-(--color-fg-muted) transition-transform duration-(--duration-base) group-open:rotate-180"
                 aria-hidden
               />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="text-[18px] font-semibold leading-6">{stage.title}</span>
                 {stage.description && (
-                  <span className="text-[13px] leading-5 text-[--color-fg-muted]">
+                  <span className="text-[13px] leading-5 text-(--color-fg-muted)">
                     {stage.description}
                   </span>
                 )}
@@ -184,9 +184,9 @@ export function StageList({
               </Badge>
             </summary>
 
-            <div className="border-t border-[--color-border] p-3">
+            <div className="border-t border-(--color-border) p-3">
               {stage.activities.length === 0 ? (
-                <p className="px-1 py-2 text-[13px] leading-5 text-[--color-fg-muted]">
+                <p className="px-1 py-2 text-[13px] leading-5 text-(--color-fg-muted)">
                   {strings.emptyStage}
                 </p>
               ) : (

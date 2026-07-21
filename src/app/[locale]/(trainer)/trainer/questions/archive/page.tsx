@@ -37,7 +37,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
         actions={
           <Link
             href={`/${locale}/trainer/questions` as Route}
-            className="inline-flex min-h-11 items-center text-[13px] font-semibold text-[--color-brand] underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-[13px] font-semibold text-(--color-brand) underline-offset-4 hover:underline"
           >
             {t("trainer.questions.backToQuestions")}
           </Link>

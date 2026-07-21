@@ -14,7 +14,7 @@ import { adminStrings, formatDate } from "@/features/content/i18n";
 function Tile({ label, value, href }: { label: string; value: number; href?: Route }) {
   const body = (
     <>
-      <p className="text-[13px] font-semibold leading-4 text-[--color-fg-muted]">{label}</p>
+      <p className="text-[13px] font-semibold leading-4 text-(--color-fg-muted)">{label}</p>
       <p className="tabular mt-1 text-[30px] font-semibold leading-9">{value}</p>
     </>
   );
@@ -80,7 +80,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
         <Card className="flex flex-col gap-3">
           <CardTitle>{s.contentStatus}</CardTitle>
           {data.versionsByState.every((entry) => entry.count === 0) ? (
-            <p className="text-[13px] text-[--color-fg-muted]">{s.contentStatusEmpty}</p>
+            <p className="text-[13px] text-(--color-fg-muted)">{s.contentStatusEmpty}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {data.versionsByState.map((entry) => (
@@ -117,18 +117,18 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
         <Card className="flex flex-col gap-3">
           <CardTitle>{s.activity}</CardTitle>
           {data.activityBlocked ? (
-            <p className="text-[13px] text-[--color-fg-muted]">{s.activityBlocked}</p>
+            <p className="text-[13px] text-(--color-fg-muted)">{s.activityBlocked}</p>
           ) : data.activity.length === 0 ? (
-            <p className="text-[13px] text-[--color-fg-muted]">{s.activityEmpty}</p>
+            <p className="text-[13px] text-(--color-fg-muted)">{s.activityEmpty}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {data.activity.map((event) => (
                 <li
                   key={event.id}
-                  className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[--color-border] pb-2 last:border-0 last:pb-0"
+                  className="flex flex-wrap items-baseline justify-between gap-2 border-b border-(--color-border) pb-2 last:border-0 last:pb-0"
                 >
                   <span className="text-[13px] font-medium">{event.eventType}</span>
-                  <span className="text-[13px] text-[--color-fg-muted]">
+                  <span className="text-[13px] text-(--color-fg-muted)">
                     {event.actorRole} · {formatDate(event.occurredAt, locale)}
                   </span>
                 </li>

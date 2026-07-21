@@ -39,7 +39,7 @@ export function RegisterForm({ locale, labels }: { locale: string; labels: Regis
         <AuthHeading title={labels.checkInboxTitle} subtitle={labels.checkInboxBody} />
         <Link
           href={`/${locale}/login` as Route}
-          className="font-semibold text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-brand) hover:underline"
         >
           {labels.loginLink}
         </Link>
@@ -100,14 +100,14 @@ export function RegisterForm({ locale, labels }: { locale: string; labels: Regis
 
         <SubmitButton>{labels.submit}</SubmitButton>
 
-        <p className="text-[13px] leading-5 text-[--color-fg-muted]">{labels.terms}</p>
+        <p className="text-[13px] leading-5 text-(--color-fg-muted)">{labels.terms}</p>
       </form>
 
-      <p className="mt-6 text-center text-[13px] text-[--color-fg-muted]">
+      <p className="mt-6 text-center text-[13px] text-(--color-fg-muted)">
         {labels.hasAccount}{" "}
         <Link
           href={`/${locale}/login` as Route}
-          className="font-semibold text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-brand) hover:underline"
         >
           {labels.loginLink}
         </Link>

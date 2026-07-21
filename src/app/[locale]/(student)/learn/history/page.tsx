@@ -76,14 +76,14 @@ export default async function HistoryPage({
         row.course_id ? (
           <Link
             href={`/${locale}/learn/courses/${row.course_id}` as Route}
-            className="text-[--color-fg] hover:text-[--color-brand] hover:underline"
+            className="text-(--color-fg) hover:text-(--color-brand) hover:underline"
           >
             {row.course_title ??
               titleByCourse.get(row.course_id) ??
               messages.learn.shared.unknownCourse}
           </Link>
         ) : (
-          <span className="text-[--color-fg-muted]">—</span>
+          <span className="text-(--color-fg-muted)">—</span>
         ),
     },
     {
@@ -93,12 +93,12 @@ export default async function HistoryPage({
         row.task_id ? (
           <Link
             href={`/${locale}/learn/tasks/${row.task_id}` as Route}
-            className="text-[--color-fg] hover:text-[--color-brand] hover:underline"
+            className="text-(--color-fg) hover:text-(--color-brand) hover:underline"
           >
             {row.task_title ?? messages.learn.shared.unknownTask}
           </Link>
         ) : (
-          <span className="text-[--color-fg-muted]">—</span>
+          <span className="text-(--color-fg-muted)">—</span>
         ),
     },
     {
@@ -129,7 +129,7 @@ export default async function HistoryPage({
           <EmptyState
             title={t.emptyTitle}
             description={t.emptyDescription}
-            icon={<History className="size-6 text-[--color-fg-subtle]" aria-hidden />}
+            icon={<History className="size-6 text-(--color-fg-subtle)" aria-hidden />}
             action={
               <LinkButton href={`/${locale}/learn/courses`} variant="outline">
                 {messages.nav.courses}
@@ -146,12 +146,12 @@ export default async function HistoryPage({
               {t.loadMore}
             </LinkButton>
           ) : (
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">{t.endOfList}</p>
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{t.endOfList}</p>
           )}
           {before && (
             <Link
               href={`/${locale}/learn/history` as Route}
-              className="inline-flex min-h-11 items-center text-[13px] font-semibold text-[--color-brand] hover:underline"
+              className="inline-flex min-h-11 items-center text-[13px] font-semibold text-(--color-brand) hover:underline"
             >
               {messages.common.back}
             </Link>

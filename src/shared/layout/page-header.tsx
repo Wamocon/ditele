@@ -27,12 +27,12 @@ export function PageHeader({
     <div className={cn("mb-6 flex flex-col gap-3 lg:mb-8", className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label="Brotkrümelnavigation">
-          <ol className="flex flex-wrap items-center gap-1.5 text-[13px] text-[--color-fg-muted]">
+          <ol className="flex flex-wrap items-center gap-1.5 text-[13px] text-(--color-fg-muted)">
             {breadcrumbs.map((c, i) => (
               <li key={`${c.label}-${i}`} className="flex items-center gap-1.5">
                 {i > 0 && <span aria-hidden>/</span>}
                 {c.href ? (
-                  <Link href={c.href as Route} className="hover:text-[--color-brand] hover:underline">
+                  <Link href={c.href as Route} className="hover:text-(--color-brand) hover:underline">
                     {c.label}
                   </Link>
                 ) : (
@@ -50,7 +50,7 @@ export function PageHeader({
             {title}
           </h1>
           {description && (
-            <p className="max-w-prose text-[15px] leading-6 text-[--color-fg-muted]">
+            <p className="max-w-prose text-[15px] leading-6 text-(--color-fg-muted)">
               {description}
             </p>
           )}

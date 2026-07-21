@@ -47,14 +47,14 @@ export function Pager({
       className={cn("mt-4 flex flex-wrap items-center justify-between gap-3", className)}
       aria-label="Seitennavigation"
     >
-      <p className="tabular text-[13px] text-[--color-fg-muted]">
+      <p className="tabular text-[13px] text-(--color-fg-muted)">
         {first}–{last} von {total}
       </p>
       <div className="flex items-center gap-2">
         {page > 1 && (
           <Link
             href={href(page - 1)}
-            className="inline-flex min-h-11 items-center rounded-[--radius-md] border border-[--color-border-strong] px-4 text-[15px] font-semibold hover:bg-[--color-surface]"
+            className="inline-flex min-h-11 items-center rounded-(--radius-md) border border-(--color-border-strong) px-4 text-[15px] font-semibold hover:bg-(--color-surface)"
           >
             {previousLabel}
           </Link>
@@ -62,7 +62,7 @@ export function Pager({
         {page < lastPage && (
           <Link
             href={href(page + 1)}
-            className="inline-flex min-h-11 items-center rounded-[--radius-md] border border-[--color-border-strong] px-4 text-[15px] font-semibold hover:bg-[--color-surface]"
+            className="inline-flex min-h-11 items-center rounded-(--radius-md) border border-(--color-border-strong) px-4 text-[15px] font-semibold hover:bg-(--color-surface)"
           >
             {nextLabel}
           </Link>

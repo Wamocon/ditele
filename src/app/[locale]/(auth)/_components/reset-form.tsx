@@ -30,7 +30,7 @@ export function ResetForm({ locale, labels }: { locale: string; labels: ResetFor
         <AuthHeading title={labels.sentTitle} subtitle={labels.sentBody} />
         <Link
           href={`/${locale}/login` as Route}
-          className="font-semibold text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-brand) hover:underline"
         >
           {labels.backToLogin}
         </Link>
@@ -63,11 +63,11 @@ export function ResetForm({ locale, labels }: { locale: string; labels: ResetFor
         <SubmitButton>{labels.submit}</SubmitButton>
       </form>
 
-      <p className="mt-6 text-center text-[13px] text-[--color-fg-muted]">
+      <p className="mt-6 text-center text-[13px] text-(--color-fg-muted)">
         {labels.remembered}{" "}
         <Link
           href={`/${locale}/login` as Route}
-          className="font-semibold text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-brand) hover:underline"
         >
           {labels.backToLogin}
         </Link>

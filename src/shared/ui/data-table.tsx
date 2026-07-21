@@ -47,13 +47,13 @@ export function DataTable<T>({
         <table className="w-full border-collapse text-left text-[15px]">
           {caption && <caption className="sr-only">{caption}</caption>}
           <thead>
-            <tr className={cn("border-b border-[--color-border]", stickyHeader && "sticky top-0 z-10 bg-[--color-bg]")}>
+            <tr className={cn("border-b border-(--color-border)", stickyHeader && "sticky top-0 z-10 bg-(--color-bg)")}>
               {columns.map((c) => (
                 <th
                   key={c.key}
                   scope="col"
                   className={cn(
-                    "px-3 py-2.5 text-[13px] font-semibold leading-4 text-[--color-fg-muted]",
+                    "px-3 py-2.5 text-[13px] font-semibold leading-4 text-(--color-fg-muted)",
                     c.numeric && "text-right"
                   )}
                 >
@@ -68,8 +68,8 @@ export function DataTable<T>({
                 key={rowKey(row)}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={cn(
-                  "border-b border-[--color-border] last:border-0",
-                  onRowClick && "cursor-pointer transition-colors hover:bg-[--color-surface]"
+                  "border-b border-(--color-border) last:border-0",
+                  onRowClick && "cursor-pointer transition-colors hover:bg-(--color-surface)"
                 )}
               >
                 {columns.map((c) => (
@@ -93,7 +93,7 @@ export function DataTable<T>({
             <div
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={cn(
-                "rounded-[--radius-lg] border border-[--color-border] bg-[--color-bg] p-4",
+                "rounded-(--radius-lg) border border-(--color-border) bg-(--color-bg) p-4",
                 onRowClick && "cursor-pointer"
               )}
             >
@@ -101,7 +101,7 @@ export function DataTable<T>({
                 .filter((c) => !c.hideOnMobile)
                 .map((c) => (
                   <div key={c.key} className="flex items-start justify-between gap-3 py-1">
-                    <span className="text-[13px] font-semibold leading-4 text-[--color-fg-muted]">
+                    <span className="text-[13px] font-semibold leading-4 text-(--color-fg-muted)">
                       {c.header}
                     </span>
                     <span className={cn("text-right text-[15px]", c.numeric && "tabular")}>

@@ -36,15 +36,15 @@ export function LinkButton({
       href={href as Route}
       className={cn(
         "inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold",
-        "transition-[background-color,box-shadow,color] duration-[--duration-base] ease-[--ease-out]",
+        "transition-[background-color,box-shadow,color] duration-(--duration-base) ease-(--ease-out)",
         size === "sm"
-          ? "min-h-11 rounded-[--radius-sm] px-3 text-[13px]"
-          : "min-h-11 rounded-[--radius-md] px-4 text-[15px]",
+          ? "min-h-11 rounded-(--radius-sm) px-3 text-[13px]"
+          : "min-h-11 rounded-(--radius-md) px-4 text-[15px]",
         variant === "primary" &&
-          "bg-[--color-brand] text-[--color-brand-fg] shadow-[--shadow-sm] hover:bg-[--color-brand-hover]",
+          "bg-(--color-brand) text-(--color-brand-fg) shadow-(--shadow-sm) hover:bg-(--color-brand-hover)",
         variant === "outline" &&
-          "border border-[--color-border-strong] text-[--color-fg] hover:bg-[--color-surface]",
-        variant === "ghost" && "text-[--color-fg] hover:bg-[--color-surface]",
+          "border border-(--color-border-strong) text-(--color-fg) hover:bg-(--color-surface)",
+        variant === "ghost" && "text-(--color-fg) hover:bg-(--color-surface)",
         fullWidth && "w-full",
         className
       )}

@@ -69,7 +69,7 @@ export default async function UsersPage({
         actions={
           <Link
             href={`${basePath}/new` as Route}
-            className="inline-flex h-11 min-h-11 items-center rounded-[--radius-md] bg-[--color-brand] px-4 text-[15px] font-semibold text-[--color-brand-fg] hover:bg-[--color-brand-hover]"
+            className="inline-flex h-11 min-h-11 items-center rounded-(--radius-md) bg-(--color-brand) px-4 text-[15px] font-semibold text-(--color-brand-fg) hover:bg-(--color-brand-hover)"
           >
             {t.users.create}
           </Link>
@@ -118,7 +118,7 @@ export default async function UsersPage({
           />
 
           {truncated && (
-            <p className="pt-3 text-[13px] leading-5 text-[--color-fg-muted]">
+            <p className="pt-3 text-[13px] leading-5 text-(--color-fg-muted)">
               {t.users.truncated}
             </p>
           )}
@@ -161,7 +161,7 @@ function userColumns(locale: string, t: AdminDict): Column<AdminUser>[] {
       cell: (row) => (
         <Link
           href={`/${locale}/admin/users/${row.userId}` as Route}
-          className="font-semibold text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-brand) hover:underline"
         >
           {row.displayName}
         </Link>
@@ -171,7 +171,7 @@ function userColumns(locale: string, t: AdminDict): Column<AdminUser>[] {
       key: "email",
       header: t.users.colEmail,
       cell: (row) => (
-        <span className="break-all text-[--color-fg-muted]">{row.email ?? t.common.none}</span>
+        <span className="break-all text-(--color-fg-muted)">{row.email ?? t.common.none}</span>
       ),
     },
     {

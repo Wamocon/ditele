@@ -153,11 +153,11 @@ export function TaskEditor({
   };
 
   return (
-    <div className="flex flex-col gap-5 border-t border-[--color-border] pt-4">
+    <div className="flex flex-col gap-5 border-t border-(--color-border) pt-4">
       {state.status === "error" && (
         <p
           role="alert"
-          className="rounded-[--radius-md] bg-[--color-danger-soft] px-3 py-2 text-[13px] text-[--color-danger]"
+          className="rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px] text-(--color-danger)"
         >
           {state.message}
         </p>
@@ -201,8 +201,8 @@ export function TaskEditor({
       {/* ── localizations ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         {CONTENT_LOCALES.map((contentLocale) => (
-          <div key={contentLocale} className="flex flex-col gap-3 rounded-[--radius-md] bg-[--color-surface] p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+          <div key={contentLocale} className="flex flex-col gap-3 rounded-(--radius-md) bg-(--color-surface) p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
               {contentLocale === "de"
                 ? strings.shared.localeDe
                 : contentLocale === "en"
@@ -235,7 +235,7 @@ export function TaskEditor({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h4 className="text-[15px] font-semibold">{s.taskHints}</h4>
-            <p className="text-[13px] text-[--color-fg-muted]">{s.taskHintsHint}</p>
+            <p className="text-[13px] text-(--color-fg-muted)">{s.taskHintsHint}</p>
           </div>
           {!readOnly && (
             <Button
@@ -250,11 +250,11 @@ export function TaskEditor({
         </div>
 
         {hints.length === 0 ? (
-          <p className="text-[13px] text-[--color-fg-muted]">{s.taskHintsEmpty}</p>
+          <p className="text-[13px] text-(--color-fg-muted)">{s.taskHintsEmpty}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {hints.map((hint, index) => (
-              <li key={index} className="flex flex-col gap-2 rounded-[--radius-md] border border-[--color-border] p-3">
+              <li key={index} className="flex flex-col gap-2 rounded-(--radius-md) border border-(--color-border) p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13px] font-semibold">{index + 1}.</span>
                   {!readOnly && (
@@ -304,7 +304,7 @@ export function TaskEditor({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h4 className="text-[15px] font-semibold">{s.taskSkills}</h4>
-            <p className="text-[13px] text-[--color-fg-muted]">{s.taskSkillsHint}</p>
+            <p className="text-[13px] text-(--color-fg-muted)">{s.taskSkillsHint}</p>
           </div>
           {!readOnly && skills.length > 0 && (
             <Button
@@ -328,13 +328,13 @@ export function TaskEditor({
         </div>
 
         {skillDrafts.length === 0 ? (
-          <p className="text-[13px] text-[--color-fg-muted]">{s.taskSkillsEmpty}</p>
+          <p className="text-[13px] text-(--color-fg-muted)">{s.taskSkillsEmpty}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {skillDrafts.map((skill, index) => (
               <li
                 key={index}
-                className="grid gap-2 rounded-[--radius-md] border border-[--color-border] p-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end"
+                className="grid gap-2 rounded-(--radius-md) border border-(--color-border) p-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end"
               >
                 <Field label={s.taskSkills}>
                   <Select
@@ -374,7 +374,7 @@ export function TaskEditor({
                 <label className="flex h-11 items-center gap-2 text-[13px]">
                   <input
                     type="checkbox"
-                    className="size-4 accent-[--color-brand]"
+                    className="size-4 accent-(--color-brand)"
                     checked={skill.evidenceRequired}
                     disabled={readOnly}
                     onChange={(event) =>
@@ -407,7 +407,7 @@ export function TaskEditor({
         <p
           className={cn(
             "tabular text-[13px] font-semibold",
-            percentTotal === 100 ? "text-[--color-success]" : "text-[--color-warning]"
+            percentTotal === 100 ? "text-(--color-success)" : "text-(--color-warning)"
           )}
         >
           {percentTotal} % / 100 %
@@ -463,11 +463,11 @@ export function TaskEditor({
         )}
 
         {options.length === 0 ? (
-          <p className="text-[13px] text-[--color-fg-muted]">{s.taskOptionsEmpty}</p>
+          <p className="text-[13px] text-(--color-fg-muted)">{s.taskOptionsEmpty}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {options.map((option, index) => (
-              <li key={index} className="flex flex-col gap-2 rounded-[--radius-md] border border-[--color-border] p-3">
+              <li key={index} className="flex flex-col gap-2 rounded-(--radius-md) border border-(--color-border) p-3">
                 <div className="grid gap-2 sm:grid-cols-3">
                   {CONTENT_LOCALES.map((contentLocale) => (
                     <Input
@@ -495,7 +495,7 @@ export function TaskEditor({
                   <label className="flex items-center gap-2 text-[13px]">
                     <input
                       type="checkbox"
-                      className="size-4 accent-[--color-brand]"
+                      className="size-4 accent-(--color-brand)"
                       checked={option.isCorrect}
                       disabled={readOnly}
                       onChange={(event) =>
@@ -538,7 +538,7 @@ export function TaskEditor({
             {s.cancelTask}
           </Button>
           {percentTotal !== BASIS_POINTS / 100 && (
-            <p className="self-center text-[13px] text-[--color-fg-muted]">{s.taskSkillsHint}</p>
+            <p className="self-center text-[13px] text-(--color-fg-muted)">{s.taskSkillsHint}</p>
           )}
         </div>
       )}

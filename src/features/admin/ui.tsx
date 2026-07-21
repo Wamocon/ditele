@@ -24,7 +24,7 @@ export function Section({
         <div className="flex flex-col gap-1">
           <CardTitle>{title}</CardTitle>
           {description && (
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">{description}</p>
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{description}</p>
           )}
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
@@ -44,7 +44,7 @@ export function DefinitionList({
     <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
       {items.map((item) => (
         <div key={item.label} className="flex flex-col gap-0.5">
-          <dt className="text-[13px] font-semibold leading-4 text-[--color-fg-muted]">
+          <dt className="text-[13px] font-semibold leading-4 text-(--color-fg-muted)">
             {item.label}
           </dt>
           <dd className="text-[15px] leading-6">{item.value}</dd>
@@ -91,14 +91,14 @@ export function Pagination({
   const hasPrevious = offset > 0;
   const hasNext = offset + limit < total;
   const linkClass =
-    "inline-flex h-11 min-h-11 items-center rounded-[--radius-md] border border-[--color-border-strong] px-4 text-[13px] font-semibold hover:bg-[--color-surface]";
+    "inline-flex h-11 min-h-11 items-center rounded-(--radius-md) border border-(--color-border-strong) px-4 text-[13px] font-semibold hover:bg-(--color-surface)";
 
   return (
     <nav
       aria-label="Seitennavigation"
       className="flex flex-wrap items-center justify-between gap-3 pt-2"
     >
-      <p className="tabular text-[13px] text-[--color-fg-muted]">{labels.showing}</p>
+      <p className="tabular text-[13px] text-(--color-fg-muted)">{labels.showing}</p>
       <div className="flex items-center gap-2">
         {hasPrevious ? (
           <Link href={href(Math.max(0, offset - limit))} className={linkClass}>
@@ -151,13 +151,13 @@ export function FilterForm({
       <div className="flex items-center gap-2">
         <button
           type="submit"
-          className="inline-flex h-11 min-h-11 items-center rounded-[--radius-md] bg-[--color-brand] px-4 text-[15px] font-semibold text-[--color-brand-fg] hover:bg-[--color-brand-hover]"
+          className="inline-flex h-11 min-h-11 items-center rounded-(--radius-md) bg-(--color-brand) px-4 text-[15px] font-semibold text-(--color-brand-fg) hover:bg-(--color-brand-hover)"
         >
           {submitLabel}
         </button>
         <Link
           href={resetHref}
-          className="inline-flex h-11 min-h-11 items-center rounded-[--radius-md] px-3 text-[13px] font-semibold text-[--color-fg-muted] hover:bg-[--color-surface]"
+          className="inline-flex h-11 min-h-11 items-center rounded-(--radius-md) px-3 text-[13px] font-semibold text-(--color-fg-muted) hover:bg-(--color-surface)"
         >
           {resetLabel}
         </Link>
@@ -207,13 +207,13 @@ export function BlockedNotice({
   action?: ReactNode;
 }) {
   return (
-    <Card className="flex flex-col items-start gap-3 border-[--color-warning] bg-[--color-warning-soft]">
-      <p className="text-[18px] font-semibold leading-6 text-[--color-warning]">{title}</p>
+    <Card className="flex flex-col items-start gap-3 border-(--color-warning) bg-(--color-warning-soft)">
+      <p className="text-[18px] font-semibold leading-6 text-(--color-warning)">{title}</p>
       <p className="max-w-prose text-[15px] leading-6">{body}</p>
       {workaround && (
-        <p className="max-w-prose text-[13px] leading-5 text-[--color-fg-muted]">{workaround}</p>
+        <p className="max-w-prose text-[13px] leading-5 text-(--color-fg-muted)">{workaround}</p>
       )}
-      {ticket && <p className="text-[13px] leading-5 text-[--color-fg-muted]">{ticket}</p>}
+      {ticket && <p className="text-[13px] leading-5 text-(--color-fg-muted)">{ticket}</p>}
       {action}
     </Card>
   );

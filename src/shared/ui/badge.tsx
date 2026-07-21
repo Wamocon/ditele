@@ -7,12 +7,12 @@ const badge = cva(
   {
     variants: {
       tone: {
-        neutral: "bg-[--color-surface-2] text-[--color-fg-muted]",
-        brand: "bg-[--color-brand-soft] text-[--color-brand]",
-        success: "bg-[--color-success-soft] text-[--color-success]",
-        warning: "bg-[--color-warning-soft] text-[--color-warning]",
-        danger: "bg-[--color-danger-soft] text-[--color-danger]",
-        info: "bg-[--color-info-soft] text-[--color-info]",
+        neutral: "bg-(--color-surface-2) text-(--color-fg-muted)",
+        brand: "bg-(--color-brand-soft) text-(--color-brand)",
+        success: "bg-(--color-success-soft) text-(--color-success)",
+        warning: "bg-(--color-warning-soft) text-(--color-warning)",
+        danger: "bg-(--color-danger-soft) text-(--color-danger)",
+        info: "bg-(--color-info-soft) text-(--color-info)",
       },
     },
     defaultVariants: { tone: "neutral" },

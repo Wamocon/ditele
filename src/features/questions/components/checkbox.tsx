@@ -26,7 +26,7 @@ export function Checkbox({
     >
       <input
         type="checkbox"
-        className="size-5 shrink-0 accent-[--color-brand]"
+        className="size-5 shrink-0 accent-(--color-brand)"
         {...props}
       />
       <span>{label}</span>

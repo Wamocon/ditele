@@ -82,7 +82,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           {dashboard.queuePreview.length > 0 && (
             <Link
               href={queueHref as Route}
-              className="text-[13px] font-semibold text-[--color-brand] underline-offset-4 hover:underline"
+              className="text-[13px] font-semibold text-(--color-brand) underline-offset-4 hover:underline"
             >
               {t("trainer.shared.showAll")}
             </Link>
@@ -112,7 +112,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                       <span className="truncate text-[15px] font-semibold leading-6">
                         {item.learnerName}
                       </span>
-                      <span className="truncate text-[13px] text-[--color-fg-muted]">
+                      <span className="truncate text-[13px] text-(--color-fg-muted)">
                         {item.taskTitle} · {item.cohortName}
                       </span>
                     </span>
@@ -149,22 +149,22 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                       <span className="text-[18px] font-semibold leading-6">{cohort.name}</span>
                       <StatusBadge state={cohort.state} />
                     </span>
-                    <span className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-[--color-fg-muted]">
+                    <span className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-(--color-fg-muted)">
                       <span>
                         {t("trainer.groups.learners")}:{" "}
-                        <span className="tabular font-semibold text-[--color-fg]">
+                        <span className="tabular font-semibold text-(--color-fg)">
                           {cohort.learnerCount}
                         </span>
                       </span>
                       <span>
                         {t("trainer.groups.openSubmissions")}:{" "}
-                        <span className="tabular font-semibold text-[--color-fg]">
+                        <span className="tabular font-semibold text-(--color-fg)">
                           {cohort.openSubmissions}
                         </span>
                       </span>
                       <span>
                         {t("trainer.groups.openQuestions")}:{" "}
-                        <span className="tabular font-semibold text-[--color-fg]">
+                        <span className="tabular font-semibold text-(--color-fg)">
                           {cohort.openQuestions}
                         </span>
                       </span>

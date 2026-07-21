@@ -42,7 +42,7 @@ export default async function Page({
         <ErrorState title={t("trainer.groups.notFoundTitle")} message={result.error.message} />
         <Link
           href={listHref as Route}
-          className="mt-4 inline-flex min-h-11 items-center text-[15px] font-semibold text-[--color-brand] underline-offset-4 hover:underline"
+          className="mt-4 inline-flex min-h-11 items-center text-[15px] font-semibold text-(--color-brand) underline-offset-4 hover:underline"
         >
           {t("trainer.groups.title")}
         </Link>

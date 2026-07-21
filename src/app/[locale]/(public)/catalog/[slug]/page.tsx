@@ -109,7 +109,7 @@ export default async function CourseDetailPage({
               <h2 className="mb-2 text-[22px] font-semibold leading-7">{t.overviewTitle}</h2>
               <div className="prose-measure flex flex-col gap-3">
                 {paragraphs.map((paragraph, index) => (
-                  <p key={index} className="text-[15px] leading-6 text-[--color-fg-muted]">
+                  <p key={index} className="text-[15px] leading-6 text-(--color-fg-muted)">
                     {paragraph}
                   </p>
                 ))}
@@ -123,7 +123,7 @@ export default async function CourseDetailPage({
               <ul className="prose-measure flex flex-col gap-2">
                 {outcomes.map((outcome) => (
                   <li key={outcome} className="flex items-start gap-2 text-[15px] leading-6">
-                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[--color-success]" aria-hidden />
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-(--color-success)" aria-hidden />
                     <span>{outcome}</span>
                   </li>
                 ))}
@@ -136,24 +136,24 @@ export default async function CourseDetailPage({
           <section>
             <h2 className="mb-3 text-[22px] font-semibold leading-7">{t.curriculumTitle}</h2>
             <Card className="flex items-start gap-3">
-              <Lock className="mt-0.5 size-4 shrink-0 text-[--color-fg-subtle]" aria-hidden />
-              <p className="text-[15px] leading-6 text-[--color-fg-muted]">{t.curriculumLocked}</p>
+              <Lock className="mt-0.5 size-4 shrink-0 text-(--color-fg-subtle)" aria-hidden />
+              <p className="text-[15px] leading-6 text-(--color-fg-muted)">{t.curriculumLocked}</p>
             </Card>
           </section>
         </div>
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-[calc(var(--header-height)+16px)] lg:self-start">
           <Card className="flex flex-col gap-3">
-            <CardTitle className="text-[15px] uppercase tracking-[0.04em] text-[--color-fg-muted]">
+            <CardTitle className="text-[15px] uppercase tracking-[0.04em] text-(--color-fg-muted)">
               {t.factsTitle}
             </CardTitle>
             <dl className="flex flex-col gap-2">
               {facts.map((fact) => (
                 <div
                   key={fact.label}
-                  className="flex items-baseline justify-between gap-3 border-b border-[--color-border] pb-2 last:border-0 last:pb-0"
+                  className="flex items-baseline justify-between gap-3 border-b border-(--color-border) pb-2 last:border-0 last:pb-0"
                 >
-                  <dt className="text-[13px] text-[--color-fg-muted]">{fact.label}</dt>
+                  <dt className="text-[13px] text-(--color-fg-muted)">{fact.label}</dt>
                   <dd className="tabular text-[15px] font-semibold">{fact.value}</dd>
                 </div>
               ))}
@@ -172,7 +172,7 @@ export default async function CourseDetailPage({
                 </Link>
                 <Link
                   href={`/${locale}/login` as Route}
-                  className="text-center text-[13px] font-semibold text-[--color-brand] hover:underline"
+                  className="text-center text-[13px] font-semibold text-(--color-brand) hover:underline"
                 >
                   {t.ctaGuestSecondary}
                 </Link>

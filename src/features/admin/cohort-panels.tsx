@@ -30,7 +30,7 @@ export function LifecyclePanel({
 
   if (options.length === 0) {
     return (
-      <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+      <p className="text-[13px] leading-5 text-(--color-fg-muted)">
         {t.groupDetail.noTransitions}
       </p>
     );
@@ -39,7 +39,7 @@ export function LifecyclePanel({
   return (
     <div className="flex flex-col gap-3">
       <ActionMessage state={state} />
-      <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+      <p className="text-[13px] leading-5 text-(--color-fg-muted)">
         {t.groupDetail.lifecycleHint}
       </p>
       <div className="flex flex-col gap-3">

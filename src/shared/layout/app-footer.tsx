@@ -12,7 +12,7 @@ export function AppFooter({ locale }: { locale: string }) {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-12 hidden border-t border-[--color-border] bg-[--color-surface] py-10 lg:block">
+    <footer className="mt-12 hidden border-t border-(--color-border) bg-(--color-surface) py-10 lg:block">
       <Container className="flex flex-col gap-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
           {/*
@@ -43,7 +43,7 @@ export function AppFooter({ locale }: { locale: string }) {
                 <li key={item.path}>
                   <Link
                     href={`/${locale}${item.path}` as Route}
-                    className="text-[13px] text-[--color-fg-muted] hover:text-[--color-brand] hover:underline"
+                    className="text-[13px] text-(--color-fg-muted) hover:text-(--color-brand) hover:underline"
                   >
                     {item.label}
                   </Link>
@@ -52,7 +52,7 @@ export function AppFooter({ locale }: { locale: string }) {
             </ul>
           </nav>
         </div>
-        <p className="text-[13px] text-[--color-fg-subtle]">
+        <p className="text-[13px] text-(--color-fg-subtle)">
           © {year} WAMOCON Academy
         </p>
       </Container>

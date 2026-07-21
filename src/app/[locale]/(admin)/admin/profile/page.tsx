@@ -57,7 +57,7 @@ export default async function AdminProfilePage({
               { label: t.profile.role, value: roleLabel(t, profile.roleCode) },
             ]}
           />
-          <p className="text-[13px] leading-5 text-[--color-fg-muted]">{t.profile.emailHint}</p>
+          <p className="text-[13px] leading-5 text-(--color-fg-muted)">{t.profile.emailHint}</p>
         </Section>
 
         <Section title={t.userDetail.profile}>

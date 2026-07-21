@@ -75,7 +75,7 @@ export default async function Page({
       cell: (row) => (
         <Link
           href={`/${locale}/admin/courses/${row.id}` as Route}
-          className="font-medium hover:text-[--color-brand] hover:underline"
+          className="font-medium hover:text-(--color-brand) hover:underline"
         >
           {row.title}
         </Link>
@@ -84,7 +84,7 @@ export default async function Page({
     {
       key: "slug",
       header: s.columnSlug,
-      cell: (row) => <span className="text-[13px] text-[--color-fg-muted]">{row.slug}</span>,
+      cell: (row) => <span className="text-[13px] text-(--color-fg-muted)">{row.slug}</span>,
     },
     { key: "state", header: s.columnState, cell: (row) => <StatusBadge state={row.state} /> },
     {
@@ -97,7 +97,7 @@ export default async function Page({
             <StatusBadge state={row.latestVersionState} />
           </span>
         ) : (
-          <span className="text-[13px] text-[--color-fg-muted]">{s.noVersion}</span>
+          <span className="text-[13px] text-(--color-fg-muted)">{s.noVersion}</span>
         ),
     },
     {
@@ -111,7 +111,7 @@ export default async function Page({
       key: "updated",
       header: s.columnUpdated,
       cell: (row) => (
-        <span className="text-[13px] text-[--color-fg-muted]">
+        <span className="text-[13px] text-(--color-fg-muted)">
           {formatDate(row.updatedAt, locale)}
         </span>
       ),

@@ -89,7 +89,7 @@ export default async function Page({
       cell: (row) => (
         <Link
           href={`/${locale}/trainer/submissions/${row.submissionId}` as Route}
-          className="inline-flex min-h-11 items-center font-semibold text-[--color-brand] underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 items-center font-semibold text-(--color-brand) underline-offset-4 hover:underline"
         >
           {t("trainer.queue.open")}
         </Link>
@@ -103,7 +103,7 @@ export default async function Page({
         title={t("trainer.history.title")}
         description={t("trainer.history.description")}
         actions={
-          <span className="text-[13px] text-[--color-fg-muted] tabular">
+          <span className="text-[13px] text-(--color-fg-muted) tabular">
             {formatCount(total, t)}
           </span>
         }
@@ -126,7 +126,7 @@ export default async function Page({
         <ul className="mt-6 flex flex-col gap-3">
           {items.map((entry) => (
             <li key={`${entry.id}-comment`} className="flex flex-col gap-1">
-              <span className="text-[13px] font-semibold text-[--color-fg-muted]">
+              <span className="text-[13px] font-semibold text-(--color-fg-muted)">
                 {entry.learnerName} · {formatDateTime(entry.createdAt, locale)}
               </span>
               <p className="max-w-[68ch] whitespace-pre-wrap text-[15px] leading-6">{entry.comment}</p>
@@ -138,7 +138,7 @@ export default async function Page({
       {pages > 1 && (
         <nav className="mt-6 flex items-center justify-between gap-3" aria-label={t("trainer.history.title")}>
           <PageLink href={`${base}?page=${page - 1}`} disabled={page <= 1} label={t("trainer.queue.previous")} />
-          <span className="text-[13px] text-[--color-fg-muted] tabular">
+          <span className="text-[13px] text-(--color-fg-muted) tabular">
             {t("trainer.queue.page", { page, pages })}
           </span>
           <PageLink href={`${base}?page=${page + 1}`} disabled={page >= pages} label={t("trainer.queue.next")} />
@@ -151,7 +151,7 @@ export default async function Page({
 function PageLink({ href, disabled, label }: { href: string; disabled: boolean; label: string }) {
   if (disabled) {
     return (
-      <span className="inline-flex min-h-11 items-center px-3 text-[15px] text-[--color-fg-subtle]">
+      <span className="inline-flex min-h-11 items-center px-3 text-[15px] text-(--color-fg-subtle)">
         {label}
       </span>
     );
@@ -159,7 +159,7 @@ function PageLink({ href, disabled, label }: { href: string; disabled: boolean; 
   return (
     <Link
       href={href as Route}
-      className="inline-flex min-h-11 items-center rounded-[--radius-md] px-3 text-[15px] font-semibold text-[--color-fg] hover:bg-[--color-surface]"
+      className="inline-flex min-h-11 items-center rounded-(--radius-md) px-3 text-[15px] font-semibold text-(--color-fg) hover:bg-(--color-surface)"
     >
       {label}
     </Link>

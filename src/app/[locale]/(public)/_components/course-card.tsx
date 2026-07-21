@@ -39,13 +39,13 @@ export function CourseCard({
     <Card interactive padded={false} className="h-full">
       <Link
         href={`/${locale}/catalog/${course.slug}` as Route}
-        className="flex h-full flex-col gap-3 rounded-[--radius-lg] p-4 lg:p-5"
+        className="flex h-full flex-col gap-3 rounded-(--radius-lg) p-4 lg:p-5"
       >
         {/* The red/navy/red mark stands in for a thumbnail — no images in the payload. */}
         <span className="flex items-center gap-1" aria-hidden>
-          <span className="size-2 rounded-full bg-[--color-brand]" />
-          <span className="size-2 rounded-full bg-[--color-ink]" />
-          <span className="size-2 rounded-full bg-[--color-brand]" />
+          <span className="size-2 rounded-full bg-(--color-brand)" />
+          <span className="size-2 rounded-full bg-(--color-ink)" />
+          <span className="size-2 rounded-full bg-(--color-brand)" />
         </span>
 
         <CardTitle className="text-[18px]">{course.title ?? course.slug}</CardTitle>
@@ -54,7 +54,7 @@ export function CourseCard({
           <CardDescription className="line-clamp-3 flex-1">{course.summary}</CardDescription>
         )}
 
-        <dl className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[13px] text-[--color-fg-muted]">
+        <dl className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[13px] text-(--color-fg-muted)">
           {duration && (
             <div className="flex items-center gap-1.5">
               <Clock className="size-4" aria-hidden />
@@ -71,7 +71,7 @@ export function CourseCard({
           </div>
         </dl>
 
-        <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[--color-brand]">
+        <span className="flex items-center gap-1.5 text-[13px] font-semibold text-(--color-brand)">
           {labels.open}
           <ArrowRight className="size-4" aria-hidden />
         </span>

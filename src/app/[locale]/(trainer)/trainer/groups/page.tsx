@@ -82,7 +82,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                     />
                   </dl>
 
-                  <span className="mt-auto pt-1 text-[13px] font-semibold text-[--color-brand]">
+                  <span className="mt-auto pt-1 text-[13px] font-semibold text-(--color-brand)">
                     {t("trainer.groups.open")}
                   </span>
                 </Link>
@@ -98,8 +98,8 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-[--color-fg-muted]">{label}</dt>
-      <dd className="tabular font-semibold text-[--color-fg]">{value}</dd>
+      <dt className="text-(--color-fg-muted)">{label}</dt>
+      <dd className="tabular font-semibold text-(--color-fg)">{value}</dd>
     </div>
   );
 }

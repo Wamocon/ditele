@@ -24,7 +24,7 @@ export function AuthHeading({ title, subtitle }: { title: string; subtitle: stri
   return (
     <div className="mb-6 flex flex-col gap-1.5">
       <h1 className="text-[22px] font-semibold leading-7">{title}</h1>
-      <p className="text-[13px] leading-5 text-[--color-fg-muted]">{subtitle}</p>
+      <p className="text-[13px] leading-5 text-(--color-fg-muted)">{subtitle}</p>
     </div>
   );
 }
@@ -38,14 +38,14 @@ export function FormAlert({ tone, children }: { tone: "error" | "success"; child
     <p
       role={error ? "alert" : "status"}
       className={cn(
-        "flex items-start gap-2 rounded-[--radius-md] border px-3 py-2.5 text-[13px] leading-5",
+        "flex items-start gap-2 rounded-(--radius-md) border px-3 py-2.5 text-[13px] leading-5",
         error
-          ? "border-[--color-danger] bg-[--color-danger-soft] text-[--color-danger]"
-          : "border-[--color-success] bg-[--color-success-soft] text-[--color-success]"
+          ? "border-(--color-danger) bg-(--color-danger-soft) text-(--color-danger)"
+          : "border-(--color-success) bg-(--color-success-soft) text-(--color-success)"
       )}
     >
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <span className="text-[--color-fg]">{children}</span>
+      <span className="text-(--color-fg)">{children}</span>
     </p>
   );
 }
@@ -84,9 +84,9 @@ export function PasswordField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-[13px] font-semibold leading-4 text-[--color-fg]">
+      <label htmlFor={id} className="text-[13px] font-semibold leading-4 text-(--color-fg)">
         {label}
-        <span className="ml-0.5 text-[--color-brand]" aria-hidden>
+        <span className="ml-0.5 text-(--color-brand)" aria-hidden>
           *
         </span>
       </label>
@@ -107,19 +107,19 @@ export function PasswordField({
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? hideLabel : showLabel}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-[--radius-md] text-[--color-fg-muted] hover:text-[--color-fg]"
+          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-(--radius-md) text-(--color-fg-muted) hover:text-(--color-fg)"
         >
           {visible ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
         </button>
       </div>
 
       {hint && !error && (
-        <p id={hintId} className="text-[13px] leading-5 text-[--color-fg-muted]">
+        <p id={hintId} className="text-[13px] leading-5 text-(--color-fg-muted)">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errorId} className="text-[13px] leading-5 text-[--color-danger]">
+        <p id={errorId} className="text-[13px] leading-5 text-(--color-danger)">
           {error}
         </p>
       )}

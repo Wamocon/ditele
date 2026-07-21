@@ -40,7 +40,7 @@ export default async function UserDetailPage({
             action={
               <Link
                 href={`/${locale}/admin/users` as Route}
-                className="text-[--color-brand] underline underline-offset-4"
+                className="text-(--color-brand) underline underline-offset-4"
               >
                 {t.userDetail.backToUsers}
               </Link>
@@ -120,16 +120,16 @@ export default async function UserDetailPage({
 
         <Section title={t.userDetail.enrollments}>
           {enrollments.length === 0 ? (
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">
               {t.userDetail.noEnrollments}
             </p>
           ) : (
-            <ul className="flex flex-col divide-y divide-[--color-border]">
+            <ul className="flex flex-col divide-y divide-(--color-border)">
               {enrollments.map((e) => (
                 <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-[15px] font-semibold leading-6">{e.courseTitle}</span>
-                    <span className="text-[13px] leading-5 text-[--color-fg-muted]">
+                    <span className="text-[13px] leading-5 text-(--color-fg-muted)">
                       {e.cohortName ?? t.common.none}
                     </span>
                   </div>
@@ -142,16 +142,16 @@ export default async function UserDetailPage({
 
         <Section title={t.userDetail.cohorts}>
           {cohorts.length === 0 ? (
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">
               {t.userDetail.noCohorts}
             </p>
           ) : (
-            <ul className="flex flex-col divide-y divide-[--color-border]">
+            <ul className="flex flex-col divide-y divide-(--color-border)">
               {cohorts.map((c) => (
                 <li key={c.cohortId} className="flex flex-wrap items-center justify-between gap-2 py-3">
                   <Link
                     href={`/${locale}/admin/groups/${c.cohortId}` as Route}
-                    className="text-[15px] font-semibold leading-6 text-[--color-brand] hover:underline"
+                    className="text-[15px] font-semibold leading-6 text-(--color-brand) hover:underline"
                   >
                     {c.cohortName}
                   </Link>

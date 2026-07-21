@@ -44,7 +44,7 @@ export default async function QuestionsPage({ params }: { params: Promise<{ loca
       cell: (row) => (
         <Link
           href={`/${locale}/learn/questions/${row.id}` as Route}
-          className="font-semibold text-[--color-fg] hover:text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-fg) hover:text-(--color-brand) hover:underline"
         >
           {row.subject}
         </Link>
@@ -54,7 +54,7 @@ export default async function QuestionsPage({ params }: { params: Promise<{ loca
       key: "task",
       header: t.columnTask,
       cell: (row) => (
-        <span className="text-[--color-fg-muted]">
+        <span className="text-(--color-fg-muted)">
           {row.taskTitle ?? messages.learn.shared.unknownTask}
         </span>
       ),
@@ -94,7 +94,7 @@ export default async function QuestionsPage({ params }: { params: Promise<{ loca
           <EmptyState
             title={t.emptyTitle}
             description={t.emptyDescription}
-            icon={<MessageCircle className="size-6 text-[--color-fg-subtle]" aria-hidden />}
+            icon={<MessageCircle className="size-6 text-(--color-fg-subtle)" aria-hidden />}
             action={askAction}
           />
         }

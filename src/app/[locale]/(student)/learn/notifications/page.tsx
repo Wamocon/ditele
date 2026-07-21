@@ -101,7 +101,7 @@ export default async function NotificationsPage({
       />
 
       {unread > 0 && (
-        <p className="mb-4 text-[13px] leading-5 text-[--color-fg-muted]">
+        <p className="mb-4 text-[13px] leading-5 text-(--color-fg-muted)">
           {format(t.unreadCount, { count: unread })}
         </p>
       )}
@@ -110,7 +110,7 @@ export default async function NotificationsPage({
         <EmptyState
           title={t.emptyTitle}
           description={t.emptyDescription}
-          icon={<Bell className="size-6 text-[--color-fg-subtle]" aria-hidden />}
+          icon={<Bell className="size-6 text-(--color-fg-subtle)" aria-hidden />}
         />
       ) : (
         <div className="flex flex-col gap-8">
@@ -120,7 +120,7 @@ export default async function NotificationsPage({
               <section key={bucket.key} aria-labelledby={`notification-group-${bucket.key}`}>
                 <h2
                   id={`notification-group-${bucket.key}`}
-                  className="mb-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]"
+                  className="mb-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)"
                 >
                   {bucket.label}
                 </h2>
@@ -150,20 +150,20 @@ export default async function NotificationsPage({
           {pageNumber > 1 ? (
             <Link
               href={`${base}?page=${pageNumber - 1}` as Route}
-              className="inline-flex min-h-11 items-center text-[13px] font-semibold text-[--color-brand] hover:underline"
+              className="inline-flex min-h-11 items-center text-[13px] font-semibold text-(--color-brand) hover:underline"
             >
               {messages.common.back}
             </Link>
           ) : (
             <span />
           )}
-          <span className="tabular text-[13px] text-[--color-fg-muted]">
+          <span className="tabular text-[13px] text-(--color-fg-muted)">
             {pageNumber} / {lastPage}
           </span>
           {pageNumber < lastPage ? (
             <Link
               href={`${base}?page=${pageNumber + 1}` as Route}
-              className="inline-flex min-h-11 items-center text-[13px] font-semibold text-[--color-brand] hover:underline"
+              className="inline-flex min-h-11 items-center text-[13px] font-semibold text-(--color-brand) hover:underline"
             >
               {messages.common.continue}
             </Link>
@@ -200,10 +200,10 @@ function NotificationCard({
         : null;
 
   return (
-    <Card className={item.isUnread ? "border-[--color-brand] bg-[--color-brand-soft]" : undefined}>
+    <Card className={item.isUnread ? "border-(--color-brand) bg-(--color-brand-soft)" : undefined}>
       <div className="flex items-start gap-3">
         <span
-          className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-[--color-surface-2] text-[--color-fg-muted]"
+          className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-(--color-surface-2) text-(--color-fg-muted)"
           aria-hidden
         >
           <NotificationIcon eventType={item.event_type} />
@@ -218,7 +218,7 @@ function NotificationCard({
               </Badge>
             )}
           </div>
-          <p className="tabular text-[13px] leading-5 text-[--color-fg-muted]">
+          <p className="tabular text-[13px] leading-5 text-(--color-fg-muted)">
             {bucket === "earlier"
               ? formatDateTime(item.created_at, locale)
               : formatTime(item.created_at, locale)}
@@ -228,7 +228,7 @@ function NotificationCard({
             {link && (
               <Link
                 href={link.href as Route}
-                className="inline-flex min-h-11 items-center text-[13px] font-semibold text-[--color-brand] hover:underline"
+                className="inline-flex min-h-11 items-center text-[13px] font-semibold text-(--color-brand) hover:underline"
               >
                 {link.label}
               </Link>

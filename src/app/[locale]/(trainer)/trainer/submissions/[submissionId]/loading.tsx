@@ -10,9 +10,9 @@ export default function Loading() {
         <Skeleton className="h-4 w-52" />
       </div>
 
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[--radius-lg] border border-[--color-border] bg-[--color-border] sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-(--radius-lg) border border-(--color-border) bg-(--color-border) sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }, (_, index) => (
-          <div key={index} className="flex flex-col gap-2 bg-[--color-bg] px-4 py-3">
+          <div key={index} className="flex flex-col gap-2 bg-(--color-bg) px-4 py-3">
             <Skeleton className="h-3 w-16" />
             <Skeleton className="h-5 w-20" />
           </div>
@@ -23,7 +23,7 @@ export default function Loading() {
         {Array.from({ length: 2 }, (_, index) => (
           <div
             key={index}
-            className="flex flex-col gap-4 rounded-[--radius-lg] border border-[--color-border] p-4 lg:p-5"
+            className="flex flex-col gap-4 rounded-(--radius-lg) border border-(--color-border) p-4 lg:p-5"
           >
             <Skeleton className="h-5 w-40" />
             <SkeletonText lines={6} />
@@ -31,7 +31,7 @@ export default function Loading() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-4 rounded-[--radius-lg] border border-[--color-border] p-4 lg:p-5">
+      <div className="flex flex-col gap-4 rounded-(--radius-lg) border border-(--color-border) p-4 lg:p-5">
         <Skeleton className="h-5 w-32" />
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-28 w-full" />

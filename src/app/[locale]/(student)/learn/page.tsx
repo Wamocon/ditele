@@ -85,7 +85,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             <h2 className="text-[22px] font-semibold leading-7">{s.dashboard.activeCourses}</h2>
             <Link
               href={`/${locale}/learn/courses` as Route}
-              className="text-[15px] font-semibold text-[--color-brand] hover:underline"
+              className="text-[15px] font-semibold text-(--color-brand) hover:underline"
             >
               {s.dashboard.allCourses}
             </Link>

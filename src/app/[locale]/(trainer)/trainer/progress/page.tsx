@@ -92,7 +92,7 @@ export default async function Page({
         emptyText={t("trainer.progress.emptyText")}
       />
 
-      <p className="mt-4 text-[13px] leading-5 text-[--color-fg-muted]">
+      <p className="mt-4 text-[13px] leading-5 text-(--color-fg-muted)">
         {t("trainer.progress.note")}
       </p>
     </>

@@ -17,13 +17,13 @@ export interface StatTileProps {
 export function StatTile({ label, value, href, alert = false }: StatTileProps) {
   const body = (
     <>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
         {label}
       </span>
       <span
         className={cn(
           "text-[30px] font-semibold leading-9 tabular",
-          alert ? "text-[--color-brand]" : "text-[--color-fg]"
+          alert ? "text-(--color-brand)" : "text-(--color-fg)"
         )}
       >
         {value}

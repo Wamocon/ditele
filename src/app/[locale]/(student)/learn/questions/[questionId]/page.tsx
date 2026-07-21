@@ -34,7 +34,7 @@ export default async function QuestionThreadPage({
           <EmptyState
             title={t.notFoundTitle}
             description={t.notFoundDescription}
-            icon={<MessageCircle className="size-6 text-[--color-fg-subtle]" aria-hidden />}
+            icon={<MessageCircle className="size-6 text-(--color-fg-subtle)" aria-hidden />}
             action={
               <LinkButton href={`/${locale}/learn/questions`} variant="outline">
                 {t.backToList}
@@ -61,19 +61,19 @@ export default async function QuestionThreadPage({
 
       <dl className="mb-6 grid gap-x-8 gap-y-3 sm:grid-cols-3">
         <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {t.taskLabel}
           </dt>
           <dd className="text-[15px] leading-6">{taskTitle ?? messages.learn.shared.unknownTask}</dd>
         </div>
         <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {t.askedAt}
           </dt>
           <dd className="tabular text-[15px] leading-6">{formatDateTime(question.created_at, locale)}</dd>
         </div>
         <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {t.answeredAt}
           </dt>
           <dd className="tabular text-[15px] leading-6">
@@ -118,7 +118,7 @@ export default async function QuestionThreadPage({
       <Card className="mt-8 flex flex-col items-start gap-3 border-dashed">
         <div>
           <p className="text-[15px] font-semibold leading-6">{t.noReplyTitle}</p>
-          <p className="mt-1 max-w-prose text-[13px] leading-5 text-[--color-fg-muted]">
+          <p className="mt-1 max-w-prose text-[13px] leading-5 text-(--color-fg-muted)">
             {t.noReplyDescription}
           </p>
         </div>
@@ -152,7 +152,7 @@ function Message({
   // treatment so the real conversation stays readable.
   if (message.message_kind === "system") {
     return (
-      <p className="px-3 py-1 text-[13px] leading-5 text-[--color-fg-subtle]">
+      <p className="px-3 py-1 text-[13px] leading-5 text-(--color-fg-subtle)">
         <span className="font-semibold">{t.systemNote}</span> · {message.body} ·{" "}
         <span className="tabular">{formatDateTime(message.created_at, locale)}</span>
       </p>
@@ -160,10 +160,10 @@ function Message({
   }
 
   return (
-    <Card className={isMine ? undefined : "bg-[--color-surface]"}>
+    <Card className={isMine ? undefined : "bg-(--color-surface)"}>
       <div className="flex items-start gap-3">
         <span
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[--color-surface-2] text-[13px] font-semibold text-[--color-fg-muted]"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--color-surface-2) text-[13px] font-semibold text-(--color-fg-muted)"
           aria-hidden
         >
           {initials(avatarName)}
@@ -172,11 +172,11 @@ function Message({
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <p className="text-[15px] font-semibold leading-6">{authorName}</p>
             {!isMine && (
-              <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
                 {t.trainerRole}
               </span>
             )}
-            <span className="tabular text-[13px] leading-5 text-[--color-fg-muted]">
+            <span className="tabular text-[13px] leading-5 text-(--color-fg-muted)">
               {formatDateTime(message.created_at, locale)}
             </span>
           </div>

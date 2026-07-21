@@ -143,7 +143,7 @@ export function StageCard({
               aria-label={s.stageDelete}
               onClick={() => setConfirmingDelete(true)}
             >
-              <Trash2 className="size-4 text-[--color-danger]" aria-hidden />
+              <Trash2 className="size-4 text-(--color-danger)" aria-hidden />
             </Button>
           </div>
         )}
@@ -152,7 +152,7 @@ export function StageCard({
       {state.status === "error" && (
         <p
           role="alert"
-          className="rounded-[--radius-md] bg-[--color-danger-soft] px-3 py-2 text-[13px] text-[--color-danger]"
+          className="rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px] text-(--color-danger)"
         >
           {state.message}
         </p>
@@ -160,8 +160,8 @@ export function StageCard({
 
       {/* Inline confirm — `ConfirmDialog` is Wave 0b and has not landed. */}
       {confirmingDelete && (
-        <div className="flex flex-wrap items-center gap-2 rounded-[--radius-md] bg-[--color-danger-soft] px-3 py-2 text-[13px]">
-          <span className="text-[--color-danger]">{s.stageDeleteConfirm}</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px]">
+          <span className="text-(--color-danger)">{s.stageDeleteConfirm}</span>
           <Button
             size="sm"
             variant="danger"
@@ -187,10 +187,10 @@ export function StageCard({
       )}
 
       {editingMeta && (
-        <div className="flex flex-col gap-3 rounded-[--radius-md] bg-[--color-surface] p-3">
+        <div className="flex flex-col gap-3 rounded-(--radius-md) bg-(--color-surface) p-3">
           {CONTENT_LOCALES.map((contentLocale) => (
             <div key={contentLocale} className="flex flex-col gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
                 {localeLabel(contentLocale, strings)}
               </p>
               <Field label={strings.shared.title} required>
@@ -257,7 +257,7 @@ export function StageCard({
       {/* ── tasks ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-[13px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+          <h4 className="text-[13px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             {s.tasks}
           </h4>
           {!readOnly && (
@@ -276,7 +276,7 @@ export function StageCard({
         </div>
 
         {stage.tasks.length === 0 ? (
-          <p className="rounded-[--radius-md] border border-dashed border-[--color-border-strong] px-3 py-4 text-center text-[13px] text-[--color-fg-muted]">
+          <p className="rounded-(--radius-md) border border-dashed border-(--color-border-strong) px-3 py-4 text-center text-[13px] text-(--color-fg-muted)">
             {s.tasksEmpty}
           </p>
         ) : (
@@ -296,8 +296,8 @@ export function StageCard({
                 <li
                   key={task.id}
                   className={cn(
-                    "rounded-[--radius-md] border border-[--color-border] p-3",
-                    open && "bg-[--color-surface]"
+                    "rounded-(--radius-md) border border-(--color-border) p-3",
+                    open && "bg-(--color-surface)"
                   )}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -305,9 +305,9 @@ export function StageCard({
                       type="button"
                       aria-expanded={open}
                       onClick={() => setOpenTaskId(open ? null : task.id)}
-                      className="flex min-h-11 flex-1 items-center gap-2 text-left text-[15px] font-medium hover:text-[--color-brand]"
+                      className="flex min-h-11 flex-1 items-center gap-2 text-left text-[15px] font-medium hover:text-(--color-brand)"
                     >
-                      <span className="tabular text-[--color-fg-subtle]">{task.position + 1}.</span>
+                      <span className="tabular text-(--color-fg-subtle)">{task.position + 1}.</span>
                       <span>{label}</span>
                       <Badge tone={task.kind === "practical" ? "brand" : "neutral"}>{kindLabel}</Badge>
                     </button>
@@ -358,15 +358,15 @@ export function StageCard({
                           aria-label={s.taskDelete}
                           onClick={() => setConfirmingTask(task.id)}
                         >
-                          <Trash2 className="size-4 text-[--color-danger]" aria-hidden />
+                          <Trash2 className="size-4 text-(--color-danger)" aria-hidden />
                         </Button>
                       </div>
                     )}
                   </div>
 
                   {confirmingTask === task.id && (
-                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-[--radius-md] bg-[--color-danger-soft] px-3 py-2 text-[13px]">
-                      <span className="text-[--color-danger]">{s.taskDeleteConfirm}</span>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px]">
+                      <span className="text-(--color-danger)">{s.taskDeleteConfirm}</span>
                       <Button
                         size="sm"
                         variant="danger"

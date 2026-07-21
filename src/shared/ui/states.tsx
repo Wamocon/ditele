@@ -7,7 +7,7 @@ import { Button } from "./button";
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("animate-shimmer rounded-[--radius-md]", className)}
+      className={cn("animate-shimmer rounded-(--radius-md)", className)}
       aria-hidden
       {...props}
     />
@@ -26,7 +26,7 @@ export function SkeletonText({ lines = 3, className }: { lines?: number; classNa
 
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn("rounded-[--radius-lg] border border-[--color-border] p-4 lg:p-5", className)}>
+    <div className={cn("rounded-(--radius-lg) border border-(--color-border) p-4 lg:p-5", className)}>
       <Skeleton className="mb-3 h-5 w-1/2" />
       <SkeletonText lines={2} />
     </div>
@@ -38,9 +38,9 @@ export function SkeletonCard({ className }: { className?: string }) {
 export function DotMark({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-1", className)} aria-hidden>
-      <span className="size-2 rounded-full bg-[--color-brand]" />
-      <span className="size-2 rounded-full bg-[--color-ink]" />
-      <span className="size-2 rounded-full bg-[--color-brand]" />
+      <span className="size-2 rounded-full bg-(--color-brand)" />
+      <span className="size-2 rounded-full bg-(--color-ink)" />
+      <span className="size-2 rounded-full bg-(--color-brand)" />
     </span>
   );
 }
@@ -59,15 +59,15 @@ export function EmptyState({ title, description, icon, action, className }: Empt
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-[--radius-lg]",
-        "border border-dashed border-[--color-border-strong] px-6 py-12 text-center",
+        "flex flex-col items-center justify-center gap-3 rounded-(--radius-lg)",
+        "border border-dashed border-(--color-border-strong) px-6 py-12 text-center",
         className
       )}
     >
       {icon ?? <DotMark className="mb-1 scale-125" />}
       <p className="text-[18px] font-semibold leading-6">{title}</p>
       {description && (
-        <p className="max-w-prose text-[13px] leading-5 text-[--color-fg-muted]">{description}</p>
+        <p className="max-w-prose text-[13px] leading-5 text-(--color-fg-muted)">{description}</p>
       )}
       {action && <div className="mt-1">{action}</div>}
     </div>
@@ -94,13 +94,13 @@ export function ErrorState({
     <div
       role="alert"
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-[--radius-lg]",
-        "border border-[--color-danger] bg-[--color-danger-soft] px-6 py-10 text-center",
+        "flex flex-col items-center justify-center gap-3 rounded-(--radius-lg)",
+        "border border-(--color-danger) bg-(--color-danger-soft) px-6 py-10 text-center",
         className
       )}
     >
-      <p className="text-[18px] font-semibold leading-6 text-[--color-danger]">{title}</p>
-      <p className="max-w-prose text-[13px] leading-5 text-[--color-fg-muted]">{message}</p>
+      <p className="text-[18px] font-semibold leading-6 text-(--color-danger)">{title}</p>
+      <p className="max-w-prose text-[13px] leading-5 text-(--color-fg-muted)">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry} className="mt-1">
           Erneut versuchen

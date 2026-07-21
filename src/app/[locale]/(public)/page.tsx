@@ -63,14 +63,14 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
     <>
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section
-        className={`${bleed} -mt-6 rounded-b-[--radius-xl] bg-[linear-gradient(180deg,var(--color-brand-soft)_0%,var(--color-bg)_100%)] py-12 lg:-mt-8 lg:py-20`}
+        className={`${bleed} -mt-6 rounded-b-(--radius-xl) bg-[linear-gradient(180deg,var(--color-brand-soft)_0%,var(--color-bg)_100%)] py-12 lg:-mt-8 lg:py-20`}
       >
         <div className="flex max-w-[720px] flex-col items-start gap-5">
-          <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+          <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
             <span className="flex items-center gap-1" aria-hidden>
-              <span className="size-2 rounded-full bg-[--color-brand]" />
-              <span className="size-2 rounded-full bg-[--color-ink]" />
-              <span className="size-2 rounded-full bg-[--color-brand]" />
+              <span className="size-2 rounded-full bg-(--color-brand)" />
+              <span className="size-2 rounded-full bg-(--color-ink)" />
+              <span className="size-2 rounded-full bg-(--color-brand)" />
             </span>
             {t.eyebrow}
           </p>
@@ -79,7 +79,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
             {t.title}
           </h1>
 
-          <p className="max-w-[60ch] text-[15px] leading-6 text-[--color-fg-muted] lg:text-[17px] lg:leading-7">
+          <p className="max-w-[60ch] text-[15px] leading-6 text-(--color-fg-muted) lg:text-[17px] lg:leading-7">
             {t.subtitle}
           </p>
 
@@ -98,13 +98,13 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
             )}
           </div>
 
-          <dl className="mt-4 grid w-full grid-cols-3 gap-4 border-t border-[--color-border] pt-5">
+          <dl className="mt-4 grid w-full grid-cols-3 gap-4 border-t border-(--color-border) pt-5">
             {stats.map((stat) => (
               <div key={stat.label} className="flex flex-col gap-0.5">
                 <dd className="tabular text-[26px] font-semibold leading-8 lg:text-[30px]">
                   {stat.value}
                 </dd>
-                <dt className="text-[13px] leading-5 text-[--color-fg-muted]">{stat.label}</dt>
+                <dt className="text-[13px] leading-5 text-(--color-fg-muted)">{stat.label}</dt>
               </div>
             ))}
           </dl>
@@ -115,7 +115,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       <section className="py-12 lg:py-16">
         <Reveal>
           <h2 className="text-[22px] font-semibold leading-7">{t.valueTitle}</h2>
-          <p className="mt-1 max-w-[60ch] text-[15px] leading-6 text-[--color-fg-muted]">
+          <p className="mt-1 max-w-[60ch] text-[15px] leading-6 text-(--color-fg-muted)">
             {t.valueSubtitle}
           </p>
         </Reveal>
@@ -124,7 +124,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
           {values.map((value, index) => (
             <Reveal key={value.title} delayMs={index * 40}>
               <Card className="flex h-full flex-col gap-3">
-                <span className="flex size-10 items-center justify-center rounded-[--radius-md] bg-[--color-brand-soft] text-[--color-brand]">
+                <span className="flex size-10 items-center justify-center rounded-(--radius-md) bg-(--color-brand-soft) text-(--color-brand)">
                   <value.icon className="size-5" aria-hidden />
                 </span>
                 <CardTitle>{value.title}</CardTitle>
@@ -136,10 +136,10 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       </section>
 
       {/* ── How it works ────────────────────────────────────────────────── */}
-      <section className={`${bleed} rounded-[--radius-xl] bg-[--color-surface] py-12 lg:py-16`}>
+      <section className={`${bleed} rounded-(--radius-xl) bg-(--color-surface) py-12 lg:py-16`}>
         <Reveal>
           <h2 className="text-[22px] font-semibold leading-7">{t.howTitle}</h2>
-          <p className="mt-1 max-w-[60ch] text-[15px] leading-6 text-[--color-fg-muted]">
+          <p className="mt-1 max-w-[60ch] text-[15px] leading-6 text-(--color-fg-muted)">
             {t.howSubtitle}
           </p>
         </Reveal>
@@ -147,15 +147,15 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
           {steps.map((step, index) => (
             <Reveal key={step.title} delayMs={index * 40}>
-              <li className="flex h-full flex-col gap-2 rounded-[--radius-lg] border border-[--color-border] bg-[--color-bg] p-4 lg:p-5">
+              <li className="flex h-full flex-col gap-2 rounded-(--radius-lg) border border-(--color-border) bg-(--color-bg) p-4 lg:p-5">
                 {/* Navy, not red: white on --color-brand is only ~3.4:1 in dark
                     mode, and 13px bold does not count as large text. Ink against
                     the page background is 13.4:1 in both themes. */}
-                <span className="tabular flex size-8 items-center justify-center rounded-full bg-[--color-ink] text-[13px] font-semibold text-[--color-bg]">
+                <span className="tabular flex size-8 items-center justify-center rounded-full bg-(--color-ink) text-[13px] font-semibold text-(--color-bg)">
                   {index + 1}
                 </span>
                 <h3 className="text-[18px] font-semibold leading-6">{step.title}</h3>
-                <p className="text-[15px] leading-6 text-[--color-fg-muted]">{step.body}</p>
+                <p className="text-[15px] leading-6 text-(--color-fg-muted)">{step.body}</p>
               </li>
             </Reveal>
           ))}
@@ -168,13 +168,13 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-[22px] font-semibold leading-7">{t.coursesTitle}</h2>
-              <p className="mt-1 max-w-[60ch] text-[15px] leading-6 text-[--color-fg-muted]">
+              <p className="mt-1 max-w-[60ch] text-[15px] leading-6 text-(--color-fg-muted)">
                 {t.coursesSubtitle}
               </p>
             </div>
             <Link
               href={`/${locale}/catalog` as Route}
-              className="flex shrink-0 items-center gap-1.5 text-[15px] font-semibold text-[--color-brand] hover:underline"
+              className="flex shrink-0 items-center gap-1.5 text-[15px] font-semibold text-(--color-brand) hover:underline"
             >
               {t.coursesLink}
               <ArrowRight className="size-4" aria-hidden />
@@ -213,13 +213,13 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       {/* ── Closing call to action ──────────────────────────────────────── */}
       {!session && (
         <section
-          className={`${bleed} mb-2 rounded-[--radius-xl] bg-[--color-brand-soft] py-12 text-center lg:py-16`}
+          className={`${bleed} mb-2 rounded-(--radius-xl) bg-(--color-brand-soft) py-12 text-center lg:py-16`}
         >
           <Reveal>
             <h2 className="text-[26px] font-semibold leading-8 lg:text-[30px] lg:leading-9">
               {t.finalTitle}
             </h2>
-            <p className="mx-auto mt-2 max-w-[52ch] text-[15px] leading-6 text-[--color-fg-muted]">
+            <p className="mx-auto mt-2 max-w-[52ch] text-[15px] leading-6 text-(--color-fg-muted)">
               {t.finalBody}
             </p>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -230,7 +230,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
               </Link>
               <Link
                 href={`/${locale}/login` as Route}
-                className="text-[15px] font-semibold text-[--color-brand] hover:underline"
+                className="text-[15px] font-semibold text-(--color-brand) hover:underline"
               >
                 {t.finalSecondary}
               </Link>

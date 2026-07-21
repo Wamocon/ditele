@@ -88,7 +88,7 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
       {error && (
         <p
           role="alert"
-          className="rounded-[--radius-md] bg-[--color-danger-soft] px-3 py-2 text-[13px] text-[--color-danger]"
+          className="rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px] text-(--color-danger)"
         >
           {error}
         </p>
@@ -125,7 +125,7 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
             <select
               value={defaultLocale}
               onChange={(event) => setDefaultLocale(event.target.value)}
-              className="h-11 w-full rounded-[--radius-md] border border-[--color-border-strong] bg-[--color-bg] px-3 pr-8 text-[15px] text-[--color-fg]"
+              className="h-11 w-full rounded-(--radius-md) border border-(--color-border-strong) bg-(--color-bg) px-3 pr-8 text-[15px] text-(--color-fg)"
             >
               <option value="de">{strings.shared.localeDe}</option>
               <option value="en">{strings.shared.localeEn}</option>
@@ -153,7 +153,7 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
       <Card className="flex flex-col gap-4">
         <div>
           <CardTitle>{s.optionalLocales}</CardTitle>
-          <p className="mt-1 text-[13px] leading-5 text-[--color-fg-muted]">
+          <p className="mt-1 text-[13px] leading-5 text-(--color-fg-muted)">
             {s.optionalLocalesHint}
           </p>
         </div>

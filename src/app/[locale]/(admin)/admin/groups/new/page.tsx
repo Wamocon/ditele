@@ -43,7 +43,7 @@ export default async function NewGroupPage({
         action={
           <Link
             href={`/${locale}/admin/groups` as Route}
-            className="inline-flex h-11 min-h-11 items-center rounded-[--radius-md] border border-[--color-border-strong] bg-[--color-bg] px-4 text-[15px] font-semibold hover:bg-[--color-surface]"
+            className="inline-flex h-11 min-h-11 items-center rounded-(--radius-md) border border-(--color-border-strong) bg-(--color-bg) px-4 text-[15px] font-semibold hover:bg-(--color-surface)"
           >
             {t.groupNew.backToGroups}
           </Link>

@@ -124,7 +124,7 @@ function AggregateCard({
           <span className="tabular text-[30px] font-semibold leading-9">
             {formatAverage(aggregate.average, locale)}
           </span>
-          <span className="tabular text-[13px] leading-5 text-[--color-fg-muted]">
+          <span className="tabular text-[13px] leading-5 text-(--color-fg-muted)">
             {aggregate.count} {t.ratings.count}
           </span>
         </div>
@@ -137,16 +137,16 @@ function AggregateCard({
           const value = aggregate.distribution[stars - 1] ?? 0;
           return (
             <div key={stars} className="flex items-center gap-2">
-              <span className="tabular w-10 shrink-0 text-[13px] leading-5 text-[--color-fg-muted]">
+              <span className="tabular w-10 shrink-0 text-[13px] leading-5 text-(--color-fg-muted)">
                 {stars} ★
               </span>
-              <span className="h-2 flex-1 overflow-hidden rounded-full bg-[--color-surface-2]">
+              <span className="h-2 flex-1 overflow-hidden rounded-full bg-(--color-surface-2)">
                 <span
-                  className="block h-full rounded-full bg-[--color-brand]"
+                  className="block h-full rounded-full bg-(--color-brand)"
                   style={{ width: `${(value / max) * 100}%` }}
                 />
               </span>
-              <span className="tabular w-6 shrink-0 text-right text-[13px] leading-5 text-[--color-fg-muted]">
+              <span className="tabular w-6 shrink-0 text-right text-[13px] leading-5 text-(--color-fg-muted)">
                 {value}
               </span>
             </div>
@@ -182,7 +182,7 @@ function commentColumns(locale: string, t: AdminDict): Column<RatingComment>[] {
     {
       key: "learner",
       header: t.ratings.colLearner,
-      cell: (row) => <span className="text-[--color-fg-muted]">{row.learnerName}</span>,
+      cell: (row) => <span className="text-(--color-fg-muted)">{row.learnerName}</span>,
     },
     {
       key: "date",

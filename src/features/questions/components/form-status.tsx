@@ -23,10 +23,10 @@ export function FormStatus({
       role={tone === "error" ? "alert" : "status"}
       aria-live="polite"
       className={cn(
-        "rounded-[--radius-md] px-3 py-2 text-[13px] leading-5",
+        "rounded-(--radius-md) px-3 py-2 text-[13px] leading-5",
         tone === "error"
-          ? "bg-[--color-danger-soft] text-[--color-danger]"
-          : "bg-[--color-success-soft] text-[--color-success]",
+          ? "bg-(--color-danger-soft) text-(--color-danger)"
+          : "bg-(--color-success-soft) text-(--color-success)",
         className
       )}
     >

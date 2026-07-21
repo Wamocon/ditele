@@ -36,9 +36,9 @@ export function Studio({
   return (
     <div className="flex flex-col gap-5">
       {readOnly && (
-        <Card className="border-[--color-info] bg-[--color-info-soft]">
-          <p className="text-[15px] font-semibold text-[--color-info]">{s.readOnly}</p>
-          <p className="mt-1 text-[13px] leading-5 text-[--color-fg-muted]">
+        <Card className="border-(--color-info) bg-(--color-info-soft)">
+          <p className="text-[15px] font-semibold text-(--color-info)">{s.readOnly}</p>
+          <p className="mt-1 text-[13px] leading-5 text-(--color-fg-muted)">
             {s.readOnlyDescription}
           </p>
         </Card>
@@ -82,7 +82,7 @@ export function Studio({
         {state.status === "error" && (
           <p
             role="alert"
-            className="rounded-[--radius-md] bg-[--color-danger-soft] px-3 py-2 text-[13px] text-[--color-danger]"
+            className="rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px] text-(--color-danger)"
           >
             {state.message}
           </p>

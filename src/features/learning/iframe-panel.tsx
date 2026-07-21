@@ -166,7 +166,7 @@ export function IframePanel({ src, strings }: IframePanelProps) {
       <Card className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h3 className="text-[18px] font-semibold leading-6">{strings.targetMobileTitle}</h3>
-          <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+          <p className="text-[13px] leading-5 text-(--color-fg-muted)">
             {strings.targetMobileDescription}
           </p>
         </div>
@@ -186,12 +186,12 @@ export function IframePanel({ src, strings }: IframePanelProps) {
     <div
       ref={containerRef}
       className={cn(
-        "flex flex-col overflow-hidden rounded-[--radius-lg] border border-[--color-border] bg-[--color-surface]",
+        "flex flex-col overflow-hidden rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface)",
         isFullscreen && "fixed inset-0 z-50 rounded-none border-0"
       )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[--color-border] bg-[--color-bg] px-3 py-2">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-(--color-border) bg-(--color-bg) px-3 py-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
           {strings.targetTitle}
         </p>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -231,13 +231,13 @@ export function IframePanel({ src, strings }: IframePanelProps) {
 
       <div
         ref={frameRef}
-        className={cn("relative bg-[--color-bg]", isFullscreen && "flex-1")}
+        className={cn("relative bg-(--color-bg)", isFullscreen && "flex-1")}
         style={{ height: DEFAULT_HEIGHT }}
       >
         {status === "error" ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
             <p className="text-[18px] font-semibold leading-6">{strings.targetErrorTitle}</p>
-            <p className="max-w-prose text-[13px] leading-5 text-[--color-fg-muted]">
+            <p className="max-w-prose text-[13px] leading-5 text-(--color-fg-muted)">
               {strings.targetErrorDescription}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -250,12 +250,12 @@ export function IframePanel({ src, strings }: IframePanelProps) {
         ) : (
           <>
             {status === "loading" && (
-              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-[--color-surface]">
+              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-(--color-surface)">
                 <span
-                  className="size-4 animate-spin rounded-full border-2 border-[--color-brand] border-t-transparent"
+                  className="size-4 animate-spin rounded-full border-2 border-(--color-brand) border-t-transparent"
                   aria-hidden
                 />
-                <p className="text-[13px] text-[--color-fg-muted]">{strings.targetLoading}</p>
+                <p className="text-[13px] text-(--color-fg-muted)">{strings.targetLoading}</p>
               </div>
             )}
             <iframe
@@ -283,9 +283,9 @@ export function IframePanel({ src, strings }: IframePanelProps) {
             if (event.key === "ArrowDown") commitHeight(heightRef.current + 40);
             if (event.key === "ArrowUp") commitHeight(heightRef.current - 40);
           }}
-          className="group flex h-4 shrink-0 cursor-ns-resize items-center justify-center border-t border-[--color-border] bg-[--color-bg]"
+          className="group flex h-4 shrink-0 cursor-ns-resize items-center justify-center border-t border-(--color-border) bg-(--color-bg)"
         >
-          <span className="h-1 w-10 rounded-full bg-[--color-border-strong] transition-colors group-hover:bg-[--color-brand]" />
+          <span className="h-1 w-10 rounded-full bg-(--color-border-strong) transition-colors group-hover:bg-(--color-brand)" />
         </div>
       )}
     </div>

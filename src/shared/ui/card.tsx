@@ -18,10 +18,10 @@ export function Card({
   return (
     <Tag
       className={cn(
-        "rounded-[--radius-lg] border border-[--color-border] bg-[--color-bg] shadow-[--shadow-sm]",
+        "rounded-(--radius-lg) border border-(--color-border) bg-(--color-bg) shadow-(--shadow-sm)",
         padded && "p-4 lg:p-5",
         interactive &&
-          "transition-[transform,box-shadow] duration-[--duration-base] ease-[--ease-out] lg:hover:-translate-y-0.5 lg:hover:shadow-[--shadow-md]",
+          "transition-[transform,box-shadow] duration-(--duration-base) ease-(--ease-out) lg:hover:-translate-y-0.5 lg:hover:shadow-(--shadow-md)",
         className
       )}
       {...props}
@@ -34,5 +34,5 @@ export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingEle
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-[13px] leading-5 text-[--color-fg-muted]", className)} {...props} />;
+  return <p className={cn("text-[13px] leading-5 text-(--color-fg-muted)", className)} {...props} />;
 }

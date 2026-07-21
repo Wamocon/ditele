@@ -13,7 +13,7 @@ export default function Loading() {
         {Array.from({ length: 4 }, (_, index) => (
           <div
             key={index}
-            className="flex flex-col gap-2 rounded-[--radius-lg] border border-[--color-border] p-4 lg:p-5"
+            className="flex flex-col gap-2 rounded-(--radius-lg) border border-(--color-border) p-4 lg:p-5"
           >
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-8 w-12" />

@@ -9,7 +9,7 @@ export default function Loading() {
         <Skeleton className="h-11 flex-1" />
         <Skeleton className="h-11 sm:w-56" />
       </div>
-      <div className="rounded-[--radius-lg] border border-[--color-border] p-4">
+      <div className="rounded-(--radius-lg) border border-(--color-border) p-4">
         <SkeletonText lines={8} />
       </div>
     </div>

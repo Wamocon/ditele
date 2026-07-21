@@ -35,7 +35,7 @@ export default async function GroupDetailPage({
             action={
               <Link
                 href={`/${locale}/admin/groups` as Route}
-                className="text-[--color-brand] underline underline-offset-4"
+                className="text-(--color-brand) underline underline-offset-4"
               >
                 {t.groupNew.backToGroups}
               </Link>
@@ -115,7 +115,7 @@ export default async function GroupDetailPage({
             emptyState={<EmptyState title={t.groupDetail.emptyMembers} />}
           />
           {/* I-012: no insert path on cohort_memberships, so no trainer picker. */}
-          <p className="pt-3 text-[13px] leading-5 text-[--color-fg-muted]">
+          <p className="pt-3 text-[13px] leading-5 text-(--color-fg-muted)">
             {t.groupDetail.trainerBlocked}
           </p>
         </Section>
@@ -132,7 +132,7 @@ function memberColumns(locale: string, t: AdminDict): Column<CohortMember>[] {
       cell: (row) => (
         <Link
           href={`/${locale}/admin/users/${row.userId}` as Route}
-          className="font-semibold text-[--color-brand] hover:underline"
+          className="font-semibold text-(--color-brand) hover:underline"
         >
           {row.displayName}
         </Link>

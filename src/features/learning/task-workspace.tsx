@@ -261,7 +261,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
         aria-live="polite"
         className={cn(
           "text-[13px] leading-5",
-          autosave.state === "error" ? "text-[--color-danger]" : "text-[--color-fg-muted]"
+          autosave.state === "error" ? "text-(--color-danger)" : "text-(--color-fg-muted)"
         )}
       >
         {label}
@@ -274,7 +274,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
     <fieldset className="flex flex-col gap-3" disabled={!canEdit}>
       <legend className="mb-1 flex flex-col gap-1">
         <span className="text-[18px] font-semibold leading-6">{s.assessmentTitle}</span>
-        <span className="text-[13px] leading-5 text-[--color-fg-muted]">
+        <span className="text-[13px] leading-5 text-(--color-fg-muted)">
           {assessment.multiple ? s.assessmentMultiple : s.assessmentSingle}
         </span>
       </legend>
@@ -286,18 +286,18 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
             <label
               key={option.id}
               className={cn(
-                "flex min-h-11 cursor-pointer items-center gap-3 rounded-[--radius-md] border px-3 py-2",
-                "transition-colors duration-[--duration-fast]",
+                "flex min-h-11 cursor-pointer items-center gap-3 rounded-(--radius-md) border px-3 py-2",
+                "transition-colors duration-(--duration-fast)",
                 checked
-                  ? "border-[--color-brand] bg-[--color-brand-soft]"
-                  : "border-[--color-border-strong] hover:bg-[--color-surface]",
+                  ? "border-(--color-brand) bg-(--color-brand-soft)"
+                  : "border-(--color-border-strong) hover:bg-(--color-surface)",
                 !canEdit && "cursor-default opacity-80"
               )}
             >
               <input
                 type={assessment.multiple ? "checkbox" : "radio"}
                 name="assessment"
-                className="size-4 accent-[--color-brand]"
+                className="size-4 accent-(--color-brand)"
                 checked={checked}
                 disabled={!canEdit}
                 onChange={() =>
@@ -323,13 +323,13 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
   const answerPanel = (
     <div className="flex flex-col gap-5">
       {readOnly && attempt && (
-        <div className="flex items-start gap-3 rounded-[--radius-md] border border-[--color-info] bg-[--color-info-soft] px-4 py-3">
-          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-[--color-info]" aria-hidden />
+        <div className="flex items-start gap-3 rounded-(--radius-md) border border-(--color-info) bg-(--color-info-soft) px-4 py-3">
+          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-(--color-info)" aria-hidden />
           <div className="flex flex-col gap-0.5">
             <p className="text-[15px] font-semibold leading-6">
               {attempt.state === "accepted" ? s.acceptedTitle : s.submittedTitle}
             </p>
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">
               {attempt.state === "accepted" ? s.acceptedDescription : s.submittedDescription}
             </p>
           </div>
@@ -337,11 +337,11 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
       )}
 
       {attempt?.state === "revision_required" && (
-        <div className="flex items-start gap-3 rounded-[--radius-md] border border-[--color-warning] bg-[--color-warning-soft] px-4 py-3">
-          <CircleAlert className="mt-0.5 size-5 shrink-0 text-[--color-warning]" aria-hidden />
+        <div className="flex items-start gap-3 rounded-(--radius-md) border border-(--color-warning) bg-(--color-warning-soft) px-4 py-3">
+          <CircleAlert className="mt-0.5 size-5 shrink-0 text-(--color-warning)" aria-hidden />
           <div className="flex flex-col gap-0.5">
             <p className="text-[15px] font-semibold leading-6">{s.revisionTitle}</p>
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">{s.revisionDescription}</p>
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{s.revisionDescription}</p>
           </div>
         </div>
       )}
@@ -352,7 +352,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
         <section className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <CardTitle>{s.defectTitle}</CardTitle>
-            <p className="text-[13px] leading-5 text-[--color-fg-muted]">{s.defectDescription}</p>
+            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{s.defectDescription}</p>
           </div>
           <DefectForm
             value={defect}
@@ -382,7 +382,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
       </Field>
 
       {formError && (
-        <p role="alert" className="text-[13px] leading-5 text-[--color-danger]">
+        <p role="alert" className="text-[13px] leading-5 text-(--color-danger)">
           {formError}
         </p>
       )}
@@ -412,9 +412,9 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
   if (task.access !== "available") {
     return (
       <Card className="flex flex-col items-center gap-3 py-12 text-center">
-        <Lock className="size-8 text-[--color-fg-subtle]" aria-hidden />
+        <Lock className="size-8 text-(--color-fg-subtle)" aria-hidden />
         <CardTitle>{s.lockedTitle}</CardTitle>
-        <p className="max-w-prose text-[13px] leading-5 text-[--color-fg-muted]">
+        <p className="max-w-prose text-[13px] leading-5 text-(--color-fg-muted)">
           {s.lockedDescription}
         </p>
         <Button variant="outline" onClick={() => router.push(courseHref as Route)}>
@@ -433,7 +433,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
       <div
         role="tablist"
         aria-label={s.breadcrumb}
-        className="flex gap-1 rounded-[--radius-md] bg-[--color-surface-2] p-1 lg:hidden"
+        className="flex gap-1 rounded-(--radius-md) bg-(--color-surface-2) p-1 lg:hidden"
       >
         {(["task", "answer"] as const).map((tab) => (
           <button
@@ -443,11 +443,11 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
             aria-selected={activeTab === tab}
             onClick={() => setActiveTab(tab)}
             className={cn(
-              "min-h-11 flex-1 rounded-[--radius-sm] text-[15px] font-semibold",
-              "transition-colors duration-[--duration-fast]",
+              "min-h-11 flex-1 rounded-(--radius-sm) text-[15px] font-semibold",
+              "transition-colors duration-(--duration-fast)",
               activeTab === tab
-                ? "bg-[--color-bg] text-[--color-fg] shadow-[--shadow-sm]"
-                : "text-[--color-fg-muted]"
+                ? "bg-(--color-bg) text-(--color-fg) shadow-(--shadow-sm)"
+                : "text-(--color-fg-muted)"
             )}
           >
             {tab === "task" ? s.tabTask : s.tabAnswer}
@@ -470,7 +470,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
               </Badge>
               {attempt && <StatusBadge state={attempt.state} />}
               {attempt && attempt.sequenceNumber > 0 && (
-                <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--color-fg-muted]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
                   {format(s.attempt, { number: attempt.sequenceNumber })}
                 </span>
               )}
@@ -496,7 +496,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href={`/${locale}/learn/questions/new?taskId=${task.id}` as Route}
-              className="inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-[--color-brand] hover:underline"
+              className="inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-(--color-brand) hover:underline"
             >
               <MessageCircleQuestion className="size-4" aria-hidden />
               {s.askQuestion}
@@ -514,11 +514,11 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
           {attempt === null ? (
             <Card className="flex flex-col gap-3">
               <CardTitle>{s.notStartedTitle}</CardTitle>
-              <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+              <p className="text-[13px] leading-5 text-(--color-fg-muted)">
                 {s.notStartedDescription}
               </p>
               {formError && (
-                <p role="alert" className="text-[13px] leading-5 text-[--color-danger]">
+                <p role="alert" className="text-[13px] leading-5 text-(--color-danger)">
                   {formError}
                 </p>
               )}
@@ -531,7 +531,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
               <CardTitle>{s.answerTitle}</CardTitle>
               {answerPanel}
               {readOnly && (
-                <p className="text-[13px] leading-5 text-[--color-fg-muted]">
+                <p className="text-[13px] leading-5 text-(--color-fg-muted)">
                   {s.submittedReadOnly}
                 </p>
               )}
@@ -540,7 +540,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
 
           <Link
             href={courseHref as Route}
-            className="inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-[--color-fg-muted] hover:text-[--color-brand]"
+            className="inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-(--color-fg-muted) hover:text-(--color-brand)"
           >
             <ArrowLeft className="size-4" aria-hidden />
             {s.backToCourse}
@@ -551,8 +551,8 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
       {/* Sticky mobile submit bar — the primary action must never be scrolled
           off a 375px screen. Sits above the tab bar's safe area. */}
       {canEdit && (
-        <div className="fixed inset-x-0 bottom-[calc(var(--tabbar-height)+env(safe-area-inset-bottom))] z-30 border-t border-[--color-border] bg-[--color-bg]/95 px-4 py-3 backdrop-blur lg:hidden">
-          <div className="mx-auto flex max-w-[--content-max] items-center gap-3">
+        <div className="fixed inset-x-0 bottom-[calc(var(--tabbar-height)+env(safe-area-inset-bottom))] z-30 border-t border-(--color-border) bg-[color-mix(in_srgb,var(--color-bg)_95%,transparent)] px-4 py-3 backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-(--content-max) items-center gap-3">
             <div className="min-w-0 flex-1">{saveIndicator}</div>
             <Button onClick={onRequestSubmit} disabled={submitting}>
               {attempt?.state === "revision_required" ? s.resubmit : s.submit}
