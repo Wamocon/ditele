@@ -13,11 +13,12 @@ export interface AskQuestionState {
   values: { context: string; subject: string; body: string };
 }
 
-export const initialAskState: AskQuestionState = {
-  error: null,
-  fieldErrors: {},
-  values: { context: "", subject: "", body: "" },
-};
+/**
+ * ⚠️ The initial state is declared in the client component, not here. A
+ * `"use server"` module may export **only async functions**; anything else
+ * reads as `undefined` on the client and the page fails during SSR while still
+ * answering 200.
+ */
 
 const SUBJECT_MAX = 200;
 const BODY_MAX = 4000;

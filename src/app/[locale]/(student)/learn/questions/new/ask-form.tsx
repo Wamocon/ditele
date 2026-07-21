@@ -6,7 +6,14 @@ import { Field, Input, Select, Textarea } from "@/shared/ui";
 import { FormStatus } from "@/features/questions/components/form-status";
 import { SubmitButton } from "@/features/questions/components/submit-button";
 import type { QuestionContext } from "@/shared/data/questions";
-import { askQuestionAction, initialAskState } from "./actions";
+import { askQuestionAction, type AskQuestionState } from "./actions";
+
+/** Declared here because a `"use server"` module may export only functions. */
+const INITIAL: AskQuestionState = {
+  error: null,
+  fieldErrors: {},
+  values: { context: "", subject: "", body: "" },
+};
 
 export interface AskFormLabels {
   contextLabel: string;
@@ -31,7 +38,7 @@ export function AskForm({
   contexts: QuestionContext[];
   labels: AskFormLabels;
 }) {
-  const [state, action] = useActionState(askQuestionAction, initialAskState);
+  const [state, action] = useActionState(askQuestionAction, INITIAL);
 
   return (
     <form action={action} className="flex max-w-[68ch] flex-col gap-5">

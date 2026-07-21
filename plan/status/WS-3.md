@@ -17,15 +17,15 @@ Updated: 2026-07-21 · Chat: **#1**
 - `/learn/questions` — list, waiting-first ordering, empty state
 - `/learn/questions/new` — context picker, validation, values survive an error
 - `/learn/questions/[questionId]` — thread, system rows, honest no-reply notice
+- `/learn/profile` — account, theme, notification preferences, password, sign out
 
 **Half-finished:**
 - Nothing.
 
 **Next, in order:**
-1. `/learn/profile`
-2. `/learn/enroll/[courseId]`
-3. `/learn/history`
-4. `/learn/certificates`
+1. `/learn/enroll/[courseId]`
+2. `/learn/history`
+3. `/learn/certificates`
 
 **⭐ Things I learned that are written down nowhere else:**
 
@@ -82,7 +82,17 @@ Updated: 2026-07-21 · Chat: **#1**
    `enrollment, review, question, submission, certificate` — anything else is
    `22023`.
 
-9. **`de.json` and `ISSUES.md` lose writes.** Both are shared, and a
+9. 🚨 **A `"use server"` module may export ONLY async functions.** I exported
+   `initialProfileState` / `initialAskState` next to the actions that use them —
+   the natural place for them. Next replaces every non-function export with a
+   server reference, so on the client `state.fieldErrors` was `undefined`, the
+   component threw during SSR, and **the route still answered `200` with an
+   empty `<main>`**. `smoke.mjs` cannot catch this: there is no "Application
+   error" in the body, just nothing. Declare `useActionState` initial values in
+   the client component. Symptom to recognise: page renders the `loading.tsx`
+   skeleton in the HTML and the content only appears after hydration.
+
+10. **`de.json` and `ISSUES.md` lose writes.** Both are shared, and a
    read-modify-write from another chat lands on top of yours. My first
    `ISSUES.md` row vanished within seconds. Always write, then **read back and
    confirm**. See I-013.
@@ -100,7 +110,7 @@ Updated: 2026-07-21 · Chat: **#1**
 | `/learn/questions` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/learn/questions/new` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/learn/questions/[questionId]` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/learn/profile` | ⬜ | | | | | | | |
+| `/learn/profile` | ✅ | ✅ | ✅ | n/a | ✅ | ✅ | ✅ | ✅ |
 | `/learn/enroll/[courseId]` | ⬜ | | | | | | | |
 | `/learn/history` | ⬜ | | | | | | | |
 | `/learn/certificates` | ⬜ | | | | | | | |
