@@ -29,7 +29,10 @@ export function NotificationBell({
       href={`/${locale}/learn/notifications` as Route}
       aria-label={label}
       className={cn(
-        "relative flex size-9 items-center justify-center rounded-(--radius-md)",
+        // 44px is the mandatory mobile touch target (MASTER_PLAN §6.5); it
+        // relaxes to the header's 36px rhythm from lg up, where the pointer is
+        // a mouse. Same pattern as ThemeToggle.
+        "relative flex size-11 items-center justify-center rounded-(--radius-md) lg:size-9",
         "text-(--color-fg) transition-colors duration-(--duration-base)",
         "hover:bg-(--color-surface-2)"
       )}

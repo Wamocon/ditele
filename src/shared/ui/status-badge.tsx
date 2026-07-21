@@ -62,18 +62,119 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
   processing:        { label: "In Bearbeitung",        tone: "info" },
 };
 
-export function StatusBadge({ state, className }: { state: string | null | undefined; className?: string }) {
+/**
+ * The same states in the other interface languages.
+ *
+ * Kept beside the tone map rather than in messages/*.json so the tone and the
+ * label can never drift apart, and so this stays "the ONE mapping". A state
+ * missing here falls back to its German label, which beats showing a raw
+ * database code like `revision_required`.
+ */
+const LABELS_EN: Record<string, string> = {
+  in_progress        : "In progress",
+  submitted          : "Submitted",
+  revision_required  : "Revision required",
+  resubmitted        : "Resubmitted",
+  accepted           : "Accepted",
+  abandoned          : "Abandoned",
+  withdrawn          : "Withdrawn",
+  transferred        : "Transferred",
+  requested          : "Requested",
+  approved           : "Approved",
+  rejected           : "Rejected",
+  assigned           : "Assigned",
+  cancelled          : "Cancelled",
+  completed          : "Completed",
+  waiting            : "Waiting",
+  active             : "Active",
+  draft              : "Draft",
+  in_review          : "In review",
+  published          : "Published",
+  archived           : "Archived",
+  open               : "Open",
+  answered           : "Answered",
+  pending            : "Pending",
+  delivered          : "Delivered",
+  read               : "Read",
+  failed             : "Failed",
+  invited            : "Invited",
+  suspended          : "Suspended",
+  removed            : "Removed",
+  inactive           : "Inactive",
+  eligible           : "Eligible",
+  issued             : "Issued",
+  available          : "Available",
+  revoked            : "Revoked",
+  expired            : "Expired",
+  processing         : "Processing",
+};
+
+const LABELS_RU: Record<string, string> = {
+  in_progress        : "В работе",
+  submitted          : "Отправлено",
+  revision_required  : "Требуется доработка",
+  resubmitted        : "Отправлено повторно",
+  accepted           : "Принято",
+  abandoned          : "Прервано",
+  withdrawn          : "Отозвано",
+  transferred        : "Передано",
+  requested          : "Запрошено",
+  approved           : "Одобрено",
+  rejected           : "Отклонено",
+  assigned           : "Назначено",
+  cancelled          : "Отменено",
+  completed          : "Завершено",
+  waiting            : "Ожидание",
+  active             : "Активно",
+  draft              : "Черновик",
+  in_review          : "На проверке",
+  published          : "Опубликовано",
+  archived           : "В архиве",
+  open               : "Открыто",
+  answered           : "Отвечено",
+  pending            : "Ожидает",
+  delivered          : "Доставлено",
+  read               : "Прочитано",
+  failed             : "Ошибка",
+  invited            : "Приглашён",
+  suspended          : "Приостановлено",
+  removed            : "Удалено",
+  inactive           : "Неактивно",
+  eligible           : "Доступно",
+  issued             : "Выдано",
+  available          : "Доступно",
+  revoked            : "Отозвано",
+  expired            : "Истекло",
+  processing         : "Обрабатывается",
+};
+
+function labelFor(state: string, locale: string | undefined): string | undefined {
+  if (locale === "en") return LABELS_EN[state];
+  if (locale === "ru") return LABELS_RU[state];
+  return undefined;
+}
+
+export function StatusBadge({
+  state,
+  className,
+  locale,
+}: {
+  state: string | null | undefined;
+  className?: string;
+  /** Omit for German. Every caller that has a locale in scope should pass it. */
+  locale?: string | undefined;
+}) {
   if (!state) return null;
   // Unknown states render honestly rather than crashing or silently vanishing.
   const entry = STATUS[state] ?? { label: state, tone: "neutral" as Tone };
   return (
     <Badge tone={entry.tone} dot className={className}>
-      {entry.label}
+      {labelFor(state, locale) ?? entry.label}
     </Badge>
   );
 }
 
 /** Exported so a screen can label a state inline without rendering a badge. */
-export function statusLabel(state: string): string {
-  return STATUS[state]?.label ?? state;
+export function statusLabel(state: string, locale?: string): string {
+  return labelFor(state, locale) ?? STATUS[state]?.label ?? state;
 }

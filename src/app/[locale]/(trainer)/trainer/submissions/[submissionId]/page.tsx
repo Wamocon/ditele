@@ -80,7 +80,7 @@ export default async function Page({
           { label: t("trainer.queue.title"), href: queueHref },
           { label: t("trainer.review.breadcrumb") },
         ]}
-        actions={<StatusBadge state={review.state} />}
+        actions={<StatusBadge state={review.state} locale={locale} />}
       />
 
       <MetaStrip
@@ -276,7 +276,7 @@ function AnswerPanel({
             {review.pastDecisions.map((decision) => (
               <li key={decision.id} className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge state={decision.decision} />
+                  <StatusBadge state={decision.decision} locale={locale} />
                   <span className="text-[13px] text-(--color-fg-muted)">
                     {decision.reviewerName} · {formatDateTime(decision.createdAt, locale)}
                   </span>

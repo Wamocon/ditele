@@ -95,7 +95,7 @@ export default async function Page({
         <Badge tone={row.kind === "practical" ? "brand" : "neutral"}>{kindLabel(row.kind)}</Badge>
       ),
     },
-    { key: "state", header: s.columnState, cell: (row) => <StatusBadge state={row.state} /> },
+    { key: "state", header: s.columnState, cell: (row) => <StatusBadge state={row.state} locale={locale} /> },
     {
       key: "version",
       header: s.columnVersion,
@@ -103,7 +103,7 @@ export default async function Page({
         row.versionState ? (
           <span className="flex flex-wrap items-center gap-2">
             <span className="tabular text-[13px]">v{row.versionNumber}</span>
-            <StatusBadge state={row.versionState} />
+            <StatusBadge state={row.versionState} locale={locale} />
           </span>
         ) : (
           <span className="text-[13px] text-(--color-fg-muted)">{strings.shared.never}</span>

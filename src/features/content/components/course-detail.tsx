@@ -86,7 +86,7 @@ export function CourseDetail({
       <Card className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>{s.sectionMeta}</CardTitle>
-          <StatusBadge state={course.state} />
+          <StatusBadge state={course.state} locale={locale} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -279,7 +279,7 @@ export function CourseDetail({
                     <span className="text-[15px] font-semibold">
                       {format(s.versionNumber, { number: version.versionNumber })}
                     </span>
-                    <StatusBadge state={version.state} />
+                    <StatusBadge state={version.state} locale={locale} />
                     {isVersionEditable(version.state) && (
                       <Badge tone="brand">{strings.shared.edit}</Badge>
                     )}

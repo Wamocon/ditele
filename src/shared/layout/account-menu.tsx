@@ -77,7 +77,9 @@ export function AccountMenu({ locale, role, displayName, email }: AccountMenuPro
         aria-expanded={open}
         aria-label={`Konto: ${displayName}`}
         className={cn(
-          "flex size-9 items-center justify-center rounded-full",
+          // 44px on mobile per MASTER_PLAN §6.5, relaxing to the header's 36px
+          // rhythm from lg up. Matches ThemeToggle and NotificationBell.
+          "flex size-11 items-center justify-center rounded-full lg:size-9",
           "bg-(--color-brand) text-[13px] font-semibold text-(--color-brand-fg)",
           "transition-transform duration-(--duration-fast) hover:scale-105 active:scale-95"
         )}

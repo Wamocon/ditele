@@ -41,12 +41,25 @@ async function localiseNav(locale: string, items: NavItem[]): Promise<NavItem[]>
   });
 }
 
+/**
+ * The "Mehr" label for both overflow menus. Resolved here for the same reason
+ * the nav labels are: the header and tab bar are client components and cannot
+ * reach the message catalogue.
+ */
+async function moreLabelFor(locale: string): Promise<string> {
+  const active = isLocale(locale) ? locale : defaultLocale;
+  const messages = await getMessages(active);
+  const nav = messages.nav as Record<string, string | undefined>;
+  return nav.more ?? "Mehr";
+}
+
 export async function AppShell({ locale, role, displayName, email, unreadCount, children, bleed = false }: AppShellProps) {
   const items = await localiseNav(locale, role ? navForRole(role) : PUBLIC_NAV);
+  const moreLabel = await moreLabelFor(locale);
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <AppHeader locale={locale} role={role} items={items} displayName={displayName} email={email} unreadCount={unreadCount} />
+      <AppHeader locale={locale} role={role} items={items} moreLabel={moreLabel} displayName={displayName} email={email} unreadCount={unreadCount} />
 
       <main
         id="main"
@@ -60,7 +73,7 @@ export async function AppShell({ locale, role, displayName, email, unreadCount, 
       </main>
 
       <AppFooter locale={locale} />
-      {role && <MobileTabBar locale={locale} role={role} items={items} />}
+      {role && <MobileTabBar locale={locale} role={role} items={items} moreLabel={moreLabel} />}
     </div>
   );
 }

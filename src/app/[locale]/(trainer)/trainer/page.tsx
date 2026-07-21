@@ -82,7 +82,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           {dashboard.queuePreview.length > 0 && (
             <Link
               href={queueHref as Route}
-              className="text-[13px] font-semibold text-(--color-brand) underline-offset-4 hover:underline"
+              className="inline-flex min-h-11 items-center text-[13px] font-semibold text-(--color-brand) underline-offset-4 hover:underline"
             >
               {t("trainer.shared.showAll")}
             </Link>
@@ -117,7 +117,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                       </span>
                     </span>
                     <span className="flex shrink-0 flex-wrap items-center gap-2">
-                      <StatusBadge state={item.state} />
+                      <StatusBadge state={item.state} locale={locale} />
                       <AgeBadge hours={item.waitingHours} t={t} />
                     </span>
                   </Link>
@@ -144,7 +144,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                   <div className="flex h-full flex-col gap-3 p-4 lg:p-5">
                     <span className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-[18px] font-semibold leading-6">{cohort.name}</span>
-                      <StatusBadge state={cohort.state} />
+                      <StatusBadge state={cohort.state} locale={locale} />
                     </span>
                     <span className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-(--color-fg-muted)">
                       <span>

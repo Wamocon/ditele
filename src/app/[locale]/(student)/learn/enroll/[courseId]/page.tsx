@@ -143,7 +143,7 @@ function EnrollmentStatus({
     <Card as="section">
       <div className="flex flex-wrap items-center gap-3">
         <CardTitle>{t.statusTitle}</CardTitle>
-        <StatusBadge state={enrollment.state} />
+        <StatusBadge state={enrollment.state} locale={locale} />
       </div>
 
       <p className="mt-2 max-w-[68ch] text-[15px] leading-6">

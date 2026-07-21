@@ -56,7 +56,7 @@ export default async function QuestionThreadPage({
         title={question.subject}
         description={taskTitle ?? messages.learn.shared.unknownTask}
         breadcrumbs={breadcrumbs}
-        actions={<StatusBadge state={question.state} />}
+        actions={<StatusBadge state={question.state} locale={locale} />}
       />
 
       <dl className="mb-6 grid gap-x-8 gap-y-3 sm:grid-cols-3">

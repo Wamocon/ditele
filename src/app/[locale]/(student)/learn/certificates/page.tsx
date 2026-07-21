@@ -71,7 +71,7 @@ export default async function CertificatesPage({
     {
       key: "state",
       header: t.columnState,
-      cell: (row) => <StatusBadge state={row.state} />,
+      cell: (row) => <StatusBadge state={row.state} locale={locale} />,
     },
     {
       key: "issued",

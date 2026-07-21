@@ -71,7 +71,7 @@ export function LoginForm({
         <div className="-mt-1 flex justify-end">
           <Link
             href={`/${locale}/reset-password` as Route}
-            className="text-[13px] font-semibold text-(--color-brand) hover:underline"
+            className="inline-flex min-h-11 items-center text-[13px] font-semibold text-(--color-brand) hover:underline"
           >
             {labels.forgot}
           </Link>

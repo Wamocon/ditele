@@ -53,8 +53,8 @@ export default async function Page({
               <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
                 {s.course.cohortLabel}: {course.cohortName}
               </span>
-              <StatusBadge state={course.cohortState} />
-              <StatusBadge state={course.enrollmentState} />
+              <StatusBadge state={course.cohortState} locale={locale} />
+              <StatusBadge state={course.enrollmentState} locale={locale} />
             </div>
           </div>
           <ProgressBar

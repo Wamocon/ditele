@@ -41,10 +41,6 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
   const [slugTouched, setSlugTouched] = useState(false);
   const [minutes, setMinutes] = useState("");
   const [defaultLocale, setDefaultLocale] = useState("de");
-  const [titleEn, setTitleEn] = useState("");
-  const [summaryEn, setSummaryEn] = useState("");
-  const [titleRu, setTitleRu] = useState("");
-  const [summaryRu, setSummaryRu] = useState("");
 
   const effectiveSlug = slugTouched ? slug : slugify(titleDe);
 
@@ -65,10 +61,12 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
         titleDe,
         summaryDe,
         descriptionDe,
-        titleEn,
-        summaryEn,
-        titleRu,
-        summaryRu,
+        // Course content is German-only (CONTENT_LOCALES === ["de"]). The action
+        // still accepts these, so send empties rather than change its contract.
+        titleEn: "",
+        summaryEn: "",
+        titleRu: "",
+        summaryRu: "",
       });
 
       if (result.status === "error") {
@@ -150,29 +148,6 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
         </Field>
       </Card>
 
-      <Card className="flex flex-col gap-4">
-        <div>
-          <CardTitle>{s.optionalLocales}</CardTitle>
-          <p className="mt-1 text-[13px] leading-5 text-(--color-fg-muted)">
-            {s.optionalLocalesHint}
-          </p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={s.titleEn}>
-            <Input value={titleEn} onChange={(event) => setTitleEn(event.target.value)} />
-          </Field>
-          <Field label={s.summaryEn}>
-            <Input value={summaryEn} onChange={(event) => setSummaryEn(event.target.value)} />
-          </Field>
-          <Field label={s.titleRu}>
-            <Input value={titleRu} onChange={(event) => setTitleRu(event.target.value)} />
-          </Field>
-          <Field label={s.summaryRu}>
-            <Input value={summaryRu} onChange={(event) => setSummaryRu(event.target.value)} />
-          </Field>
-        </div>
-      </Card>
 
       <div className="flex flex-wrap gap-2">
         <Button onClick={submit} loading={pending}>

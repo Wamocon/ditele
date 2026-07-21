@@ -71,7 +71,9 @@ export function LocaleSwitcher({ locale }: { locale: string }) {
         aria-expanded={open}
         aria-label={`Sprache: ${LABEL[current]}`}
         className={cn(
-          "flex h-9 items-center gap-1.5 rounded-(--radius-md) px-2",
+          // 44px on mobile per MASTER_PLAN §6.5, relaxing to the header's 36px
+          // rhythm from lg up. Matches ThemeToggle and NotificationBell.
+          "flex h-11 items-center gap-1.5 rounded-(--radius-md) px-2 lg:h-9",
           "text-[13px] font-semibold text-(--color-fg)",
           "transition-colors duration-(--duration-base) hover:bg-(--color-surface-2)"
         )}

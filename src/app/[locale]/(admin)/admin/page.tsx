@@ -85,7 +85,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             <ul className="flex flex-col gap-2">
               {data.versionsByState.map((entry) => (
                 <li key={entry.state} className="flex items-center justify-between gap-3">
-                  <StatusBadge state={entry.state} />
+                  <StatusBadge state={entry.state} locale={locale} />
                   <span className="tabular text-[18px] font-semibold">{entry.count}</span>
                 </li>
               ))}

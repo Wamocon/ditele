@@ -133,7 +133,7 @@ export default async function UserDetailPage({
                       {e.cohortName ?? t.common.none}
                     </span>
                   </div>
-                  <StatusBadge state={e.state} />
+                  <StatusBadge state={e.state} locale={locale} />
                 </li>
               ))}
             </ul>
@@ -156,7 +156,7 @@ export default async function UserDetailPage({
                     <Badge tone={c.role === "trainer" ? "info" : "neutral"}>
                       {c.role === "trainer" ? t.groupDetail.roleTrainer : t.groupDetail.roleLearner}
                     </Badge>
-                    <StatusBadge state={c.state} />
+                    <StatusBadge state={c.state} locale={locale} />
                   </div>
                 </li>
               ))}

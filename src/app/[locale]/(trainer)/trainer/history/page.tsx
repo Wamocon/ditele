@@ -69,7 +69,7 @@ export default async function Page({
     {
       key: "decision",
       header: t("trainer.history.decision"),
-      cell: (row) => <StatusBadge state={row.decision} />,
+      cell: (row) => <StatusBadge state={row.decision} locale={locale} />,
     },
     {
       key: "points",

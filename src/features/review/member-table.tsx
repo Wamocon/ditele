@@ -73,7 +73,7 @@ export function MemberTable({
     {
       key: "state",
       header: t("trainer.shared.state"),
-      cell: (row) => <StatusBadge state={row.membershipState} />,
+      cell: (row) => <StatusBadge state={row.membershipState} locale={locale} />,
     },
   ];
 

@@ -1,4 +1,7 @@
 import de from "@/shared/i18n/messages/de.json";
+import en from "@/shared/i18n/messages/en.json";
+import ru from "@/shared/i18n/messages/ru.json";
+import { overlayMessages } from "@/shared/i18n/overlay";
 
 /**
  * The `admin.*` message subtree, typed from `messages/de.json`.
@@ -14,8 +17,13 @@ import de from "@/shared/i18n/messages/de.json";
  */
 export type AdminStrings = (typeof de)["admin"];
 
-/** Add `en` and `ru` here when the translation pass fills in their `admin` block. */
-const BUNDLES: Partial<Record<string, AdminStrings>> = { de: de.admin };
+const BUNDLES: Record<string, AdminStrings> = {
+  de: de.admin,
+  // Laid over German per key, so an untranslated string falls back on its
+  // own rather than dropping the whole namespace back to German.
+  en: overlayMessages(de.admin, (en as Record<string, unknown>).admin),
+  ru: overlayMessages(de.admin, (ru as Record<string, unknown>).admin),
+};
 
 export function adminStrings(locale: string): AdminStrings {
   return BUNDLES[locale] ?? de.admin;

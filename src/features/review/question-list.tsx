@@ -55,7 +55,7 @@ export function QuestionList({
           formatDateTime(row.createdAt, locale)
         ),
     },
-    { key: "state", header: t("trainer.shared.state"), cell: (row) => <StatusBadge state={row.state} /> },
+    { key: "state", header: t("trainer.shared.state"), cell: (row) => <StatusBadge state={row.state} locale={locale} /> },
     {
       key: "open",
       header: t("trainer.questions.open"),

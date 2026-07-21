@@ -64,7 +64,7 @@ export default async function QuestionsPage({ params }: { params: Promise<{ loca
       header: t.columnState,
       cell: (row) => (
         <span className="inline-flex flex-wrap items-center gap-1.5">
-          <StatusBadge state={row.state} />
+          <StatusBadge state={row.state} locale={locale} />
           {row.isWaiting && (
             <Badge tone="warning" dot>
               {t.waitingForAnswer}

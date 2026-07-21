@@ -16,11 +16,14 @@ export function MobileTabBar({
   locale,
   role,
   items,
+  moreLabel = "Mehr",
 }: {
   locale: string;
   role: UiRole;
   /** Locale-resolved nav from AppShell; falls back to the German config. */
   items?: NavItem[] | undefined;
+  /** Translated sheet label; the German default matches the old hardcoding. */
+  moreLabel?: string | undefined;
 }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -87,7 +90,7 @@ export function MobileTabBar({
                 <span className="absolute top-0 h-[3px] w-8 rounded-full bg-(--color-brand)" />
               )}
               <MoreHorizontal className="size-5" aria-hidden />
-              <span className="text-[11px] font-semibold leading-none">Mehr</span>
+              <span className="text-[11px] font-semibold leading-none">{moreLabel}</span>
             </button>
           </li>
         </ul>
@@ -109,7 +112,7 @@ export function MobileTabBar({
             className="absolute inset-x-0 bottom-0 animate-slide-up rounded-t-(--radius-xl) bg-(--color-bg) pb-[env(safe-area-inset-bottom)]"
           >
             <div className="flex items-center justify-between border-b border-(--color-border) px-4 py-3">
-              <span className="text-[15px] font-semibold">Mehr</span>
+              <span className="text-[15px] font-semibold">{moreLabel}</span>
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}

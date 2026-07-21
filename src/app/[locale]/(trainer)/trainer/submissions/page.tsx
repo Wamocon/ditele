@@ -105,7 +105,7 @@ export default async function Page({
       header: t("trainer.shared.waiting"),
       cell: (row) => <AgeBadge hours={row.waitingHours} t={t} />,
     },
-    { key: "state", header: t("trainer.shared.state"), cell: (row) => <StatusBadge state={row.state} /> },
+    { key: "state", header: t("trainer.shared.state"), cell: (row) => <StatusBadge state={row.state} locale={locale} /> },
     {
       key: "open",
       header: t("trainer.queue.open"),

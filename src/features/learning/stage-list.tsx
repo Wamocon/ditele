@@ -85,7 +85,7 @@ export function TaskListItem({
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[15px] font-semibold leading-6">{activity.title}</span>
           {!activity.locked && activity.state !== "available" && (
-            <StatusBadge state={activity.state} />
+            <StatusBadge state={activity.state} locale={locale} />
           )}
         </div>
         {activity.description && (

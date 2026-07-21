@@ -175,7 +175,7 @@ export function ContinueCard({
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="brand">{strings.continueEyebrow}</Badge>
-            {!done && course.nextTaskState && <StatusBadge state={course.nextTaskState} />}
+            {!done && course.nextTaskState && <StatusBadge state={course.nextTaskState} locale={locale} />}
           </div>
 
           <div className="flex items-start gap-5">
@@ -256,8 +256,8 @@ export function CourseCard({
         />
 
         <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge state={course.enrollmentState} />
-          <StatusBadge state={course.cohortState} />
+          <StatusBadge state={course.enrollmentState} locale={locale} />
+          <StatusBadge state={course.cohortState} locale={locale} />
         </div>
 
         <Link

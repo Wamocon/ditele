@@ -9,6 +9,7 @@ import { cn } from "@/shared/ui";
 import type { UiRole } from "@/shared/auth/role";
 import { navForRole, type NavItem } from "./nav-config";
 import { activeNavHref } from "./active-nav";
+import { NavOverflow } from "./nav-overflow";
 import { Container } from "./container";
 import { ThemeToggle } from "./theme-toggle";
 import { AccountMenu } from "./account-menu";
@@ -24,9 +25,19 @@ export interface AppHeaderProps {
   unreadCount?: number | undefined;
   /** Locale-resolved nav, computed server-side in AppShell. */
   items?: NavItem[] | undefined;
+  /** Translated "Mehr" label for the desktop overflow menu. */
+  moreLabel?: string | undefined;
 }
 
-export function AppHeader({ locale, role, displayName, email, unreadCount, items: navItems }: AppHeaderProps) {
+export function AppHeader({
+  locale,
+  role,
+  displayName,
+  email,
+  unreadCount,
+  items: navItems,
+  moreLabel,
+}: AppHeaderProps) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
 
@@ -42,6 +53,9 @@ export function AppHeader({ locale, role, displayName, email, unreadCount, items
   // fallback for any caller that has not been updated.
   const nav = navItems ?? (role ? navForRole(role) : []);
   const items = nav.filter((i) => i.primary);
+  // Everything the primary row does not show. Without a desktop home these were
+  // unreachable above lg — the tab bar that used to carry them is lg:hidden.
+  const overflow = nav.filter((i) => !i.primary);
   // Resolved once against the full nav, not per item — see active-nav.ts for why
   // a per-item prefix test marked every ancestor tab as selected.
   const currentHref = activeNavHref(
@@ -75,13 +89,18 @@ export function AppHeader({ locale, role, displayName, email, unreadCount, items
             priority
             className="hidden h-[17px] w-auto sm:block"
           />
+          {/* mobilelogo.svg is 47×12, not the square its old props claimed. With
+              width/height declared as 32×32 and rendered at h-8, `w-auto` gave
+              it the real 3.92:1 ratio and it came out 125px wide — most of a
+              320px viewport, which pushed the right-hand controls 9px off
+              screen. Declared at its true size and rendered near 1:1. */}
           <Image
             src="/mobilelogo.svg"
             alt="DiTeLe"
-            width={32}
-            height={32}
+            width={47}
+            height={12}
             priority
-            className="h-8 w-auto sm:hidden"
+            className="h-4 w-auto sm:hidden"
           />
         </Link>
 
@@ -110,6 +129,17 @@ export function AppHeader({ locale, role, displayName, email, unreadCount, items
                 </li>
               );
             })}
+
+            {role && (
+              <li>
+                <NavOverflow
+                  locale={locale}
+                  items={overflow}
+                  currentHref={currentHref}
+                  label={moreLabel ?? "Mehr"}
+                />
+              </li>
+            )}
           </ul>
         </nav>
 

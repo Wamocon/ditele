@@ -86,7 +86,7 @@ export default async function Page({
       header: s.columnSlug,
       cell: (row) => <span className="text-[13px] text-(--color-fg-muted)">{row.slug}</span>,
     },
-    { key: "state", header: s.columnState, cell: (row) => <StatusBadge state={row.state} /> },
+    { key: "state", header: s.columnState, cell: (row) => <StatusBadge state={row.state} locale={locale} /> },
     {
       key: "latest",
       header: s.columnLatest,
@@ -94,7 +94,7 @@ export default async function Page({
         row.latestVersionState ? (
           <span className="flex flex-wrap items-center gap-2">
             <span className="tabular text-[13px]">v{row.latestVersionNumber}</span>
-            <StatusBadge state={row.latestVersionState} />
+            <StatusBadge state={row.latestVersionState} locale={locale} />
           </span>
         ) : (
           <span className="text-[13px] text-(--color-fg-muted)">{s.noVersion}</span>
@@ -131,7 +131,7 @@ export default async function Page({
         allLabel={strings.shared.filterAll}
         submitLabel={s.search}
         // `statusLabel` is the one DB-state → German mapping (WS-0). Never a second one.
-        filterOptions={COURSE_STATES.map((value) => ({ value, label: statusLabel(value) }))}
+        filterOptions={COURSE_STATES.map((value) => ({ value, label: statusLabel(value, locale) }))}
       />
 
       <DataTable

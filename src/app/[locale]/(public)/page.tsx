@@ -174,7 +174,10 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
             </div>
             <Link
               href={`/${locale}/catalog` as Route}
-              className="flex shrink-0 items-center gap-1.5 text-[15px] font-semibold text-(--color-brand) hover:underline"
+              /* min-h-11 = the 44px mobile touch target. A 24px-tall standalone
+                 link is a miss on a phone, and this one is a section CTA, not
+                 a word inside a sentence. */
+              className="flex min-h-11 shrink-0 items-center gap-1.5 text-[15px] font-semibold text-(--color-brand) hover:underline"
             >
               {t.coursesLink}
               <ArrowRight className="size-4" aria-hidden />
@@ -230,7 +233,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
               </Link>
               <Link
                 href={`/${locale}/login` as Route}
-                className="text-[15px] font-semibold text-(--color-brand) hover:underline"
+                className="inline-flex min-h-11 items-center text-[15px] font-semibold text-(--color-brand) hover:underline"
               >
                 {t.finalSecondary}
               </Link>

@@ -70,7 +70,7 @@ export function LifecycleBar({
     <Card className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CardTitle>{s.title}</CardTitle>
-        <StatusBadge state={versionState} />
+        <StatusBadge state={versionState} locale={locale} />
       </div>
 
       {/* Steps. Colour is never the only signal — the current step is also labelled. */}

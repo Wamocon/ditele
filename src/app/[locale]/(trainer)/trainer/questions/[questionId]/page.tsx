@@ -64,7 +64,7 @@ export default async function Page({
           { label: t("trainer.questions.title"), href: listHref },
           { label: t("trainer.questions.threadTitle") },
         ]}
-        actions={<StatusBadge state={question.state} />}
+        actions={<StatusBadge state={question.state} locale={locale} />}
       />
 
       <MetaStrip

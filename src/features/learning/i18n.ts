@@ -1,4 +1,7 @@
 import de from "@/shared/i18n/messages/de.json";
+import en from "@/shared/i18n/messages/en.json";
+import ru from "@/shared/i18n/messages/ru.json";
+import { overlayMessages } from "@/shared/i18n/overlay";
 
 /**
  * The `learn.*` message subtree, typed from `messages/de.json`.
@@ -14,8 +17,13 @@ import de from "@/shared/i18n/messages/de.json";
  */
 export type LearnStrings = (typeof de)["learn"];
 
-/** Add `en` and `ru` here when the translation pass fills in their `learn` block. */
-const BUNDLES: Partial<Record<string, LearnStrings>> = { de: de.learn };
+const BUNDLES: Record<string, LearnStrings> = {
+  de: de.learn,
+  // Laid over German per key, so an untranslated string falls back on its
+  // own rather than dropping the whole namespace back to German.
+  en: overlayMessages(de.learn, (en as Record<string, unknown>).learn),
+  ru: overlayMessages(de.learn, (ru as Record<string, unknown>).learn),
+};
 
 export function learnStrings(locale: string): LearnStrings {
   return BUNDLES[locale] ?? de.learn;

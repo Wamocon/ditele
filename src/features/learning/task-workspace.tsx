@@ -469,7 +469,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
               <Badge tone={isPractice ? "brand" : "info"}>
                 {isPractice ? s.typePractice : s.typeTheory}
               </Badge>
-              {attempt && <StatusBadge state={attempt.state} />}
+              {attempt && <StatusBadge state={attempt.state} locale={locale} />}
               {attempt && attempt.sequenceNumber > 0 && (
                 <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
                   {format(s.attempt, { number: attempt.sequenceNumber })}

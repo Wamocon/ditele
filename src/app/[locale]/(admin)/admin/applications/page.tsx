@@ -85,7 +85,7 @@ export default async function ApplicationsPage({
                 <option value="">{t.common.filterAll}</option>
                 {ENROLLMENT_STATES.map((s) => (
                   <option key={s} value={s}>
-                    {statusLabel(s)}
+                    {statusLabel(s, locale)}
                   </option>
                 ))}
               </Select>
@@ -105,7 +105,7 @@ export default async function ApplicationsPage({
                 <Section
                   title={row.learnerName}
                   description={row.courseTitle}
-                  actions={<StatusBadge state={row.state} />}
+                  actions={<StatusBadge state={row.state} locale={locale} />}
                 >
                   <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                     <div className="flex flex-col gap-0.5">

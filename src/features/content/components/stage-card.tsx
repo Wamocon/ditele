@@ -91,7 +91,7 @@ export function StageCard({
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="brand">{s.stageNumber.replace("{position}", String(stage.position + 1))}</Badge>
-            <StatusBadge state={stage.state} />
+            <StatusBadge state={stage.state} locale={locale} />
           </div>
           <h3 className="text-[18px] font-semibold leading-6">{heading}</h3>
         </div>
