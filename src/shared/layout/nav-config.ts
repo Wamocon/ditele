@@ -63,9 +63,10 @@ export const STUDENT_NAV: NavItem[] = [
    * because the mobile tab bar caps at 5 including "Mehr". It keeps its place
    * in the sheet, so nothing became unreachable.
    *
-   * ⚠️ The route itself is WS-11's (`learn/arena/**`) and does NOT exist yet,
-   * so this link 404s until WS-11 lands. See ISSUES.md I-043 — the alternative
-   * was WS-11 editing a file it does not own.
+   * The route itself is WS-11's (`learn/arena/**`). It did not exist when this
+   * entry landed, and because Next prefetches every nav link in the viewport,
+   * every student page took a 404 on every load until it did (ISSUES.md I-043).
+   * WS-11 shipped it in `6844509`; verified live by WS-13.
    */
   { path: "/learn/arena", label: "Arena", labelKey: "arena", primary: true, owner: "WS-11" },
   { path: "/learn/questions", label: "Fragen", labelKey: "questions", owner: "WS-3" },
@@ -90,6 +91,16 @@ export const ADMIN_NAV: NavItem[] = [
   { path: "/admin/courses", label: "Kurse", labelKey: "courses", primary: true, owner: "WS-5" },
   { path: "/admin/users", label: "Benutzer", labelKey: "users", primary: true, owner: "WS-6" },
   { path: "/admin/tasks", label: "Aufgaben", labelKey: "tasks", owner: "WS-5" },
+  /**
+   * The learner progress board. Added by WS-13 under `ISSUES.md` I-056 — WS-12
+   * built the route but §7 grants the nav exception to WS-8 only, so it shipped
+   * reachable by URL and by URL alone.
+   *
+   * Two things closed with this one line: an administrator can find the board,
+   * and `scripts/smoke.mjs` — which enumerates its route list from this file —
+   * starts covering it. It was outside the 42/42 run until now.
+   */
+  { path: "/admin/progress", label: "Fortschritt", labelKey: "learnerProgress", owner: "WS-12" },
   { path: "/admin/applications", label: "Kursanfragen", labelKey: "applications", owner: "WS-6" },
   { path: "/admin/issues", label: "Fehlermeldungen", labelKey: "reports", owner: "WS-6" },
   { path: "/admin/settings", label: "Einstellungen", labelKey: "settings", owner: "WS-6" },

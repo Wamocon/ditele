@@ -55,18 +55,9 @@ export async function flagLearnerAction(
 
   try {
     const supabase = await createServerClient();
-    // The same I-052 cast as `listProgressBoard`: `database.types.ts` cannot be
-    // regenerated without Docker and is WS-0's file, so this RPC is absent from
-    // the generated name union. WS-13 regenerates; then drop the cast.
-    const { data, error } = await (
-      supabase.rpc as unknown as (
-        name: string,
-        args: Record<string, unknown>
-      ) => Promise<{
-        data: unknown;
-        error: import("@supabase/supabase-js").PostgrestError | null;
-      }>
-    )("flag_learner_to_trainer", {
+    // I-052's cast is gone: WS-13 hand-added `flag_learner_to_trainer` to
+    // `database.types.ts`, so this call is name- and argument-checked again.
+    const { data, error } = await supabase.rpc("flag_learner_to_trainer", {
       p_enrollment_id: input.data.enrollmentId,
       p_note: input.data.note,
       p_correlation_id: crypto.randomUUID(),

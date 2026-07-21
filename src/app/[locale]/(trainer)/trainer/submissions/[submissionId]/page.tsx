@@ -10,6 +10,8 @@ import { formatDateTime, formatDuration } from "@/features/review/format";
 import { MetaStrip } from "@/features/review/meta-strip";
 import { PanelTabs } from "@/features/review/panel-tabs";
 import { DecisionPanel } from "@/features/review/decision-panel";
+import { HuntPanel } from "@/features/review/hunt-panel";
+import { getHuntScenarioCodeForSubmission } from "@/features/arena/ticket/data";
 
 export async function generateMetadata({
   params,
@@ -71,6 +73,23 @@ export default async function Page({
     />
   );
 
+  /**
+   * ⭐ Decision **D2** — the ground-truth panel, wired in by WS-13 (ISSUES.md
+   * I-046). WS-10 built and tested it but owned neither this route nor
+   * `decision-panel.tsx`, so it shipped unreachable.
+   *
+   * `HuntPanel` works out for itself whether this submission is a hunt and
+   * returns `null` for every other task kind, so the desktop branch renders it
+   * unconditionally. The **mobile tab** cannot be unconditional: a tab whose
+   * body is `null` is an empty tab on every practical review, so the page asks
+   * the same question the panel does and only offers the tab when the answer is
+   * yes. One extra query on a screen that already makes several, in exchange
+   * for a tab bar that never lies.
+   */
+  const huntScenario = await getHuntScenarioCodeForSubmission(review.id);
+  const isHunt = huntScenario.ok && huntScenario.data !== null;
+  const huntPanel = <HuntPanel locale={locale} submissionId={review.id} editable={review.decidable} />;
+
   return (
     <>
       <PageHeader
@@ -120,6 +139,9 @@ export default async function Page({
             label: t("trainer.review.tabTask"),
             content: <TaskPanel review={review} t={t} />,
           },
+          ...(isHunt
+            ? [{ id: "hunt", label: t("trainer.hunt.title"), content: huntPanel }]
+            : []),
           { id: "decision", label: t("trainer.review.tabDecision"), content: decision },
         ]}
         desktop={
@@ -128,6 +150,7 @@ export default async function Page({
               <TaskPanel review={review} t={t} />
               <AnswerPanel review={review} t={t} locale={locale} />
             </div>
+            {huntPanel}
             {decision}
           </div>
         }

@@ -26,7 +26,7 @@
     "env:local": "node scripts/configure-local-env.mjs",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset --local --sql-paths ./seed.sql --sql-paths ./seed_assessments.sql --sql-paths ./seed_cleanup.sql --sql-paths ./seed_role_accounts.sql && node scripts/ensure-local-auth-gateway.mjs",
-    "db:lint": "supabase db lint --local --level error --fail-on error",
+    "db:lint": "node scripts/db-lint.mjs",
     "db:types": "supabase gen types --lang typescript --local > src/shared/database/database.types.ts",
     "verify": "npm run i18n:check && npm run secrets:check && npm run a11y:contrast && npm run typecheck && npm run lint && npm run test && npm run build",
     "a11y:contrast": "node scripts/check-contrast.mjs"

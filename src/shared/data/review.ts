@@ -1047,99 +1047,15 @@ export async function listCohorts(): Promise<Result<CohortSummary[]>> {
   }
 }
 
-export interface MemberProgress {
-  userId: string;
-  name: string;
-  role: string;
-  membershipState: string;
-  assignedAt: string;
-  submitted: number;
-  accepted: number;
-  revisionRequired: number;
-  openQuestions: number;
-  lastActivityAt: string | null;
-}
-
-export interface CohortDetail extends CohortSummary {
-  members: MemberProgress[];
-}
-
 /**
- * ⚠️ Built from `cohort_memberships`, not `enrollments` — a trainer session
- * reads 0 enrollments (ISSUES I-018).
+ * ⚠️ `listMemberProgress`, `getCohortDetail`, `MemberProgress` and `CohortDetail`
+ * were removed by WS-13 (ISSUES.md I-055). They computed learner progress from
+ * `cohort_memberships` because a trainer session read 0 rows from
+ * `enrollments` (I-018) when they were written. That policy was fixed by the
+ * course-trainer migration, and both progress screens now read the one
+ * role-scoped RPC in `src/shared/data/progress.ts`. Their last consumers were
+ * `/trainer/progress` and the deleted `/trainer/groups` tree.
  */
-export async function getCohortDetail(cohortId: string): Promise<Result<CohortDetail>> {
-  try {
-    const cohorts = await listCohorts();
-    if (!cohorts.ok) return cohorts;
-    const cohort = cohorts.data.find((c) => c.id === cohortId);
-    if (!cohort) {
-      return err({
-        code: "PGRST116",
-        message: "Diese Gruppe existiert nicht oder ist für Sie nicht sichtbar.",
-        retryable: false,
-      });
-    }
-    const members = await listMemberProgress(cohortId);
-    if (!members.ok) return members;
-    return ok({ ...cohort, members: members.data });
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
-export async function listMemberProgress(cohortId?: string): Promise<Result<MemberProgress[]>> {
-  try {
-    const supabase = await createServerClient();
-
-    let membershipQuery = supabase
-      .from("cohort_memberships")
-      .select("user_id,role,state,assigned_at,cohort_id")
-      .eq("state", "active");
-    if (cohortId) membershipQuery = membershipQuery.eq("cohort_id", cohortId);
-
-    const [{ data: memberships, error }, { data: submissions }, { data: questions }] = await Promise.all([
-      membershipQuery,
-      supabase.from("submissions").select("learner_id,state,updated_at,cohort_id"),
-      supabase.from("questions").select("learner_id,state,cohort_id"),
-    ]);
-    if (error) return err(mapReviewError(error));
-
-    const rows = memberships ?? [];
-    const profiles = await readProfiles(supabase, rows.map((row) => row.user_id));
-    const openQuestionStates = new Set(["open", "assigned", "transferred"]);
-
-    return ok(
-      rows
-        .map((row) => {
-          const mine = (submissions ?? []).filter(
-            (s) => s.learner_id === row.user_id && (!cohortId || s.cohort_id === cohortId)
-          );
-          const timestamps = mine.map((s) => s.updated_at).sort();
-          return {
-            userId: row.user_id,
-            name: profiles.get(row.user_id) ?? "—",
-            role: row.role as string,
-            membershipState: row.state as string,
-            assignedAt: row.assigned_at,
-            submitted: mine.filter((s) => s.state === "submitted" || s.state === "resubmitted").length,
-            accepted: mine.filter((s) => s.state === "accepted").length,
-            revisionRequired: mine.filter((s) => s.state === "revision_required").length,
-            openQuestions: (questions ?? []).filter(
-              (q) =>
-                q.learner_id === row.user_id &&
-                openQuestionStates.has(q.state as string) &&
-                (!cohortId || q.cohort_id === cohortId)
-            ).length,
-            lastActivityAt: timestamps.at(-1) ?? null,
-          };
-        })
-        .sort((a, b) => a.name.localeCompare(b.name, "de"))
-    );
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
 
 /* ── Review history ─────────────────────────────────────────────────────── */
 

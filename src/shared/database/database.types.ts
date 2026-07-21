@@ -11,6 +11,39 @@ export type Database = {
     Tables: {
       [_ in never]: never
     }
+      xp_rules: {
+        Row: {
+          code: string
+          created_at: string
+          is_awarded: boolean
+          points: number
+          rule_version: number
+          source_kind: string
+          state: Database["public"]["Enums"]["record_state"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          is_awarded?: boolean
+          points: number
+          rule_version?: number
+          source_kind: string
+          state?: Database["public"]["Enums"]["record_state"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          is_awarded?: boolean
+          points?: number
+          rule_version?: number
+          source_kind?: string
+          state?: Database["public"]["Enums"]["record_state"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     Views: {
       [_ in never]: never
     }
@@ -1382,6 +1415,56 @@ export type Database = {
           },
         ]
       }
+      // ──────────────────────────────────────────────────────────────────
+      // Added BY HAND by WS-13 (ISSUES.md I-052 / I-057). `npm run db:types`
+      // shells out to `supabase gen types`, which starts a Docker container to
+      // run pg_meta — and it does so even when given `--db-url`, so pointing it
+      // at the remote database does not avoid the dependency. This machine has
+      // no Docker daemon. Introspected from the live database with psql, so a
+      // real regeneration produces the same thing and overwrites this cleanly.
+      // ──────────────────────────────────────────────────────────────────
+      course_trainers: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          course_id: string
+          organization_id: string
+          removed_at: string | null
+          trainer_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          course_id: string
+          organization_id: string
+          removed_at?: string | null
+          trainer_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          course_id?: string
+          organization_id?: string
+          removed_at?: string | null
+          trainer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_trainers_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_trainers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           archived_at: string | null
@@ -1966,6 +2049,7 @@ export type Database = {
           id: string
           organization_id: string | null
           planted_code: string | null
+          reported_details: Json
           reported_summary: string
           row_version: number
           scenario_id: string | null
@@ -1982,6 +2066,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           planted_code?: string | null
+          reported_details?: Json
           reported_summary?: string
           row_version?: number
           scenario_id?: string | null
@@ -1998,6 +2083,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           planted_code?: string | null
+          reported_details?: Json
           reported_summary?: string
           row_version?: number
           scenario_id?: string | null
@@ -2520,6 +2606,56 @@ export type Database = {
           result?: Json
         }
         Relationships: []
+      }
+      learner_streaks: {
+        Row: {
+          created_at: string
+          current_length: number
+          freeze_period_start: string | null
+          freezes_used: number
+          last_activity_date: string | null
+          learner_id: string
+          longest_length: number
+          organization_id: string
+          row_version: number
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_length?: number
+          freeze_period_start?: string | null
+          freezes_used?: number
+          last_activity_date?: string | null
+          learner_id: string
+          longest_length?: number
+          organization_id: string
+          row_version?: number
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_length?: number
+          freeze_period_start?: string | null
+          freezes_used?: number
+          last_activity_date?: string | null
+          learner_id?: string
+          longest_length?: number
+          organization_id?: string
+          row_version?: number
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_streaks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       learning_path_items: {
         Row: {
@@ -5858,10 +5994,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      flag_learner_to_trainer: {
+        Args: { p_correlation_id?: string; p_enrollment_id: string; p_note: string }
+        Returns: Json
+      }
       get_content_archive_impact: {
         Args: { p_content_version_id: string }
         Returns: Json
       }
+      get_my_arena_summary: { Args: Record<string, never>; Returns: Json }
       get_my_learning_course: {
         Args: { p_course_id: string; p_locale?: string }
         Returns: Json
@@ -5901,6 +6042,7 @@ export type Database = {
         Args: { p_locale?: string; p_submission_id: string }
         Returns: Json
       }
+      list_progress_board: { Args: { p_locale?: string }; Returns: Json }
       list_active_cohort_trainers: {
         Args: { p_cohort_id: string }
         Returns: {
