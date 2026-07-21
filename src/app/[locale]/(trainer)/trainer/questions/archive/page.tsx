@@ -1,19 +1,53 @@
+import type { Metadata } from "next";
+import type { Route } from "next";
+import Link from "next/link";
 import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import { ErrorState } from "@/shared/ui";
+import { requireRole } from "@/shared/auth/guard";
+import { listQuestions } from "@/shared/data/review";
+import { getTranslator } from "@/features/review/i18n";
+import { QuestionList } from "@/features/review/question-list";
 
-/**
- * STUB — owned by WS-4. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
- */
-export default function Page() {
+export const metadata: Metadata = { title: "Frage-Archiv" };
+
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  await requireRole(["trainer", "admin"], locale);
+  const t = await getTranslator(locale);
+
+  const result = await listQuestions({ locale, archived: true });
+
   return (
     <>
-      <PageHeader title="Frage-Archiv" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-4</p>
-      </Card>
+      <PageHeader
+        title={t("trainer.questions.archiveTitle")}
+        description={t("trainer.questions.archiveDescription")}
+        breadcrumbs={[
+          { label: t("trainer.questions.title"), href: `/${locale}/trainer/questions` },
+          { label: t("trainer.questions.archiveTitle") },
+        ]}
+        actions={
+          <Link
+            href={`/${locale}/trainer/questions` as Route}
+            className="inline-flex min-h-11 items-center text-[13px] font-semibold text-[--color-brand] underline-offset-4 hover:underline"
+          >
+            {t("trainer.questions.backToQuestions")}
+          </Link>
+        }
+      />
+
+      {result.ok ? (
+        <QuestionList
+          items={result.data.items}
+          locale={locale}
+          t={t}
+          showWaiting={false}
+          emptyTitle={t("trainer.questions.archiveEmptyTitle")}
+          emptyText={t("trainer.questions.archiveEmptyText")}
+        />
+      ) : (
+        <ErrorState message={result.error.message} />
+      )}
     </>
   );
 }
