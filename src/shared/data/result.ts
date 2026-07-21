@@ -79,7 +79,7 @@ export async function fromSupabase<T>(
     if (error) return err(mapPostgrestError(error));
     if (data === null) return err({ code: "PGRST116", message: "Nicht gefunden.", retryable: false });
     return ok(data);
-  } catch (cause) {
+  } catch {
     return err({
       code: "NETWORK",
       message: "Verbindung zum Server fehlgeschlagen.",

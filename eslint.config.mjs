@@ -7,6 +7,9 @@ export default defineConfig([
   ...nextTypeScript,
   globalIgnores([
     ".next/**",
+    // Per-workstream dev build output (NEXT_DIST_DIR=.next-ws<n>). Generated
+    // code, and without this it drowns the report in ~7600 false problems.
+    ".next-*/**",
     "coverage/**",
     "playwright-report/**",
     "test-results/**",
