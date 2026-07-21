@@ -370,36 +370,4 @@ export function markAllNotificationsRead(args: { before?: string; idempotencyKey
   });
 }
 
-export function rateCourse(args: {
-  courseId: string;
-  score: number;
-  comment: string;
-  expectedVersion: number;
-  idempotencyKey: string;
-}) {
-  return rpc<unknown>("rate_course", {
-    p_course_id: args.courseId,
-    p_score: args.score,
-    p_comment: args.comment,
-    p_expected_version: args.expectedVersion,
-    p_correlation_id: newCorrelationId(),
-    p_idempotency_key: args.idempotencyKey,
-  });
-}
 
-export function rateTask(args: {
-  taskId: string;
-  score: number;
-  comment: string;
-  expectedVersion: number;
-  idempotencyKey: string;
-}) {
-  return rpc<unknown>("rate_task", {
-    p_task_id: args.taskId,
-    p_score: args.score,
-    p_comment: args.comment,
-    p_expected_version: args.expectedVersion,
-    p_correlation_id: newCorrelationId(),
-    p_idempotency_key: args.idempotencyKey,
-  });
-}

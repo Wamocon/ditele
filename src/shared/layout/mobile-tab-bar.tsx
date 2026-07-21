@@ -8,6 +8,7 @@ import { Home, BookOpen, CheckSquare, MessageCircle, MoreHorizontal, X } from "l
 import { cn } from "@/shared/ui";
 import type { UiRole } from "@/shared/auth/role";
 import { primaryNav, secondaryNav } from "./nav-config";
+import { activeNavHref } from "./active-nav";
 
 const ICONS = [Home, BookOpen, CheckSquare, MessageCircle];
 
@@ -16,6 +17,18 @@ export function MobileTabBar({ locale, role }: { locale: string; role: UiRole })
   const [moreOpen, setMoreOpen] = useState(false);
   const tabs = primaryNav(role);
   const rest = secondaryNav(role);
+
+  // Resolved once against every entry, tabs and sheet alike, so the most
+  // specific one wins instead of every ancestor lighting up at once.
+  const currentHref = activeNavHref(
+    pathname,
+    [...tabs, ...rest].map((i) => `/${locale}${i.path}`)
+  );
+
+  // A route that lives in the "Mehr" sheet has no tab of its own, so the sheet
+  // trigger carries the selected state. Without this the bar reads as though
+  // nothing is open whenever the user is on a secondary page.
+  const restIsActive = rest.some((i) => `/${locale}${i.path}` === currentHref);
 
   return (
     <>
@@ -29,7 +42,7 @@ export function MobileTabBar({ locale, role }: { locale: string; role: UiRole })
         <ul className="flex h-(--tabbar-height) items-stretch">
           {tabs.map((item, i) => {
             const href = `/${locale}${item.path}`;
-            const active = pathname === href || pathname.startsWith(`${href}/`);
+            const active = href === currentHref;
             const Icon = ICONS[i] ?? Home;
             return (
               <li key={item.path} className="flex-1">
@@ -56,8 +69,14 @@ export function MobileTabBar({ locale, role }: { locale: string; role: UiRole })
               type="button"
               onClick={() => setMoreOpen(true)}
               aria-expanded={moreOpen}
-              className="flex h-full min-h-11 w-full flex-col items-center justify-center gap-1 text-(--color-fg-muted)"
+              className={cn(
+                "relative flex h-full min-h-11 w-full flex-col items-center justify-center gap-1",
+                restIsActive ? "text-(--color-brand)" : "text-(--color-fg-muted)"
+              )}
             >
+              {restIsActive && (
+                <span className="absolute top-0 h-[3px] w-8 rounded-full bg-(--color-brand)" />
+              )}
               <MoreHorizontal className="size-5" aria-hidden />
               <span className="text-[11px] font-semibold leading-none">Mehr</span>
             </button>

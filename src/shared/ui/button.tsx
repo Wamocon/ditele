@@ -6,20 +6,25 @@ const button = cva(
   [
     "inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold",
     "transition-[background-color,box-shadow,transform,color] duration-(--duration-base) ease-(--ease-out)",
-    "active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50",
+    // Spring on release only. The press itself stays linear-ish so the control
+    // never overshoots *away* from the pointer while it is still held down.
+    "active:scale-[0.97] active:duration-(--duration-fast)",
+    "disabled:pointer-events-none disabled:opacity-50",
   ],
   {
     variants: {
       variant: {
+        // `shine` is a one-pass sheen on hover, defined in globals.css. Filled
+        // variants only — on a transparent button there is nothing to catch it.
         primary:
-          "bg-(--color-brand) text-(--color-brand-fg) shadow-(--shadow-sm) hover:bg-(--color-brand-hover) active:bg-(--color-brand-active)",
+          "shine bg-(--color-brand) text-(--color-brand-fg) shadow-(--shadow-sm) hover:bg-(--color-brand-hover) hover:shadow-(--shadow-brand) active:bg-(--color-brand-active)",
         secondary:
           "bg-(--color-surface-2) text-(--color-fg) hover:bg-(--color-border)",
         outline:
           "border border-(--color-border-strong) bg-transparent text-(--color-fg) hover:bg-(--color-surface)",
         ghost: "bg-transparent text-(--color-fg) hover:bg-(--color-surface)",
         danger:
-          "bg-(--color-danger) text-(--color-danger-fg) shadow-(--shadow-sm) hover:brightness-110",
+          "shine bg-(--color-danger) text-(--color-danger-fg) shadow-(--shadow-sm) hover:brightness-110",
         link: "bg-transparent text-(--color-brand) underline-offset-4 hover:underline",
       },
       size: {

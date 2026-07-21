@@ -92,6 +92,14 @@ export interface LearningTask {
   access: string;
   /** Non-null ⇒ practice task: the IframePanel target. Null ⇒ theory task. */
   targetUrl: string | null;
+  /**
+   * Task media, carried in the published snapshot by migration
+   * 20260721160000. Null on versions published before it — a frozen snapshot
+   * is never rewritten, so media appears after the next publish.
+   */
+  videoUrl: string | null;
+  introVideoUrl: string | null;
+  documentUrl: string | null;
   cohortState: string;
   assessment: TaskAssessment | null;
   hints: TaskHint[];

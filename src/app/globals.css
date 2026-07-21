@@ -61,21 +61,65 @@
   --shadow-brand: 0 6px 20px rgb(187 39 52 / 0.24);
 
   /* ── Motion ────────────────────────────────────── */
-  --duration-fast: 120ms;
-  --duration-base: 200ms;
-  --duration-slow: 320ms;
-  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast:   120ms;
+  --duration-base:   200ms;
+  --duration-slow:   320ms;
+  --duration-slower: 520ms;
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-emphasis: cubic-bezier(0.2, 0, 0, 1);
+  /* Slight overshoot. Entrances and presses only — never on colour, and never
+     on anything the pointer is aiming at. */
+  --ease-spring:   cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* ── Glass (chrome only — never behind a number or an input) ── */
+  --glass-bg:        color-mix(in srgb, var(--color-bg) 72%, transparent);
+  --glass-border:    color-mix(in srgb, var(--color-fg) 8%, transparent);
+  --glass-highlight: color-mix(in srgb, #FFFFFF 65%, transparent);
+  --glass-shadow:    0 8px 32px rgb(36 48 54 / 0.10);
+  --glass-blur:      16px;
+  --glass-saturate:  180%;
+
+  /* ── Ambient field ─────────────────────────────────
+     The slow aurora wash behind every page. Derived from brand + info so it
+     re-tints itself per theme. Light mode stays near-imperceptible; a white
+     ground shows colour far more readily than a dark one. */
+  --aurora-1:       color-mix(in srgb, var(--color-brand) 9%,  transparent);
+  --aurora-2:       color-mix(in srgb, var(--color-info)  7%,  transparent);
+  --aurora-3:       color-mix(in srgb, var(--color-brand) 5%,  transparent);
+  --grain-opacity:  0.032;
+
+  /* Pointer-tracked highlight. Overwritten per-element by <Spotlight>. */
+  --glow:           color-mix(in srgb, var(--color-brand) 14%, transparent);
+  --glow-size:      420px;
 
   /* ── Layout ────────────────────────────────────── */
   --header-height: 64px;
   --tabbar-height: 62px;
   --content-max:   1200px;
-
-  /* ── Type families (wired from next/font in fonts.ts) ── */
-  --font-heading: var(--font-heading);
-  --font-body:    var(--font-body);
 }
+
+/* ── Type families ───────────────────────────────────────────────────────────
+   Deliberately NOT declared in @theme.
+
+   next/font stamps --font-heading / --font-body onto a class on <html>. A
+   @theme entry of the same name emits `--font-heading: var(--font-heading)`
+   into :root — same element, same (0,1,0) specificity, but later in the
+   bundle, so :root wins and the property becomes self-referential. A custom
+   property that references itself is invalid at computed-value time, so the
+   whole var() collapses to its fallback and neither face ever renders. That is
+   what put Georgia on every heading in the V1 screenshots.
+
+   `@theme inline` does not fix it either: inline changes how *utilities*
+   reference the variable, but the :root declaration is still emitted, so the
+   self-reference survives. The pattern only works when the theme key and the
+   next/font variable have different names.
+
+   Nothing uses a `font-heading` / `font-body` Tailwind utility — the two rules
+   in the base layer below reference the variables directly — so the theme entry
+   bought nothing and cost the fonts. Verified against the built CSS, not the
+   source: grep the bundle for `--font-heading:var(--font-heading)` and it must
+   return zero. */
 
 :root[data-theme="dark"] {
   --color-bg:            #151C21;
@@ -113,6 +157,20 @@
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.32);
   --shadow-md: 0 4px 16px rgb(0 0 0 / 0.36);
   --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.44);
+
+  /* Glass reads darker and needs a brighter rim to separate from the ground. */
+  --glass-bg:        color-mix(in srgb, var(--color-bg) 66%, transparent);
+  --glass-border:    color-mix(in srgb, #FFFFFF 10%, transparent);
+  --glass-highlight: color-mix(in srgb, #FFFFFF 14%, transparent);
+  --glass-shadow:    0 8px 32px rgb(0 0 0 / 0.40);
+
+  /* A dark ground absorbs colour, so the aurora runs roughly twice as strong
+     here as in light mode to land at the same perceived intensity. */
+  --aurora-1:      color-mix(in srgb, var(--color-brand) 20%, transparent);
+  --aurora-2:      color-mix(in srgb, var(--color-info)  15%, transparent);
+  --aurora-3:      color-mix(in srgb, var(--color-brand) 11%, transparent);
+  --grain-opacity: 0.05;
+  --glow:          color-mix(in srgb, var(--color-brand) 22%, transparent);
 }
 
 /* ═══ Base ══════════════════════════════════════════════════════════════ */
@@ -131,14 +189,165 @@ html {
 body {
   background: var(--color-bg);
   color: var(--color-fg);
-  font-family: var(--font-body), system-ui, sans-serif;
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   font-size: 15px;
   line-height: 24px;
   -webkit-font-smoothing: antialiased;
 }
 
+/* Rosario is a humanist *sans*. The old `Georgia, serif` fallback meant that
+   whenever the face failed to load the whole app silently switched typographic
+   category, which is what the serif headings in the V1 screenshots were. */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading), Georgia, serif;
+  font-family: var(--font-heading), Candara, "Segoe UI", ui-sans-serif, sans-serif;
+  text-wrap: balance;
+}
+
+/* ═══ Ambient field ═════════════════════════════════════════════════════════
+   A slow aurora wash plus a film-grain overlay, both fixed behind the content.
+   Two body pseudo-elements rather than a mounted component, so no layout file
+   has to know this exists and nothing ships JavaScript for it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20vmax;                /* overscan so the drift never exposes an edge */
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(38vmax 38vmax at 18% 12%,  var(--aurora-1) 0%, transparent 62%),
+    radial-gradient(32vmax 32vmax at 84% 22%,  var(--aurora-2) 0%, transparent 60%),
+    radial-gradient(44vmax 44vmax at 62% 88%,  var(--aurora-3) 0%, transparent 64%);
+  animation: aurora-drift 34s var(--ease-in-out) infinite alternate;
+  will-change: transform;
+}
+
+/* Grain breaks up the banding a large soft gradient produces on a cheap panel,
+   and keeps the wash from reading as a rendering artefact. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes aurora-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(2.5%, -2%, 0) scale(1.08); }
+}
+
+/* ═══ Surface effects ═══════════════════════════════════════════════════════ */
+
+/* Frosted chrome. Header, menus, modals, toasts, tab bar — never data. */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+}
+/* Translucency is decoration; legibility is not. */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass { background: var(--color-bg); }
+}
+
+/* Pointer-tracked highlight. <Spotlight> writes --mx/--my; with no JS the
+   default 50%/50% just yields a soft centred sheen on hover, so the server
+   render is never wrong — only less specific. */
+.spotlight { position: relative; isolation: isolate; }
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out);
+  background: radial-gradient(
+    var(--glow-size) circle at var(--mx, 50%) var(--my, 50%),
+    var(--glow) 0%,
+    transparent 70%
+  );
+}
+.spotlight:hover::before,
+.spotlight:focus-within::before { opacity: 1; }
+.spotlight > * { position: relative; z-index: 1; }
+
+/* Gradient rim, drawn with a masked border so it survives any radius and does
+   not need a wrapper element or a second background layer. */
+.rim {
+  position: relative;
+}
+.rim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-brand) 55%, transparent) 0%,
+    color-mix(in srgb, var(--color-fg) 6%, transparent) 38%,
+    transparent 62%,
+    color-mix(in srgb, var(--color-info) 30%, transparent) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+}
+
+/* Kinetic gradient text. Headline scale only — it costs contrast, so it never
+   goes on body copy, a label, or anything inside a table. */
+.text-kinetic {
+  background: linear-gradient(
+    100deg,
+    var(--color-fg) 0%,
+    var(--color-fg) 34%,
+    var(--color-brand) 50%,
+    var(--color-fg) 66%,
+    var(--color-fg) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  animation: kinetic 7s var(--ease-in-out) infinite;
+}
+@keyframes kinetic {
+  0%, 100% { background-position: 130% 0; }
+  50%      { background-position: -30% 0; }
+}
+
+/* One-pass sheen across a filled button on hover. */
+.shine { position: relative; overflow: hidden; }
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translateX(-120%);
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, #FFFFFF 26%, transparent) 50%,
+    transparent 80%
+  );
+}
+.shine:hover::after { animation: shine 780ms var(--ease-out); }
+@keyframes shine {
+  to { transform: translateX(120%); }
 }
 
 /* Every number in a table, stat, timer or score lines up. */
@@ -218,7 +427,29 @@ h1, h2, h3, h4, h5, h6 {
 .stagger > *:nth-child(6) { animation-delay: 200ms }
 .stagger > *:nth-child(n+7) { animation-delay: 240ms }
 
-/* Mandatory. Non-negotiable. */
+/* Progress ring draw-on. The dash offset is set inline per instance, so the
+   keyframe only has to supply the "empty" starting point. */
+@keyframes draw-ring { from { stroke-dashoffset: var(--ring-circumference); } }
+.animate-draw-ring {
+  animation: draw-ring var(--duration-slower) var(--ease-out) both;
+}
+
+/* Scroll reveal. Native scroll-driven timelines run off the main thread and
+   cannot jank, so they are the preferred path; <Reveal> supplies an
+   IntersectionObserver fallback for browsers without them. */
+@supports (animation-timeline: view()) {
+  .reveal-native {
+    animation: fade-in-up var(--duration-slow) var(--ease-out) both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 55%;
+  }
+}
+
+/* Mandatory. Non-negotiable.
+   The blanket rule below neutralises durations, but an infinite ambient
+   animation with a ~0ms duration still lands on its final frame, and
+   `animation: none` is what actually stops the aurora, the kinetic sweep and
+   the sheen. Reduced motion means reduced motion, not faster motion. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -226,4 +457,24 @@ h1, h2, h3, h4, h5, h6 {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  body::before,
+  .text-kinetic,
+  .shine:hover::after,
+  .animate-pulse-ring {
+    animation: none !important;
+  }
+
+  /* Keep the wash as a static tint rather than dropping it — removing it
+     entirely would change the layout's colour balance, not just its motion. */
+  body::before { transform: none !important; }
+
+  /* The gradient would otherwise freeze mid-sweep on a random frame and clip
+     the text to whatever happened to be under it. */
+  .text-kinetic {
+    background: none;
+    color: var(--color-fg);
+  }
+
+  .reveal-native { animation: none !important; }
 }

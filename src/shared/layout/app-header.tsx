@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/shared/ui";
 import type { UiRole } from "@/shared/auth/role";
 import { navForRole } from "./nav-config";
+import { activeNavHref } from "./active-nav";
 import { Container } from "./container";
 import { ThemeToggle } from "./theme-toggle";
 import { AccountMenu } from "./account-menu";
@@ -35,7 +36,14 @@ export function AppHeader({ locale, role, displayName, email, unreadCount }: App
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const items = role ? navForRole(role).filter((i) => i.primary) : [];
+  const nav = role ? navForRole(role) : [];
+  const items = nav.filter((i) => i.primary);
+  // Resolved once against the full nav, not per item — see active-nav.ts for why
+  // a per-item prefix test marked every ancestor tab as selected.
+  const currentHref = activeNavHref(
+    pathname,
+    nav.map((i) => `/${locale}${i.path}`)
+  );
 
   return (
     <header
@@ -78,7 +86,7 @@ export function AppHeader({ locale, role, displayName, email, unreadCount }: App
           <ul className="flex items-center gap-1">
             {items.map((item) => {
               const href = `/${locale}${item.path}`;
-              const active = pathname === href || pathname.startsWith(`${href}/`);
+              const active = href === currentHref;
               return (
                 <li key={item.path}>
                   <Link

@@ -136,6 +136,16 @@ const TaskRow = z.object({
   instructions: Localized,
   access: text,
   target_url: z.string().nullish().transform((v) => v ?? null),
+  // Added by migration 20260721160000. Older published snapshots were frozen
+  // without it, so it must stay optional — a missing key means "no media".
+  media: z
+    .object({
+      video_url: z.string().nullish().transform((v) => v ?? null),
+      intro_video_url: z.string().nullish().transform((v) => v ?? null),
+      document_url: z.string().nullish().transform((v) => v ?? null),
+    })
+    .nullish()
+    .transform((v) => v ?? null),
   activated_at: z.string().nullish().transform((v) => v ?? null),
   cohort_state: text,
   version_number: int,
@@ -309,6 +319,9 @@ export async function getMyLearningTask(
     instructions: pickLocale(toLocalized(row.instructions), locale),
     access: row.access,
     targetUrl: row.target_url,
+    videoUrl: row.media?.video_url ?? null,
+    introVideoUrl: row.media?.intro_video_url ?? null,
+    documentUrl: row.media?.document_url ?? null,
     cohortState: row.cohort_state,
     assessment: row.assessment
       ? {

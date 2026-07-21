@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ---------------------------------------------------------------------------
-// Workflow coverage test — Workflows A..F of
+// Workflow coverage test — Workflows A..E of
 // anforderung/01_RESEARCH_LERNPLATTFORM.md section 2.1.
 //
 //   node --env-file=.env.local scripts/workflow-test.mjs
@@ -163,18 +163,6 @@ const main = async () => {
     check("E", "Student meldet Fehler", "/learn (any screen)", /fehler melden|bug|problem melden/i.test(s.body), "NOT IMPLEMENTED - no 'report a problem' entry point for students");
   }
 
-  // ── Workflow F — Content-Feedback ────────────────────────────────────────
-  console.log("\nWorkflow F — Content-Feedback");
-  {
-    const a = await page("/admin/ratings", admin);
-    check("F", "Admin Aggregation", "/admin/ratings", a.status === 200 && /bewertung|rating|durchschnitt/i.test(a.body), `status ${a.status}`);
-
-    const t = await page(`/learn/tasks/${TASK}`, learner);
-    check("F", "Feedback-Prompt nach Abschluss", "/learn/tasks/:id", /bewert|stern|feedback/i.test(t.body), "NOT IMPLEMENTED - no rating prompt on the task screen");
-
-    const c = await page(`/learn/courses/${COURSE}`, learner);
-    check("F", "Kurs bewerten", "/learn/courses/:id", /bewert|stern|feedback/i.test(c.body), "NOT IMPLEMENTED - no course rating control");
-  }
 
   // ── Summary ──────────────────────────────────────────────────────────────
   const byWf = {};

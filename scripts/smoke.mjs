@@ -44,7 +44,7 @@ const TRAINER = [
 
 const ADMIN = [
   "/admin", "/admin/courses", "/admin/courses/new", `/admin/courses/${COURSE}`,
-  "/admin/tasks", "/admin/users", "/admin/users/new", "/admin/applications", "/admin/issues", "/admin/ratings",
+  "/admin/tasks", "/admin/users", "/admin/users/new", "/admin/applications", "/admin/issues",
   "/admin/settings", "/admin/profile",
 ];
 

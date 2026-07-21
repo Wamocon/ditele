@@ -1,14 +1,19 @@
 import Link from "next/link";
 import type { Route } from "next";
+import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
-import { Badge, Card, CardTitle, StatusBadge, cn } from "@/shared/ui";
+import { Badge, Card, CardTitle, CountUp, Spotlight, StatusBadge, cn } from "@/shared/ui";
 import type { LearningCourseSummary } from "./model";
 import { format, type LearnStrings } from "./i18n";
 import { progressPercent } from "./format";
 
 /**
- * The presentational pieces the learning screens share. Server Components —
- * none of this needs the browser, so none of it ships JavaScript.
+ * The presentational pieces the learning screens share.
+ *
+ * These stay Server Components. The two interactive flourishes — the pointer
+ * spotlight and the counting figures — are imported client components, so the
+ * JavaScript boundary sits around those two widgets rather than around a whole
+ * dashboard of otherwise static content.
  */
 
 /* ── Progress ────────────────────────────────────────────────────────────── */
@@ -35,7 +40,12 @@ export function ProgressBar({
       aria-label={label}
     >
       <div
-        className="h-full animate-progress-fill rounded-full bg-(--color-brand)"
+        className={cn(
+          "h-full animate-progress-fill rounded-full",
+          // A shallow gradient reads as depth at 6px tall where a second colour
+          // stop would just read as two bars.
+          "bg-linear-to-r from-(--color-brand) to-(--color-brand-hover)"
+        )}
         style={{ width: `${percent}%` }}
       />
     </div>
@@ -47,16 +57,20 @@ export function ProgressRing({
   total,
   size = 52,
   label,
+  emphasis = false,
 }: {
   done: number;
   total: number;
   size?: number;
   label: string;
+  /** Larger figure and a brand-tinted halo. One per screen at most. */
+  emphasis?: boolean;
 }) {
   const percent = progressPercent(done, total);
-  const stroke = 5;
+  const stroke = emphasis ? 7 : 5;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - percent / 100);
 
   return (
     <div
@@ -68,7 +82,7 @@ export function ProgressRing({
       aria-valuemax={100}
       aria-label={label}
     >
-      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+      <svg width={size} height={size} className="-rotate-90 overflow-visible" aria-hidden>
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -85,11 +99,22 @@ export function ProgressRing({
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - percent / 100)}
-          className="stroke-(--color-brand)"
+          strokeDashoffset={offset}
+          className={cn(
+            "animate-draw-ring stroke-(--color-brand)",
+            emphasis && "drop-shadow-[0_0_6px_var(--glow)]"
+          )}
+          // The keyframe animates *from* a full offset (an empty ring) to the
+          // inline value above, so one keyframe serves every percentage.
+          style={{ "--ring-circumference": `${circumference}px` } as React.CSSProperties}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold tabular-nums">
+      <span
+        className={cn(
+          "absolute inset-0 flex items-center justify-center font-semibold tabular-nums",
+          emphasis ? "text-[19px]" : "text-[13px]"
+        )}
+      >
         {percent}%
       </span>
     </div>
@@ -106,17 +131,20 @@ export function ProgressRing({
  * and one red button just carries on. It is the largest thing on the dashboard,
  * above the fold, with exactly one primary action.
  *
- * `list_my_learning_courses` already returns `next_task_id` and
- * `next_task_title`, so this costs one call and no extra query.
+ * This is the single card on the screen that carries the gradient rim and the
+ * pointer spotlight. Both are rank signals, so spending them anywhere else
+ * would flatten the hierarchy this card exists to create.
  */
 export function ContinueCard({
   course,
   locale,
   strings,
+  className,
 }: {
   course: LearningCourseSummary;
   locale: string;
   strings: LearnStrings["dashboard"];
+  className?: string;
 }) {
   const done = course.nextTaskId === null;
   const href = (
@@ -134,48 +162,57 @@ export function ContinueCard({
         : strings.continueStart;
 
   return (
-    <Card className="relative overflow-hidden border-(--color-brand) shadow-(--shadow-brand)">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="brand">{strings.continueEyebrow}</Badge>
-          {!done && course.nextTaskState && <StatusBadge state={course.nextTaskState} />}
-        </div>
-
-        <div className="flex items-start gap-4">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{course.title}</p>
-            <p className="text-[22px] font-semibold leading-7 lg:text-[26px] lg:leading-8">
-              {done ? strings.continueAllDone : course.nextTaskTitle}
-            </p>
+    <Spotlight size={560} className={cn("h-full rounded-(--radius-lg)", className)}>
+      {/*
+        Centred, not space-between. This card spans two grid rows so it is as
+        tall as the two summary cards beside it, and a learner with one short
+        task title does not have enough content to fill that. Pushing the CTA to
+        the floor left a dead band through the middle of the most important card
+        on the page; centring the block keeps it reading as one deliberate unit
+        at any content length.
+      */}
+      <Card rim padded={false} className="flex h-full flex-col justify-center gap-6 p-5 lg:p-7">
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="brand">{strings.continueEyebrow}</Badge>
+            {!done && course.nextTaskState && <StatusBadge state={course.nextTaskState} />}
           </div>
-          <ProgressRing
-            done={course.completedActivities}
-            total={course.totalActivities}
-            label={strings.continueProgress}
-          />
-        </div>
 
-        <p className="text-[13px] leading-5 text-(--color-fg-muted) tabular-nums">
-          {format(strings.continueProgress, {
-            done: course.completedActivities,
-            total: course.totalActivities,
-          })}
-        </p>
+          <div className="flex items-start gap-5">
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <p className="text-[13px] leading-5 text-(--color-fg-muted)">{course.title}</p>
+              <h2 className="text-balance text-[26px] font-semibold leading-8 lg:text-[34px] lg:leading-[2.75rem]">
+                {done ? strings.continueAllDone : course.nextTaskTitle}
+              </h2>
+              <p className="text-[13px] leading-5 text-(--color-fg-muted) tabular-nums">
+                {format(strings.continueProgress, {
+                  done: course.completedActivities,
+                  total: course.totalActivities,
+                })}
+              </p>
+            </div>
+          </div>
+        </div>
 
         <Link
           href={href}
           className={cn(
-            "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-(--radius-md) px-6",
+            "shine group inline-flex min-h-12 w-full items-center justify-center gap-2",
+            "rounded-(--radius-md) px-6 sm:w-auto sm:self-start",
             "bg-(--color-brand) text-[15px] font-semibold text-(--color-brand-fg)",
-            "transition-[background-color,transform] duration-(--duration-base) ease-(--ease-out)",
-            "hover:bg-(--color-brand-hover) active:scale-[0.97] sm:w-auto sm:self-start"
+            "shadow-(--shadow-sm) transition-[background-color,box-shadow,transform]",
+            "duration-(--duration-base) ease-(--ease-out)",
+            "hover:bg-(--color-brand-hover) hover:shadow-(--shadow-brand) active:scale-[0.97]"
           )}
         >
           {action}
-          <ArrowRight className="size-4" aria-hidden />
+          <ArrowRight
+            className="size-4 transition-transform duration-(--duration-base) ease-(--ease-out) group-hover:translate-x-0.5"
+            aria-hidden
+          />
         </Link>
-      </div>
-    </Card>
+      </Card>
+    </Spotlight>
   );
 }
 
@@ -196,52 +233,87 @@ export function CourseCard({
   });
 
   return (
-    <Card interactive className="flex h-full flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <CardTitle className="truncate">{course.title}</CardTitle>
-          <p className="text-[13px] leading-5 text-(--color-fg-muted) tabular-nums">
-            {progressLabel}
-          </p>
+    <Spotlight size={340} className="h-full rounded-(--radius-lg)">
+      <Card interactive className="flex h-full flex-col gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <CardTitle className="truncate">{course.title}</CardTitle>
+            <p className="text-[13px] leading-5 text-(--color-fg-muted) tabular-nums">
+              {progressLabel}
+            </p>
+          </div>
+          <ProgressRing
+            done={course.completedActivities}
+            total={course.totalActivities}
+            label={progressLabel}
+          />
         </div>
-        <ProgressRing
+
+        <ProgressBar
           done={course.completedActivities}
           total={course.totalActivities}
           label={progressLabel}
         />
-      </div>
 
-      <ProgressBar
-        done={course.completedActivities}
-        total={course.totalActivities}
-        label={progressLabel}
-      />
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge state={course.enrollmentState} />
+          <StatusBadge state={course.cohortState} />
+        </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusBadge state={course.enrollmentState} />
-        <StatusBadge state={course.cohortState} />
-      </div>
-
-      <Link
-        href={`/${locale}/learn/courses/${course.courseId}` as Route}
-        className="mt-auto inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-(--color-brand) hover:underline"
-      >
-        {strings.openCourse}
-        <ArrowRight className="size-4" aria-hidden />
-      </Link>
-    </Card>
+        <Link
+          href={`/${locale}/learn/courses/${course.courseId}` as Route}
+          className="group mt-auto inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-(--color-brand) hover:underline"
+        >
+          {strings.openCourse}
+          <ArrowRight
+            className="size-4 transition-transform duration-(--duration-base) ease-(--ease-out) group-hover:translate-x-0.5"
+            aria-hidden
+          />
+        </Link>
+      </Card>
+    </Spotlight>
   );
 }
 
 /* ── Stat tile ───────────────────────────────────────────────────────────── */
 
-export function StatTile({ label, value }: { label: string; value: number }) {
+export function StatTile({
+  label,
+  value,
+  locale = "de-DE",
+  icon,
+  compact = false,
+}: {
+  label: string;
+  value: number;
+  locale?: string;
+  icon?: ReactNode;
+  /** Row form, for stacking several inside one bento cell. */
+  compact?: boolean;
+}) {
+  if (compact) {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2.5 text-[13px] text-(--color-fg-muted)">
+          {icon && <span className="text-(--color-fg-subtle)">{icon}</span>}
+          {label}
+        </span>
+        <span className="text-[19px] font-semibold leading-6 tabular-nums">
+          <CountUp value={value} locale={locale} />
+        </span>
+      </div>
+    );
+  }
+
   return (
     <Card className="flex flex-col gap-1">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
+      <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
+        {icon && <span className="text-(--color-fg-subtle)">{icon}</span>}
         {label}
       </p>
-      <p className="text-[30px] font-semibold leading-9 tabular-nums">{value}</p>
+      <p className="text-[30px] font-semibold leading-9 tabular-nums">
+        <CountUp value={value} locale={locale} />
+      </p>
     </Card>
   );
 }

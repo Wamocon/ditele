@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Route } from "next";
-import { ArrowLeft, CheckCircle2, CircleAlert, Lock, MessageCircleQuestion, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleAlert, ExternalLink, FileText, Lock, MessageCircleQuestion, Save } from "lucide-react";
 import {
   Badge,
   Button,
@@ -27,6 +27,7 @@ import {
 import { saveDraftAction, startAttemptAction, submitAttemptAction } from "./actions";
 import { DefectForm, formatDefectReport, isDefectComplete } from "./defect-form";
 import { HintCascade } from "./hint-cascade";
+import { VideoEmbed } from "@/shared/ui";
 import { IframePanel } from "./iframe-panel";
 import { format, learnStrings } from "./i18n";
 import { formatTime } from "./format";
@@ -479,6 +480,27 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
               {task.instructions}
             </div>
           </div>
+
+          {/* Workflow B — "Intro-Video ansehen" leads into the scenario. */}
+          {task.introVideoUrl && (
+            <VideoEmbed url={task.introVideoUrl} title={task.title} intro />
+          )}
+
+          {/* Workflow A — "Video ansehen" then "PDF-Skript lesen". */}
+          {task.videoUrl && <VideoEmbed url={task.videoUrl} title={task.title} />}
+
+          {task.documentUrl && (
+            <a
+              href={task.documentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 text-[15px] font-semibold transition-colors hover:border-(--color-brand) hover:bg-(--color-surface-2)"
+            >
+              <FileText className="size-5 shrink-0 text-(--color-brand)" aria-hidden />
+              <span className="flex-1">Skript (PDF) öffnen</span>
+              <ExternalLink className="size-4 shrink-0 text-(--color-fg-muted)" aria-hidden />
+            </a>
+          )}
 
           {isPractice && task.targetUrl && <IframePanel src={task.targetUrl} strings={s} />}
 

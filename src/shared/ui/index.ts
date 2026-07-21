@@ -16,3 +16,11 @@ export { StatusBadge, statusLabel } from "./status-badge";
 export { Skeleton, SkeletonText, SkeletonCard, EmptyState, ErrorState, DotMark } from "./states";
 export { ConfirmDialog, type ConfirmDialogProps } from "./confirm-dialog";
 export { DataTable, type Column, type DataTableProps } from "./data-table";
+
+/* Tier 3 — surface + motion. Every one degrades to a correct static render
+   with JavaScript off or `prefers-reduced-motion: reduce` set. */
+export { useReducedMotion } from "./use-reduced-motion";
+export { Spotlight, type SpotlightProps } from "./spotlight";
+export { Reveal, type RevealProps } from "./reveal";
+export { CountUp, type CountUpProps } from "./count-up";
+export { VideoEmbed, detectProvider, type VideoProvider } from "./video-embed";

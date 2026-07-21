@@ -63,7 +63,6 @@ export const ADMIN_NAV: NavItem[] = [
   { path: "/admin/tasks", label: "Aufgaben", owner: "WS-5" },
   { path: "/admin/applications", label: "Kursanfragen", owner: "WS-6" },
   { path: "/admin/issues", label: "Fehlermeldungen", owner: "WS-6" },
-  { path: "/admin/ratings", label: "Bewertungen", owner: "WS-6" },
   { path: "/admin/settings", label: "Einstellungen", owner: "WS-6" },
   { path: "/admin/profile", label: "Profil", owner: "WS-6" },
 ];

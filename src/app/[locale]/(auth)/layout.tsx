@@ -12,7 +12,11 @@ export default async function AuthLayout({
 }) {
   const { locale } = await params;
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-(--color-surface) px-4 py-10">
+    // No background of its own. A full-bleed opaque wrapper here sat on top of
+    // the ambient field in globals.css, so the auth screens were the only ones
+    // in the app with a flat ground. The centred card already separates itself
+    // from the page with its own border and shadow.
+    <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-10">
       {/* The wordmark is 17px tall but it is the only way back out of the auth
           screens, so the hit area is padded to the mandatory 44px on mobile
           (MASTER_PLAN §6.5). Matches app-header.tsx. */}
