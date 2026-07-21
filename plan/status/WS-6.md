@@ -7,27 +7,51 @@ Started: 2026-07-21 · Port: 3106 · Dist: `.next-ws6` · Account: `admin@ditele
 ## RESUME HERE
 Updated: 2026-07-21 · Chat: **#1** for this workstream
 
-**State:** IN PROGRESS
+**State:** DONE — all 11 routes built, verified against live data, and committed.
+
+> ### For the coordinator, in one paragraph
+> **All 11 WS-6 routes are real pages; no stub is left in this tree.** Every one
+> was fetched with a real admin session and asserted on its *content*, not just a
+> 200. The full admin half of WF-1 works end to end (approve → assign → the
+> membership actually appeared). Four gates green: `tsc` clean across the whole
+> repo, `eslint .` clean, `smoke.mjs` 47/47, and the privileged Supabase key
+> reachable only from `server-only` modules. **Two capabilities are impossible on
+> this database and are shipped as visible, explained blocked states, not as
+> forms that fail: creating a cohort (I-011) and adding a member or trainer to
+> one (I-012).** Both need a migration. A third gap, I-028, is that five
+> destructive admin actions cannot write an `audit_events` row.
 
 **Done and committed:**
-- `src/shared/data/admin.ts` — the whole WS-6 data layer.
-- `src/features/admin/` — `i18n.ts`, `format.ts`, `ui.tsx`, `form-ui.tsx`, `actions.ts`
-  (Server Actions, each re-checking the role), plus the per-screen panels.
-- `adminOps` + `adminOps.roleLabels` in `messages/de.json` (German only).
+- `src/shared/data/admin.ts` — the whole WS-6 data layer (20 functions).
+- `src/features/admin/` — `action-state.ts`, `actions.ts` (10 Server Actions,
+  each re-checking the role), `i18n.ts`, `format.ts`, `ui.tsx`, `form-ui.tsx`
+  and six per-screen panel components.
+- `adminOps` + `adminOps.roleLabels` in `messages/de.json` (German only;
+  `en.json` / `ru.json` untouched, as instructed).
 - **`/admin/applications`** — approve / reject-with-reason / assign-to-cohort.
-  ⭐ Verified against the live database end to end: approve → assign →
+  ⭐ Verified end to end against the live database: approve → assign →
   `cohort_memberships` grew 6 → 7. WF-1's admin half works.
 - **`/admin/users`** — search, role filter, pagination, empty state.
 - **`/admin/users/[userId]`** — role change, deactivate/reactivate, password
   reset, enrolments, groups.
-- **`/admin/users/new`** — service-role create, in a Server Action only.
+- **`/admin/users/new`** — privileged create, inside a Server Action only.
+- **`/admin/groups`** · **`/admin/groups/[cohortId]`** (lifecycle + schedule +
+  members) · **`/admin/groups/new`** (blocked state, I-011).
+- **`/admin/issues`** · **`/admin/ratings`** · **`/admin/settings`** ·
+  **`/admin/profile`**.
 
 **Half-finished:**
-- Nothing.
+- Nothing. Tree is clean and every gate is green.
 
-**Next, in order:**
-1. `/admin/groups` → `/admin/groups/[cohortId]` → `/admin/groups/new`
-2. `/admin/issues` → `/admin/ratings` → `/admin/settings` → `/admin/profile`
+**Next, in order (nothing is blocking; this is polish):**
+1. **WS-7 must sweep 375px / dark mode / keyboard for all 11 routes** — this
+   chat had no browser and did not eyeball any of them. See the Routes legend.
+2. If a migration ever lands for I-011/I-012, `/admin/groups/new` needs a real
+   form and `/admin/groups/[cohortId]` needs a member + trainer picker. The data
+   layer is already shaped for it (`updateCohortSchedule` proves `cohorts` UPDATE
+   works; only INSERT is missing).
+3. `/admin/issues` triage is wired but has never executed — `support_issues` has
+   0 rows and nothing can create one. Re-test when F56 (P1) ships.
 
 **Things I learned that are written down nowhere else:**
 
@@ -133,13 +157,17 @@ workstream is gated on `state === "requested"` before it renders.
 | /admin/users | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ | ◐ | ◐ |
 | /admin/users/new | ✅ | ✅ | ✅ | n/a | ✅ | ◐ | ◐ | ◐ |
 | /admin/users/[userId] | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ | ◐ | ◐ |
-| /admin/groups | ⬜ | | | | | | | |
-| /admin/groups/new | ⬜ | | | | | | | |
-| /admin/groups/[cohortId] | ⬜ | | | | | | | |
-| /admin/issues | ⬜ | | | | | | | |
-| /admin/ratings | ⬜ | | | | | | | |
-| /admin/settings | ⬜ | | | | | | | |
-| /admin/profile | ⬜ | | | | | | | |
+| /admin/groups | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ | ◐ | ◐ |
+| /admin/groups/new | ✅ | n/a | ✅ | n/a | ✅ | ◐ | ◐ | ◐ |
+| /admin/groups/[cohortId] | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ | ◐ | ◐ |
+| /admin/issues | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ | ◐ | ◐ |
+| /admin/ratings | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ | ◐ | ◐ |
+| /admin/settings | ✅ | ✅ | ✅ | n/a | ✅ | ◐ | ◐ | ◐ |
+| /admin/profile | ✅ | ✅ | ✅ | n/a | ✅ | ◐ | ◐ | ◐ |
+
+`/admin/groups/new` has no "real data" cell because it deliberately renders a
+blocked notice, not a query — see I-011. `/admin/issues` renders its **empty**
+state with real data: the table genuinely has 0 rows and nothing can create one.
 
 **What "Real data" means per route, so WS-7 can re-run it:** each was fetched at
 `http://127.0.0.1:3106/de<route>` with a real `admin@ditele.local` cookie and
@@ -166,16 +194,73 @@ plus `parseEnrollmentState` / `parseCohortState` (narrow a URL param to the enum
 - [x] `node scripts/smoke.mjs` — **47/47 green** against port 3106.
       ⏱ It takes ~12 minutes in dev with six servers contending, because each
       route compiles on first request. Budget for that; it is not hung.
-- [ ] SEC-3: `grep -r "service_role" .next-ws6/static/` returns nothing
+- [x] SEC-3 — **as far as a Wave-1 chat can take it. Read this, WS-7:**
+      the documented command greps `.next-ws6/static/`, and **that directory does
+      not exist in dev** — Turbopack serves client chunks from memory, and
+      Wave-1 chats are forbidden from running `npm run build`. So the literal
+      command passes vacuously and proves nothing. What was actually verified:
+      1. The privileged key's **value** appears nowhere except
+         `.next-ws6/dev/server/chunks/ssr/` and the Turbopack build cache —
+         both server-side.
+      2. `createServiceRoleClient` is imported by exactly one WS-6 file,
+         `src/shared/data/admin.ts`, whose first line is `import "server-only"`.
+         No route file and no `"use client"` file imports it.
+      3. No `"use client"` file in this workstream contains the strings
+         `service_role` / `SERVICE_ROLE`. A doc comment in `create-user-form.tsx`
+         originally did, purely as prose — it was reworded, because it is
+         indistinguishable from a real leak to the SEC-3 grep.
+      **WS-7 still owes the real check after a production build.**
 - [x] committed
 
 ## Deferred / not yet built
-_pending — see the cut list in 02_WORKSTREAMS §8 WS-6_
+Nothing was cut from the WS-6 build list — all 11 routes are real. What is
+*absent* is absent because the database cannot do it, not because it was
+deprioritised:
+- **Cohort creation** (I-011) and **member / trainer assignment** (I-012) —
+  no write path exists. Both render an explanation instead.
+- **Audit rows for five admin actions** (I-028) — `audit_events` refuses an
+  admin insert; only the RPC-backed actions are logged.
+- **Rating moderation** — `ratings` refuses UPDATE (42501), so the screen is
+  read-only aggregation. That matches the brief ("ratings → simple average list").
+- **Editing another user's profile** — `profiles` refuses UPDATE for an admin;
+  `update_own_profile` is own-row only. The user detail page says so.
 
 ## Still a stub
-`/admin/groups` · `/admin/groups/new` · `/admin/groups/[cohortId]` ·
-`/admin/issues` · `/admin/ratings` · `/admin/settings` · `/admin/profile`
+**None.** All 11 WS-6 routes are real pages.
 
 ## Issues found in someone else's area
-- I-011 — `cohorts` has no insert path, so no cohort can be created (needs a migration)
-- I-012 — `cohort_memberships` has no insert path, so no trainer can be assigned to a cohort
+- **I-011** — `cohorts` has no insert path, so no cohort can be created. Needs a migration.
+- **I-012** — `cohort_memberships` has no insert path, so no trainer can be assigned to a cohort.
+- **I-028** — `audit_events` refuses an admin insert, so role change, deactivate,
+  password reset, user creation, cohort rename and issue triage are unlogged.
+  §5.5 rule 3 is unachievable for those five without a migration.
+
+> ⚠️ Note on ISSUES.md IDs: I-011 is used by both WS-0 and WS-6 (the known
+> concurrent-append collision, logged as I-026). Match on the **From** column,
+> not the ID alone.
+
+---
+
+## ⚠️ Two traps that cost this chat real time — worth knowing
+
+**1. A `"use server"` module may export ONLY async functions.**
+`actions.ts` originally also exported `idleState` and `ISSUE_STATES`. Next does
+**not** fail the build for this — it strips the export, so
+`import { idleState }` silently resolves to `undefined`, `useActionState` gets
+`undefined` as its initial state, and the component dies at render with
+`Cannot read properties of undefined (reading 'length')` pointing at a line that
+has nothing to do with the cause. Every constant and type now lives in
+`action-state.ts`. **If any workstream sees that error near a form, check this
+first.**
+
+**2. `npx next lint` does not exist in Next 16.**
+It parses `lint` as a directory name and fails with "Invalid project directory".
+The gate in the prompts is stale; the real command is `npx eslint .`
+(= `npm run lint`).
+
+**3. Six Turbopack dev servers exhaust Windows' thread pool.**
+Mine panicked with `failed to spawn thread: Os { code: 1450, ... Insufficient
+system resources }` and stopped answering. It is not a code bug and not fixable
+from the app — kill that server and restart it. Find your own PID with
+`netstat -ano | grep ":3106"` and kill only that one; never a blanket
+`taskkill node.exe`, which would take down five other chats.

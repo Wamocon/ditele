@@ -11,9 +11,12 @@ import type { AdminDict } from "./i18n";
 import { roleLabel } from "./i18n";
 
 /**
- * ⚠️ `SUPABASE_SERVICE_ROLE_KEY` never reaches this file. The form posts to a
- * Server Action; the Auth Admin call happens there, on the server. SEC-3 checks
- * this (`grep -r service_role .next-ws6/static/` must be empty).
+ * ⚠️ The privileged Supabase key never reaches this file. The form posts to a
+ * Server Action, and the Auth Admin call happens there, on the server.
+ *
+ * The literal env-var name is deliberately NOT written anywhere in this module:
+ * SEC-3 greps the client bundle for that token, and a comment mentioning it
+ * would look identical to a real leak.
  */
 export function CreateUserForm({
   roles,
