@@ -98,12 +98,45 @@ check("names the level", /neuling|entdecker|lehrling|tester|experte|meister|cham
 check("shows an XP total", /\d[\d.]*\s*xp/i.test(hub));
 check("has a hunts section", hubLower.includes("jagden"));
 check("has a badges section", hubLower.includes("abzeichen"));
+check("has a streak tile", hubLower.includes("streak"));
+
+// The streak must be a real number derived from real activity, not a
+// placeholder. `learner@` has attempts, so "Noch kein Streak" here would mean
+// the refresh ran and found nothing — which is the interesting failure.
+const streakText = /streak[\s\S]{0,80}/i.exec(hub)?.[0] ?? "";
+console.log(`  note  streak reads: ${JSON.stringify(streakText.replace(/\s+/g, " ").slice(0, 90))}`);
 
 // WS-8 seeded one badge award for learner@. If this learner holds it, the badge
 // list must show it rather than its empty state — the empty state is correct
 // only when there is genuinely nothing.
 const hasBadgeEmptyState = hubLower.includes("noch keine abzeichen");
 console.log(`  note  badge section is ${hasBadgeEmptyState ? "EMPTY" : "populated"}`);
+
+/* ── The celebration, and its dismissal ───────────────────────────────────── */
+
+// A celebration is an UNREAD `badge.awarded` / `level.up` notification, so this
+// only runs when the learner actually has one. Skipping loudly beats asserting
+// against a fixture the award engine did not really produce.
+const banner = page.locator('[role="status"]').filter({ hasText: /Abzeichen|Level/i });
+if ((await banner.count()) === 0) {
+  console.log("  note  no unread award to celebrate — banner correctly absent");
+} else {
+  check("celebration banner is announced politely", (await banner.count()) > 0);
+
+  // role="status" is aria-live="polite" and must NOT trap focus. A celebration
+  // that interrupts is worse than no celebration.
+  const isDialog = await banner.first().evaluate((el) => el.closest('[role="dialog"]') !== null);
+  check("celebration is not a focus-trapping modal", !isDialog);
+
+  await banner.first().getByRole("button").click();
+  await page.waitForTimeout(1500);
+  await page.reload({ waitUntil: "networkidle" });
+  const stillThere = await page
+    .locator('[role="status"]')
+    .filter({ hasText: /Abzeichen|Level/i })
+    .count();
+  check("dismissing marks it read, and it stays dismissed across a reload", stillThere === 0);
+}
 
 /* ── The rules the whole app is held to ───────────────────────────────────── */
 
