@@ -165,17 +165,22 @@ export function TaskListItem({
   if (activity.locked) {
     return (
       <li>
-        {/* ⚠️ This was `opacity-80`, and it had to go the moment the row gained
-            an action. Opacity applies to the whole subtree and cannot be undone
-            by a child, so it would have dimmed the "play the hunt" link and its
+        {/* ⚠️ Two attributes came off this row when it gained an action, and
+            both would have silently disabled that action.
+
+            `opacity-80`: opacity applies to a whole subtree and cannot be
+            undone by a child, so it dimmed the "play the hunt" link and its
             focus ring along with the text — and a contrast audit reading
             computed colours would not have noticed, because the element's own
-            opacity is still 1. The muted foreground below says the same thing
-            about the *text* without touching the control. */}
-        <div
-          className={cn(shared, "bg-(--color-surface) text-(--color-fg-muted)")}
-          aria-disabled
-        >
+            opacity is still 1.
+
+            `aria-disabled`: this is a plain `<div>`, not a control, so the
+            attribute was decorative to begin with — but assistive technology
+            propagates it, and the browser check refused to click the link with
+            "element is not enabled". A learner using a screen reader would have
+            been told the one actionable thing on the row was unavailable. The
+            lock icon and the sentence already say the task is locked. */}
+        <div className={cn(shared, "bg-(--color-surface) text-(--color-fg-muted)")}>
           {body}
         </div>
       </li>
