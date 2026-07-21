@@ -10,17 +10,24 @@ Updated: 2026-07-21 · Chat: **#1** for this workstream
 **State:** IN PROGRESS
 
 **Done and committed:**
-- Nothing yet. Foundation read, live database probed (findings below).
+- `src/shared/data/admin.ts` — the whole WS-6 data layer.
+- `src/features/admin/` — `i18n.ts`, `format.ts`, `ui.tsx`, `form-ui.tsx`, `actions.ts`
+  (Server Actions, each re-checking the role), plus the per-screen panels.
+- `adminOps` + `adminOps.roleLabels` in `messages/de.json` (German only).
+- **`/admin/applications`** — approve / reject-with-reason / assign-to-cohort.
+  ⭐ Verified against the live database end to end: approve → assign →
+  `cohort_memberships` grew 6 → 7. WF-1's admin half works.
+- **`/admin/users`** — search, role filter, pagination, empty state.
+- **`/admin/users/[userId]`** — role change, deactivate/reactivate, password
+  reset, enrolments, groups.
+- **`/admin/users/new`** — service-role create, in a Server Action only.
 
 **Half-finished:**
 - Nothing.
 
 **Next, in order:**
-1. `src/shared/data/admin.ts` + `adminOps` block in `messages/de.json`
-2. `/admin/applications` — the one that unblocks WF-1 for WS-1 and WS-3
-3. `/admin/users` → `/admin/users/[userId]` → `/admin/users/new`
-4. `/admin/groups` → `/admin/groups/[cohortId]` → `/admin/groups/new`
-5. `/admin/issues` → `/admin/ratings` → `/admin/settings` → `/admin/profile`
+1. `/admin/groups` → `/admin/groups/[cohortId]` → `/admin/groups/new`
+2. `/admin/issues` → `/admin/ratings` → `/admin/settings` → `/admin/profile`
 
 **Things I learned that are written down nowhere else:**
 
@@ -77,6 +84,13 @@ was actually inserted — `23503` means permitted, `42501` means denied):*
 ```
 No email. Use it for pickers; use `profiles` + Auth Admin for the user list.
 
+*User-creation flow, verified on a throwaway account (created, exercised, deleted):*
+> `createUser` → the trigger grants **`learner`** by default, whatever role you
+> intended. So `/admin/users/new` always runs a second step. `setUserRole` is an
+> **UPDATE** of the live `user_roles` row: learner → trainer → admin all
+> succeeded. `banned_until` **is** returned by `listUsers` once set and absent
+> once cleared, so the Aktiv/Deaktiviert column is trustworthy.
+
 *The 8 role ids (stable, seeded):*
 | code | id |
 |---|---|
@@ -104,12 +118,21 @@ workstream is gated on `state === "requested"` before it renders.
 ---
 
 ## Routes
+
+> **Legend — read this before trusting a tick.** ✅ = actually exercised against
+> the live database and asserted. **◐ = built to the spec but NOT eyeballed in a
+> browser.** This chat had no browser; every "renders" claim comes from fetching
+> the route with a real admin session and asserting on the HTML
+> (`Real data` column). **375px, dark mode and keyboard are ◐ everywhere — WS-7
+> must sweep them for real.** A false ✅ here is worse than an honest ◐, because
+> it makes WS-7 skip the check.
+
 | Route | Built | Real data | Loading | Empty | Error | 375px | Dark | Keyboard |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| /admin/applications | ⬜ | | | | | | | |
-| /admin/users | ⬜ | | | | | | | |
-| /admin/users/new | ⬜ | | | | | | | |
-| /admin/users/[userId] | ⬜ | | | | | | | |
+| /admin/applications | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ | ◐ | ◐ |
+| /admin/users | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ | ◐ | ◐ |
+| /admin/users/new | ✅ | ✅ | ✅ | n/a | ✅ | ◐ | ◐ | ◐ |
+| /admin/users/[userId] | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ | ◐ | ◐ |
 | /admin/groups | ⬜ | | | | | | | |
 | /admin/groups/new | ⬜ | | | | | | | |
 | /admin/groups/[cohortId] | ⬜ | | | | | | | |
@@ -118,21 +141,40 @@ workstream is gated on `state === "requested"` before it renders.
 | /admin/settings | ⬜ | | | | | | | |
 | /admin/profile | ⬜ | | | | | | | |
 
+**What "Real data" means per route, so WS-7 can re-run it:** each was fetched at
+`http://127.0.0.1:3106/de<route>` with a real `admin@ditele.local` cookie and
+asserted to contain seeded values — e.g. `/admin/users` must contain
+"Ada Admin", "admin@ditele.local" and "Mara Keller"; `/admin/applications` must
+contain "Praktisches Softwaretesten" and a live decision button. A 200 alone was
+never accepted as a pass, and neither was a page still showing the stub text.
+
 ## Data functions added
-_pending_
+`src/shared/data/admin.ts` →
+`listRoles` · `listAdminUsers` · `getAdminUser` · `createAdminUser` ·
+`setUserRole` · `setUserActive` · `resetUserPassword` ·
+`listEnrollmentApplications` · `decideEnrollment` · `assignEnrollment` ·
+`listCohorts` · `getCohort` · `transitionCohortState` · `updateCohortSchedule` ·
+`listSupportIssues` · `updateSupportIssueState` · `listRatings` ·
+`getOwnProfile` · `updateOwnAdminProfile` · `getPlatformInfo`
+plus `parseEnrollmentState` / `parseCohortState` (narrow a URL param to the enum).
 
 ## Gates
-- [ ] `npx tsc --noEmit` green
-- [ ] `npx next lint` green
-- [ ] `node scripts/smoke.mjs` green
+- [x] `npx tsc --noEmit` — green for every WS-6 file
+- [x] lint — **`npx next lint` does not exist in Next 16** (it reads `lint` as a
+      directory and errors). The real gate is `npx eslint .`, which is what
+      `npm run lint` runs and what WS-0 used. Green on all WS-6 paths.
+- [x] `node scripts/smoke.mjs` — **47/47 green** against port 3106.
+      ⏱ It takes ~12 minutes in dev with six servers contending, because each
+      route compiles on first request. Budget for that; it is not hung.
 - [ ] SEC-3: `grep -r "service_role" .next-ws6/static/` returns nothing
-- [ ] committed
+- [x] committed
 
 ## Deferred / not yet built
-_pending_
+_pending — see the cut list in 02_WORKSTREAMS §8 WS-6_
 
 ## Still a stub
-All 11 routes.
+`/admin/groups` · `/admin/groups/new` · `/admin/groups/[cohortId]` ·
+`/admin/issues` · `/admin/ratings` · `/admin/settings` · `/admin/profile`
 
 ## Issues found in someone else's area
 - I-011 — `cohorts` has no insert path, so no cohort can be created (needs a migration)

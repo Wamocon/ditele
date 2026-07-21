@@ -420,6 +420,10 @@
       "dueAt": "Fällig am {date}",
       "availableFrom": "Verfügbar ab {date}",
       "lockedTitle": "Diese Aufgabe ist noch gesperrt",
+      "lockReasonDefault": "Diese Aufgabe ist noch nicht freigeschaltet.",
+      "lockReasonSchedule": "Diese Aufgabe wird zu einem späteren Zeitpunkt freigeschaltet.",
+      "lockReasonPrerequisite": "Schließe zuerst die vorherigen Aufgaben ab.",
+      "lockReasonCohort": "Deine Gruppe hat noch nicht begonnen.",
       "emptyTitle": "Dieser Kurs hat noch keine Inhalte",
       "emptyDescription": "Sobald die Trainerin oder der Trainer Inhalte veröffentlicht, erscheinen sie hier.",
       "emptyStage": "In dieser Stufe gibt es noch keine Aufgaben."
@@ -604,7 +608,9 @@
       "notFoundDescription": "Diese Frage existiert nicht oder gehört nicht zu deinem Konto.",
       "emptyTitle": "Noch keine Nachrichten",
       "emptyDescription": "In diesem Verlauf gibt es noch keine Nachricht.",
-      "backToList": "Zurück zu meinen Fragen"
+      "backToList": "Zurück zu meinen Fragen",
+      "systemNote": "Systemhinweis",
+      "messagesTitle": "Verlauf"
     },
     "profile": {
       "title": "Profil & Einstellungen",

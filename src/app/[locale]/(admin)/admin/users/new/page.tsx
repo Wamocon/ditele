@@ -1,19 +1,38 @@
 import { PageHeader } from "@/shared/layout";
-import { Card } from "@/shared/ui";
+import { ErrorState } from "@/shared/ui";
+import { listRoles } from "@/shared/data/admin";
+import { CreateUserForm } from "@/features/admin/create-user-form";
+import { getAdminDict } from "@/features/admin/i18n";
+import { Section } from "@/features/admin/ui";
 
-/**
- * STUB — owned by WS-6. Replace this file with the real page.
- * Do not delete it: every route file exists from Wave 0a so two chats can
- * never race to create the same path.
- */
-export default function Page() {
+export default async function NewUserPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getAdminDict(locale);
+  const rolesResult = await listRoles();
+
   return (
     <>
-      <PageHeader title="Benutzer anlegen" />
-      <Card className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-[18px] font-semibold">Diese Seite wird gerade gebaut</p>
-        <p className="text-[13px] text-[--color-fg-muted]">Zuständig: WS-6</p>
-      </Card>
+      <PageHeader
+        title={t.userNew.title}
+        description={t.userNew.description}
+        breadcrumbs={[
+          { label: t.common.administration, href: `/${locale}/admin` },
+          { label: t.users.title, href: `/${locale}/admin/users` },
+          { label: t.userNew.title },
+        ]}
+      />
+
+      {rolesResult.ok ? (
+        <Section title={t.userNew.title}>
+          <CreateUserForm roles={rolesResult.data} locale={locale} t={t} />
+        </Section>
+      ) : (
+        <ErrorState message={rolesResult.error.message} />
+      )}
     </>
   );
 }
