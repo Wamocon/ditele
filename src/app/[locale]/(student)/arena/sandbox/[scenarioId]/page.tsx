@@ -5,6 +5,7 @@ import { isAuthoringEnabled } from "@/features/arena/sandbox/authoring";
 import { sandboxStrings } from "@/features/arena/sandbox/i18n";
 import { parseScenarioConfiguration } from "@/features/arena/sandbox/model";
 import { registryMismatches } from "@/features/arena/sandbox/registry";
+import { getDraftScenario } from "@/features/arena/sandbox/scenarios";
 import { SandboxFrame } from "@/features/arena/sandbox/sandbox-frame";
 import { SandboxRuntime } from "@/features/arena/sandbox/sandbox-runtime";
 import { KNOWN_SURFACES } from "@/features/arena/sandbox/surface-effects";
@@ -57,14 +58,30 @@ export default async function Page({
   const authoring = isAuthoringEnabled();
   const embedded = query.embed === "1";
   const defectsEnabled = !(authoring && query.defects === "off");
+  // `?draft=1` renders a scenario straight from `scenarios/*.json`, with no
+  // database involved, so an author can iterate before seeding. Author-only:
+  // outside authoring mode the flag is ignored entirely, so a learner cannot
+  // reach a draft even by guessing its code.
+  const useDraft = authoring && query.draft === "1";
 
-  const result = await getHuntScenarioByCode(scenarioId);
+  /** Only the four fields this route needs, from either source. */
+  let scenario: {
+    code: string;
+    scenarioVersion: number;
+    description: string;
+    configuration: unknown;
+  } | null;
 
-  if (!result.ok) {
-    return <ErrorState title={s.loadErrorTitle} message={result.error.message} locale={locale} />;
+  if (useDraft) {
+    scenario = getDraftScenario(scenarioId);
+  } else {
+    const result = await getHuntScenarioByCode(scenarioId);
+    if (!result.ok) {
+      return <ErrorState title={s.loadErrorTitle} message={result.error.message} locale={locale} />;
+    }
+    scenario = result.data;
   }
 
-  const scenario = result.data;
   if (!scenario) {
     // Not a 404 on purpose. RLS scopes this read to active scenarios in a
     // cohort the learner can reach, so "no such scenario" and "not yours" are
