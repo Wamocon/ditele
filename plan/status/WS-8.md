@@ -6,19 +6,44 @@ Updated: 2026-07-21 · Chat: #1 for this workstream
 **State:** IN PROGRESS
 
 **Done and committed:**
-- Startup reading, live-DB reconnaissance, coordinator decisions recorded
-  (ISSUES.md I-036 / I-037 / I-038), BOARD.md set to IN PROGRESS.
+- `56c1ba1` — coordinator decisions + live-DB reconnaissance
+  (ISSUES.md I-036 / I-037 / I-038).
+- `c7d5664` — **step 2 done early**: `20260722100000_arena_task_kind_hunt.sql`.
+  Widens `task_kind` to accept `'hunt'` **and** patches `public.submit_attempt`,
+  which would otherwise have made every hunt unsubmittable (I-040).
+- `a4db174` — slice seed + `ws8-probe.mjs`. Hunt task H gates content task T2.
+  Also I-041, the German-only/three-locale trap that briefly emptied the
+  learner's course.
+- `f47c80c` — `ws8-roundtrip.mjs`: **the slice round-trips at the data layer.**
+  locked → submitted → accepted → unlocked, all through the real command RPCs.
+- Badge seeded and awarded (`scripts/ws8-slice-badge.sql`); idempotent on
+  re-run, and the learner reads it back under their own RLS policy.
 
 **Half-finished:**
-- Nothing yet. No migration written.
+- Nothing half-written. The slice's **browser** confirmation is the one
+  outstanding piece — `06_…` §3 says Wave B may not open until it round-trips
+  in a real browser, and only the RPC layer is proven so far.
 
 **Next, in order:**
-1. The vertical slice (`06_…` §3) — see "The slice plan" below. Nothing else
-   starts until it round-trips in a browser.
-2. Then steps 2–8 of the `06_…` §8 WS-8 entry.
+1. Browser round-trip of the slice. ⚠️ Build + `next start`, **not** `next dev`
+   (RELEASE.md §7: Turbopack wedges on this machine and looks like an app bug).
+   `NEXT_DIST_DIR=.next-ws8 … --port 3108`.
+2. Then steps 3–8 of the `06_…` §8 WS-8 entry: `hunt_scenarios`,
+   `hunt_findings`, relative scheduling, lock-reason enrichment, the
+   `arena.ts` / `model.ts` pair, the nav entry.
 
 **Blocked on:**
 - Nothing.
+
+**Slice fixtures now on the live database** (WS-9/WS-10/WS-13 will want these):
+
+| Thing | Id |
+|---|---|
+| hunt task H | `019f9100-0000-7000-8000-000000000001` (`external_id='checkout-v1'`, `source_system='arena'`) |
+| gated task T2 | `019f9100-0000-7000-8000-000000000002` |
+| prerequisite | `019f9100-0000-7000-8000-000000000003` |
+| badge | `019f9100-0000-7000-8000-0000000000b1` (`first-bug-found`) |
+| learner | `learner@ditele.local` · enrollment `01980a33-0000-7000-8000-000000000001` |
 
 ---
 
