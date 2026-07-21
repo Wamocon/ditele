@@ -14,7 +14,19 @@
 
 ## 1. What a scenario is
 
-A row in `public.hunt_scenarios`:
+A scenario exists in **two places, deliberately**:
+
+| | Where | What it is for |
+|---|---|---|
+| the **definition** | `scenarios/<code>.json` | what the sandbox renders. Ships with the app |
+| the **row** | `public.hunt_scenarios` | ground truth for grading (WS-10's panel, `hunt_findings.planted_code`) and the authorization scope |
+
+They cannot drift: `supabase/seed_arena_scenarios.sql` is generated from the
+JSON and `scripts/ws9-check-scenario.mjs` diffs the two. The route prefers the
+row and falls back to the definition — see §9 for why that fallback exists
+today and when to delete it.
+
+The row:
 
 | Column | What |
 |---|---|
@@ -331,3 +343,35 @@ v2 is: seed v2 as `active`, then set v1 to `inactive` once nobody is mid-hunt.
 | `surface-effects.ts`, `registry.ts` | only alongside a new surface or effect |
 | `model.ts` | only a new trigger type — §4 |
 | `defect-context.tsx`, `sandbox-runtime.tsx`, `capture.ts` | **never**, in the normal course of authoring. If you must, that is `ISSUES.md` |
+
+---
+
+## 9. Two open defects you will meet, both outside this tree
+
+Neither is fixable from `features/arena/sandbox/**`. Both are measured, not
+inferred, and both are in `plan/status/ISSUES.md` with the exact remedy.
+
+### I-050 — a learner reads zero rows from `hunt_scenarios`
+
+`hunt_scenarios_scoped_read` proves entitlement with an `exists` over
+`public.tasks`. A policy body is not `security definer`, so `tasks`' own RLS
+applies inside it — and a learner reads **0 rows** from `tasks`
+(`RPC_CONTRACTS.md` §10). The `exists` is false for every learner, always, and
+it fails *silently*: the read returns `null`, which the caller cannot tell from
+"no such scenario".
+
+**Until it is fixed**, the sandbox route falls back to the shipped definition,
+which is why §1's two-places split is load-bearing rather than decorative. The
+cost: any signed-in learner can render any shipped scenario by guessing its
+code. A sandbox holds no learner data, so nothing leaks — but the scoping WS-8
+intended is not in force. **When the policy is fixed, delete the fallback
+branch in the route**; it is marked. `scripts/ws9-check-seeded.mjs` prints the
+current state on every run, so the day it flips you will see it.
+
+### I-049 — the task workspace cannot embed the sandbox
+
+`next.config.ts` sends `X-Frame-Options: DENY` on every route, which forbids
+framing even same-origin. `?embed=1` is built and correct; the frame simply
+never loads. The standalone route is unaffected. One word — `SAMEORIGIN` — but
+it is an app-wide security header and changing it is a decision someone should
+make on purpose.
