@@ -163,9 +163,19 @@ for (const p of PLAN) {
     if (!rows.length) throw new Error("no enrolment row found after request_enrollment");
     l.enrollmentId = rows[0].id;
     l.enrollmentVersion = rows[0].row_version;
+    l.enrollmentState = rows[0].state;
+    l.assigned = rows[0].state === "assigned";
     return `${rows[0].id.slice(0, 8)}… state=${rows[0].state} v=${rows[0].row_version}`;
   });
   if (!row || !p.decide) continue;
+
+  // ⚠️ Idempotency guard. Re-deciding an already-decided enrolment does NOT
+  //    return a clean error — Kong returns 504 "upstream server is timing out"
+  //    after the RPC hangs. Skip anything already past `requested`.
+  if (l.enrollmentState !== "requested") {
+    log(`  ⏭  already ${l.enrollmentState}, skipping decide/assign`);
+    continue;
+  }
 
   await step(`  decide_enrollment ${p.decide}`, async () => {
     must(
@@ -231,10 +241,14 @@ for (const l of LEARNERS) {
     log(`     ↳ start_attempt returned: ${JSON.stringify(attempt).slice(0, 400)}`);
   }
 
-  const attemptId = attempt?.attempt_id ?? attempt?.id ?? (typeof attempt === "string" ? attempt : null);
+  // ⚠️ start_attempt returns an ARRAY of one row, not an object.
+  //    [{ attempt_id, organization_id, enrollment_id, cohort_id, course_id,
+  //       content_version_id, task_id, attempt_state, … }]
+  const rec = Array.isArray(attempt) ? attempt[0] : attempt;
+  const attemptId = rec?.attempt_id ?? rec?.id ?? (typeof rec === "string" ? rec : null);
   if (!attemptId) { problems.push(`${l.name}: could not find attempt id in start_attempt payload`); continue; }
 
-  const draftVersion = attempt?.draft_version ?? attempt?.expected_draft_version ?? 0;
+  const draftVersion = rec?.draft_version ?? rec?.expected_draft_version ?? 0;
   await step(`  save_attempt_draft`, async () => {
     must(
       await c.rpc("save_attempt_draft", {
@@ -244,7 +258,9 @@ for (const l of LEARNERS) {
           "Bei Maximallänge+1 wird die Eingabe ohne Meldung abgeschnitten.",
         p_selected_option_ids: [OPTION_BOUNDARY],
         p_used_hint_ids: [],
-        p_evidence_draft: {},
+        // ⚠️ p_evidence_draft must be a JSON ARRAY (max 50 items, max 256 KB).
+        //    Passing {} fails with `22023 invalid draft payload`.
+        p_evidence_draft: [],
         p_elapsed_seconds: 720,
         p_expected_draft_version: draftVersion,
       }),
@@ -255,6 +271,35 @@ for (const l of LEARNERS) {
   // leave learner 4's attempt in_progress so the workspace has a live draft
   if (l.n === 4) { log("     ↳ left in_progress on purpose (live draft for WS-2)"); continue; }
 
+  // ⚠️ This task's skill mapping carries `evidence_required: true`, so
+  //    submit_attempt refuses an empty p_evidence_refs with
+  //    `22023 verified evidence is required for this task`.
+  const evidenceIds = [];
+  await step(`  create_external_task_evidence`, async () => {
+    const sourceUri = `https://example.invalid/defect-report/${l.n}`;
+    const sha = [...new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sourceUri))
+    )].map((b) => b.toString(16).padStart(2, "0")).join("");
+    const data = must(
+      await c.rpc("create_external_task_evidence", {
+        p_attempt_id: attemptId,
+        p_title: "Fehlerbericht: Eingabe über Maximallänge wird stillschweigend abgeschnitten",
+        p_source_uri: sourceUri,
+        p_sha256_hex: sha,
+        p_idempotency_key: `ws0-mock-evidence-${l.n}`,
+      }),
+      "create_external_task_evidence"
+    );
+    if (!globalThis.__loggedEv) {
+      globalThis.__loggedEv = true;
+      log(`     ↳ create_external_task_evidence returned: ${JSON.stringify(data).slice(0, 300)}`);
+    }
+    const r = Array.isArray(data) ? data[0] : data;
+    const id = r?.evidence_id ?? r?.id;
+    if (id) evidenceIds.push(id);
+    return id ? `evidence ${String(id).slice(0, 8)}…` : "no id in payload";
+  });
+
   await step(`  submit_attempt`, async () => {
     const rows = must(await admin.from("attempts").select("row_version").eq("id", attemptId), "read attempt version");
     must(
@@ -264,7 +309,7 @@ for (const l of LEARNERS) {
           "Grenzwertanalyse an allen Eingabefeldern. Gefundener Fehler: Eingaben über der Maximallänge werden " +
           "stillschweigend abgeschnitten, statt eine Validierungsmeldung zu zeigen.",
         p_selected_option_ids: [OPTION_BOUNDARY],
-        p_evidence_refs: [],
+        p_evidence_refs: evidenceIds,
         p_expected_version: rows[0]?.row_version ?? 1,
         p_correlation_id: uuid(),
         p_idempotency_key: `ws0-mock-submit-${l.n}`,
@@ -313,7 +358,8 @@ for (const s of SUBJECTS) {
         p_question_id: qid,
         p_expected_version: rows[0]?.row_version ?? 1,
         p_correlation_id: uuid(),
-        p_idempotency_key: `ws0-mock-claim-${l.n}`,
+        // key must be unique per (question, payload) — reuse raises 22023
+        p_idempotency_key: `ws0-mock-claim-${qid}`,
       }),
       "claim_question"
     );
