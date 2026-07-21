@@ -187,3 +187,56 @@ export async function listProgressBoard(locale: string): Promise<Result<Progress
 
   return ok(parsed.data.map(toRow));
 }
+
+/**
+ * The set of course ids that currently have at least one assigned trainer.
+ *
+ * ⚠️ This exists because of a failure found in a browser, not in review.
+ * "Trainer benachrichtigen" on a course with no `course_trainers` row notifies
+ * nobody — correctly, and the RPC says so. But the admin only found out *after*
+ * writing the note, and on a course that has never been assigned a trainer that
+ * is every single attempt. Knowing up front turns a wasted effort into a
+ * different, actionable message.
+ *
+ * Read directly rather than folded into `list_progress_board`: an admin session
+ * *can* read `course_trainers` (measured — it is not one of the tables §10 of
+ * `RPC_CONTRACTS.md` blanks), so a second small query beats re-issuing a
+ * 200-line `security definer` body in a third migration against a live
+ * database.
+ *
+ * A failure here degrades to "assume a trainer exists". The notify RPC is still
+ * the authority and still reports the truth, so the worst case is the message
+ * an admin would have got anyway — never a flag that silently vanishes.
+ */
+export async function listCoursesWithTrainer(): Promise<Result<Set<string>>> {
+  const supabase = await createServerClient();
+
+  const result = await fromSupabase<{ course_id: string }[]>(async () => {
+    // ⚠️ Another I-052 cast, and a wider one than expected: `course_trainers`
+    // is missing from `database.types.ts` too. The table shipped in
+    // `20260721130000_course_based_assignment.sql` and the generated types have
+    // not been regenerated since — `npm run db:types` needs a Docker daemon
+    // this machine does not have. So the table is unknown to the relation
+    // union, exactly like WS-11's three objects. WS-13 regenerates; then the
+    // cast comes out and this becomes a plain `.from()`.
+    const { data, error } = await (
+      supabase.from as unknown as (relation: string) => {
+        select: (columns: string) => {
+          is: (
+            column: string,
+            value: null
+          ) => Promise<{
+            data: { course_id: string }[] | null;
+            error: import("@supabase/supabase-js").PostgrestError | null;
+          }>;
+        };
+      }
+    )("course_trainers")
+      .select("course_id")
+      .is("removed_at", null);
+    return { data, error };
+  });
+
+  if (!result.ok) return result;
+  return ok(new Set(result.data.map((row) => row.course_id)));
+}

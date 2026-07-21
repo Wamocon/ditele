@@ -597,6 +597,7 @@
         "task_schedule.updated": "Ein Aufgabentermin wurde geändert",
         "badge.awarded": "Du hast ein Abzeichen verdient",
         "level.up": "Du hast ein neues Level erreicht",
+        "learner.flagged": "Ein Teilnehmer braucht Unterstützung",
         "fallback": "Neue Benachrichtigung"
       }
     },

@@ -4,9 +4,16 @@ import Link from "next/link";
 import { PageHeader } from "@/shared/layout";
 import { Badge, ErrorState, cn } from "@/shared/ui";
 import { requireRole } from "@/shared/auth/guard";
-import { listProgressBoard, RISK_SIGNALS, type RiskSignal } from "@/shared/data/progress";
+import {
+  listCoursesWithTrainer,
+  listProgressBoard,
+  RISK_SIGNALS,
+  type RiskSignal,
+} from "@/shared/data/progress";
 import { getAdminDict, fill } from "@/features/admin/i18n";
 import { ProgressLegend, ProgressTable } from "@/features/admin/progress-table";
+import { ProgressNotify } from "@/features/admin/progress-notify";
+import { flagLearnerAction } from "./actions";
 
 /**
  * WS-12 — `/[locale]/admin/progress`. `05_…` §G10, `06_…` §8 WS-12 items 1–2.
@@ -52,7 +59,16 @@ export default async function Page({
   const rawRisk = Array.isArray(query.risk) ? query.risk[0] : query.risk;
   const risk = rawRisk && isRiskSignal(rawRisk) ? rawRisk : undefined;
 
-  const board = await listProgressBoard(locale);
+  const [board, coursesWithTrainer] = await Promise.all([
+    listProgressBoard(locale),
+    listCoursesWithTrainer(),
+  ]);
+
+  // Degrade to "assume a trainer exists" — the notify RPC is the authority and
+  // still reports the truth, so a failure here costs a clearer message, never a
+  // flag that silently goes nowhere.
+  const hasTrainer = (courseId: string) =>
+    !coursesWithTrainer.ok || coursesWithTrainer.data.has(courseId);
 
   if (!board.ok) {
     return (
@@ -122,7 +138,37 @@ export default async function Page({
         </nav>
       )}
 
-      <ProgressTable rows={rows} dict={dict} now={new Date()} filtered={Boolean(risk)} />
+      <ProgressTable
+        rows={rows}
+        dict={dict}
+        now={new Date()}
+        filtered={Boolean(risk)}
+        renderAction={(row) =>
+          !hasTrainer(row.courseId) ? (
+            // No trainer on this course ⇒ the flag has nowhere to go. Say so
+            // here rather than after the admin has written a note. Found in a
+            // browser, not in review: see `listCoursesWithTrainer`.
+            <span className="text-[13px] leading-5 text-(--color-fg-muted)">
+              {p.notifyNoTrainer}
+            </span>
+          ) : (
+          // ⚠️ `flagLearnerAction` crosses into a Client Component, and a
+          // FUNCTION prop is legal here only because it is a Server Action —
+          // React serialises it as a reference. A plain function would be
+          // refused at render with a digest-only error in a production build,
+          // which reaches the browser as "Etwas ist schiefgelaufen" and nothing
+          // else. WS-11 lost time to exactly that; see plan/status/WS-11.md
+          // learning 4.
+          <ProgressNotify
+            enrollmentId={row.enrollmentId}
+            learnerName={row.learnerName}
+            locale={locale}
+            dict={dict}
+            action={flagLearnerAction}
+          />
+          )
+        }
+      />
 
       <ProgressLegend dict={dict} />
     </>

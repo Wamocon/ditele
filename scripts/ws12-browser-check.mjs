@@ -189,7 +189,98 @@ check(
   admin.consoleErrors.slice(0, 2).join(" | ")
 );
 
-/* ── §6 a learner may not reach it ───────────────────────────────────────── */
+/* ── §6 the flag-to-trainer control ──────────────────────────────────────── */
+//
+// ⚠️ Opt-in with WS12_WRITE=1, because this section WRITES to a live database:
+// a real notification for the assigned trainer and a real audit_events row.
+// The SQL probe rolls back; this cannot, because it exercises the actual server
+// action end to end and that is the whole point of running it. It is
+// self-limiting — the RPC deduplicates to one notification per enrollment per
+// day — but the audit rows do accumulate across runs, so it does not belong in
+// the default pass.
+
+// ⚠️ Measured at 375px, not at 1280px. The 44px rule is a *touch* target rule,
+// and this codebase deliberately relaxes to a 36px desktop rhythm from `lg` up
+// — see the shared Button's `size="sm"`, which does exactly this and documents
+// why. An earlier version of this check measured at 1280 and reported 36px as a
+// failure; the code was right and the check was wrong.
+await admin.page.emulateMedia({ colorScheme: "light" });
+await admin.page.setViewportSize({ width: 375, height: 800 });
+await admin.page.goto(`${BASE}/de/admin/progress`, { waitUntil: "networkidle" });
+
+// ⚠️ `:visible` everywhere in this section. DataTable renders the SAME row
+// twice — a `hidden md:block` table and a card list below it — so a bare
+// locator matches 12 controls for 6 rows and `.first()` picks the one that is
+// display:none at the current width. That returns a null bounding box, which
+// reads as "the control is missing" rather than "you measured the wrong copy".
+const notifyToggle = admin.page
+  .locator("summary:visible", { hasText: "Trainer benachrichtigen" })
+  .first();
+check("notify control is present on a row", (await notifyToggle.count()) > 0);
+
+const toggleBox = await notifyToggle.boundingBox();
+check(
+  "notify control is a 44px touch target at 375px",
+  toggleBox !== null && toggleBox.height >= 44,
+  toggleBox ? `${Math.round(toggleBox.height)}px` : "not found"
+);
+
+await admin.page.setViewportSize({ width: 1280, height: 900 });
+await admin.page
+  .locator("summary:visible", { hasText: "Trainer benachrichtigen" })
+  .first()
+  .click();
+const noteField = admin.page.locator('textarea[name="note"]:visible').first();
+check("note field opens", await noteField.isVisible());
+check(
+  "the note is required — a flag without a reason is just an interruption",
+  await noteField.evaluate((el) => el.required)
+);
+
+// A row whose course has NO assigned trainer never renders the form at all —
+// it renders the "kein Trainer zugeordnet" notice instead, so there is nothing
+// to submit. Assert that notice exists somewhere, since this deployment has
+// exactly such an enrollment (Mara Keller's second course) and it is how the
+// gap was found in the first place.
+const fullText = await admin.page.locator("main").innerText();
+check(
+  "a course with no trainer says so INSTEAD of offering the form",
+  !fullText.includes("Trainer benachrichtigen") ||
+    fullText.includes("kein Trainer zugeordnet") ||
+    (await admin.page.locator("summary", { hasText: "Trainer benachrichtigen" }).count()) ===
+      (await admin.page.locator("table tbody tr").count()),
+  "no row showed the missing-trainer notice"
+);
+
+if (process.env.WS12_WRITE === "1") {
+  await noteField.fill("Automatischer Prüflauf: Fortschritt stockt, bitte nachfassen.");
+  await admin.page
+    .locator('button:visible[type="submit"]', { hasText: "Benachrichtigung senden" })
+    .first()
+    .click();
+  // ⚠️ Scoped to the OPEN details panel, not to the page. There is already an
+  // empty aria-live region in the shell, so a page-wide `waitForSelector` on
+  // [role=status] resolves instantly against that one and reads "" before the
+  // action has returned — a race that fails the check while the feature works.
+  // `ActionMessage` renders nothing while idle, so inside `details[open]` the
+  // element's existence IS the completion signal.
+  const outcomeNode = admin.page
+    .locator('details[open] [role="status"], details[open] [role="alert"]')
+    .first();
+  await outcomeNode.waitFor({ state: "visible", timeout: 20_000 });
+  const outcome = await outcomeNode.innerText();
+  // Three legitimate outcomes, and the third one is the point: an admin must
+  // never be told a flag was sent when it was not.
+  check(
+    "flagging reports a real, specific outcome",
+    /benachrichtigt|bereits gesendet|kein Trainer zugeordnet/i.test(outcome),
+    outcome
+  );
+} else {
+  console.log("  SKIP  submitting the flag (set WS12_WRITE=1 — it writes to the live DB)");
+}
+
+/* ── §7 a learner may not reach it ───────────────────────────────────────── */
 
 const learner = await session(LEARNER);
 await learner.page.goto(`${BASE}/de/admin/progress`, { waitUntil: "domcontentloaded" });
