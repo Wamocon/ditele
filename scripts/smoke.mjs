@@ -23,29 +23,51 @@ const COURSE = "01980a20-0000-7000-8000-000000000001";
 const TASK = "01980a26-0000-7000-8000-000000000001";
 const COHORT = "01980a30-0000-7000-8000-000000000001";
 const SLUG = "practical-software-testing";
+// Added by WS-13 to close the dynamic-route gap RELEASE.md §6 item 5 records.
+const SUBMISSION = "019f8408-296a-7804-94ab-c3279f5b633c";
+const LEARNER_USER = "01980a00-0000-7000-8000-000000000001";
+const CONTENT_VERSION = "01980a22-0000-7000-8000-000000000001";
+const SCENARIO = "checkout-v1";
 
 const GUEST = [
   "", "/catalog", `/catalog/${SLUG}`, "/about", "/faq", "/privacy", "/legal", "/403",
   "/login", "/register", "/reset-password", "/update-password",
 ];
 
+// ⚠️ These lists are HAND-MAINTAINED. `ISSUES.md` I-056 states that smoke
+// derives them from `nav-config.ts`; it does not, and believing that is how a
+// new route ships uncovered. Add the route here when you add it to the nav.
 const STUDENT = [
   "/learn", "/learn/courses", `/learn/courses/${COURSE}`, "/learn/tasks",
   `/learn/tasks/${TASK}`, "/learn/history", `/learn/enroll/${COURSE}`,
   "/learn/questions", "/learn/questions/new", "/learn/certificates",
   "/learn/notifications", "/learn/profile",
+  // Arena phase (WS-11, WS-9). The hub was 404ing on every student page load
+  // via Next's link prefetch before it landed (I-043); the sandbox is the
+  // practice target the hunt task frames.
+  "/learn/arena",
+  `/arena/sandbox/${SCENARIO}`,
 ];
 
 const TRAINER = [
   "/trainer", "/trainer/submissions", "/trainer/questions",
   "/trainer/questions/archive",
   "/trainer/progress", "/trainer/history", "/trainer/profile",
+  // RELEASE.md §6 item 5: the review detail route was outside this gate, and it
+  // is the single most important screen a trainer uses. It is also where the
+  // Arena's ground-truth panel now renders (I-046).
+  `/trainer/submissions/${SUBMISSION}`,
 ];
 
 const ADMIN = [
   "/admin", "/admin/courses", "/admin/courses/new", `/admin/courses/${COURSE}`,
   "/admin/tasks", "/admin/users", "/admin/users/new", "/admin/applications", "/admin/issues",
   "/admin/settings", "/admin/profile",
+  // Arena phase (WS-12) — reachable only by URL until I-056 added the nav entry.
+  "/admin/progress",
+  // RELEASE.md §6 item 5, the rest of the uncovered dynamic routes.
+  `/admin/users/${LEARNER_USER}`,
+  `/admin/courses/${COURSE}/versions/${CONTENT_VERSION}`,
 ];
 
 const ROLES = [
@@ -113,6 +135,24 @@ for (const role of ROLES) {
       });
       const body = res.status < 400 ? await res.text() : "";
       const crashed = body.includes("Application error") || body.includes("Internal Server Error");
+
+      // ⚠️ RELEASE.md §6 item 6 and §8 item 4 ask for a non-empty-`<main>`
+      // assertion HERE. **It cannot live here, and WS-13 tried it before
+      // concluding that.**
+      //
+      // Every route in this app streams through a Suspense boundary, so the
+      // `<main>` in the initial response contains a loading skeleton and
+      // nothing else — `<template id="B:0">` plus shimmer divs — while the real
+      // content arrives later in the same stream and is grafted in by the
+      // client. A `<main>…</main>` extraction therefore yields **0 characters
+      // of text on every healthy page in the application**: the first run of
+      // this check reported 39 of 47 routes as holes, and all 39 were fine.
+      //
+      // That is WS-8's "any page assertion in this app needs a real browser",
+      // in a new disguise. The assertion is real and it is worth having, so it
+      // moved to `scripts/ws13-regression-check.mjs`, which waits for hydration
+      // and reads rendered text. This suite stays what it is good at: status
+      // codes, session acceptance, and crash strings, across every route.
 
       // ⚠️ A signed-in role must actually RENDER its pages. If a guarded route
       // 3xx-redirects, the session cookie was not accepted — that is a failure,
