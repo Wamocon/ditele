@@ -6,7 +6,19 @@
  * Everything in this file is pure — no imports, no I/O, safe on both sides.
  */
 
-export const CONTENT_LOCALES = ["de", "en", "ru"] as const;
+/**
+ * Course CONTENT is authored in German only.
+ *
+ * The interface speaks three languages — nav, buttons, statuses and errors all
+ * translate. Course material does not: an admin writes a course once, in
+ * German, and every learner sees that German regardless of their interface
+ * language.
+ *
+ * This is the single source for the studio. Adding a locale back here restores
+ * the per-language editors and the "all languages complete" publish gate
+ * everywhere at once; nothing else needs to change.
+ */
+export const CONTENT_LOCALES = ["de"] as const;
 export type ContentLocale = (typeof CONTENT_LOCALES)[number];
 
 /**
