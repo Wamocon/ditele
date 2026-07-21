@@ -10,7 +10,15 @@ import { formatDate } from "@/features/review/format";
 import { MetaStrip } from "@/features/review/meta-strip";
 import { MemberTable } from "@/features/review/member-table";
 
-export const metadata: Metadata = { title: "Gruppendetail" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.groups.detailTitle") };
+}
 
 export default async function Page({
   params,

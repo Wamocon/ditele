@@ -8,7 +8,15 @@ import { locales } from "@/shared/i18n/config";
 import { getTranslator } from "@/features/review/i18n";
 import { ProfileForm } from "@/features/review/profile-form";
 
-export const metadata: Metadata = { title: "Profil" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.profile.title") };
+}
 
 /** Functional tier — correct and plain, no polish budget spent here. */
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {

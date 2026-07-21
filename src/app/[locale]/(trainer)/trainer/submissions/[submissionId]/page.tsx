@@ -11,7 +11,15 @@ import { MetaStrip } from "@/features/review/meta-strip";
 import { PanelTabs } from "@/features/review/panel-tabs";
 import { DecisionPanel } from "@/features/review/decision-panel";
 
-export const metadata: Metadata = { title: "Abgabe prüfen" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.review.title") };
+}
 
 /**
  * ⭐ Signature screen. The task and the learner's answer sit side by side with

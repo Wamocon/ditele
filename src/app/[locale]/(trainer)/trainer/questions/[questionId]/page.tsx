@@ -10,7 +10,15 @@ import { formatDateTime } from "@/features/review/format";
 import { MetaStrip } from "@/features/review/meta-strip";
 import { QuestionActions } from "@/features/review/question-actions";
 
-export const metadata: Metadata = { title: "Frage beantworten" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.questions.threadTitle") };
+}
 
 /** The thread, then the one action that is actually available right now. */
 export default async function Page({

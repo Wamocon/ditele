@@ -10,7 +10,15 @@ import { formatWaiting } from "@/features/review/format";
 import { AgeBadge } from "@/features/review/age-badge";
 import { StatTile } from "@/features/review/stat-tile";
 
-export const metadata: Metadata = { title: "Übersicht" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.dashboard.title") };
+}
 
 /** What is waiting, how long it has waited, and one click to deal with it. */
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {

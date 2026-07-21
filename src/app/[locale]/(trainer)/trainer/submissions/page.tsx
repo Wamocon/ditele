@@ -16,7 +16,15 @@ import { AgeBadge } from "@/features/review/age-badge";
 import { QueueFilters } from "@/features/review/queue-filters";
 import { Notice } from "@/features/review/notice";
 
-export const metadata: Metadata = { title: "Review-Queue" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.queue.title") };
+}
 
 const PAGE_SIZE = 25;
 

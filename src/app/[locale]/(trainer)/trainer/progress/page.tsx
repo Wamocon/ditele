@@ -7,7 +7,15 @@ import { getTranslator } from "@/features/review/i18n";
 import { MemberTable } from "@/features/review/member-table";
 import { QueueFilters } from "@/features/review/queue-filters";
 
-export const metadata: Metadata = { title: "Lernfortschritt" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.progress.title") };
+}
 
 /**
  * ⚠️ Built from `cohort_memberships`, not `enrollments`: a trainer session

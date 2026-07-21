@@ -8,7 +8,15 @@ import { listReviewHistory, type HistoryEntry } from "@/shared/data/review";
 import { getTranslator } from "@/features/review/i18n";
 import { formatCount, formatDateTime } from "@/features/review/format";
 
-export const metadata: Metadata = { title: "Review-Verlauf" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.history.title") };
+}
 
 const PAGE_SIZE = 25;
 

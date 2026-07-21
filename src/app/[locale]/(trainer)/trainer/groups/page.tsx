@@ -8,7 +8,15 @@ import { listCohorts } from "@/shared/data/review";
 import { getTranslator } from "@/features/review/i18n";
 import { formatDate } from "@/features/review/format";
 
-export const metadata: Metadata = { title: "Meine Gruppen" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.groups.title") };
+}
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

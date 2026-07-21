@@ -8,7 +8,15 @@ import { listQuestions } from "@/shared/data/review";
 import { getTranslator } from "@/features/review/i18n";
 import { QuestionList } from "@/features/review/question-list";
 
-export const metadata: Metadata = { title: "Frage-Archiv" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslator(locale);
+  return { title: t("trainer.questions.archiveTitle") };
+}
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
