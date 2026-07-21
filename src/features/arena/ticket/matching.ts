@@ -38,19 +38,28 @@ import type { HuntFinding, HuntScenario } from "@/features/arena/model";
 /* ── The scenario configuration, read defensively ─────────────────────────── */
 
 /**
- * One planted defect, as the design specifies it in `05_…` §G1:
+ * One planted defect.
  *
- * ```jsonc
- * { "code": "TOTAL_IGNORES_DISCOUNT", "severity": "high",
- *   "surface": "cart-summary", "trigger": "coupon applied" }
- * ```
+ * ⚠️ **WS-9 owns the on-disk shape**, and authors it in
+ * `src/features/arena/sandbox/README.md`. WS-9 and WS-10 ran in parallel, and
+ * **the shape WS-9 shipped is not the one `05_…` §G1 sketches** — which is
+ * exactly the kind of thing that silently produces a feature that does nothing:
  *
- * ⚠️ **WS-9 owns this shape**, and authors it in
- * `src/features/arena/sandbox/README.md`. WS-9 and WS-10 ran in parallel, so
- * every field below is optional and every reader here tolerates its absence:
- * the only thing this module truly requires is `code`. If WS-9 adds a richer
- * description field later, feed it in through `keywords` or `description` and
- * matching improves with no change to this file.
+ * | `05_…` §G1 sketch | `checkout-v1.json` as shipped |
+ * |---|---|
+ * | `planted: [...]` + `decoys: [...]` | one `defects: [...]` list |
+ * | decoy = membership of `decoys` | `kind: planted \| decoy \| known_non_bug` |
+ * | `trigger: "coupon applied"` | `trigger: { type, signal, count, … }` |
+ * | — | `reproduction` + `expected`, German prose |
+ *
+ * A reader written to the sketch alone returns `[]` against the real file, and
+ * `[]` means "no suggestions", which looks like a working panel with nothing to
+ * say rather than a broken one. **Both shapes are therefore accepted**, and the
+ * tests cover both.
+ *
+ * The prose fields are a gift and are read as matching signal: `reproduction`
+ * and `expected` describe the defect in the same German a student writes their
+ * report in, which is far stronger evidence than a `SCREAMING_SNAKE` code.
  */
 export interface PlantedDefect {
   code: string;
@@ -80,8 +89,32 @@ function asStringArray(value: unknown): string[] {
   return value.map(asString).filter((entry): entry is string => entry !== null);
 }
 
-/** One entry of `planted` / `decoys`, which may be a bare code or an object. */
-function toPlanted(value: unknown, decoy: boolean): PlantedDefect | null {
+/**
+ * `trigger` is a string in the design sketch and an object in the shipped
+ * scenario. Flattened to the words a report might echo — a `type` of
+ * `"whenInput"` and a `field` of `"email"` are both real signal; a regex
+ * `pattern` is not, and is left out rather than tokenized into noise.
+ */
+function readTrigger(value: unknown): string | null {
+  const direct = asString(value);
+  if (direct !== null) return direct;
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+
+  const row = value as Record<string, unknown>;
+  const parts = [row.type, row.signal, row.field]
+    .map(asString)
+    .filter((part): part is string => part !== null);
+  return parts.length > 0 ? parts.join(" ") : null;
+}
+
+/**
+ * One entry of `defects` / `planted` / `decoys` — a bare code or an object.
+ *
+ * `fallbackDecoy` applies only when the entry does not classify itself. An
+ * explicit `kind` always wins, so an entry listed under `planted` but marked
+ * `kind: "decoy"` is treated as the author's `kind` said.
+ */
+function toPlanted(value: unknown, fallbackDecoy: boolean): PlantedDefect | null {
   if (typeof value === "string") {
     const code = value.trim();
     return code.length === 0
@@ -93,7 +126,7 @@ function toPlanted(value: unknown, decoy: boolean): PlantedDefect | null {
           trigger: null,
           description: null,
           keywords: [],
-          decoy,
+          decoy: fallbackDecoy,
         };
   }
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
@@ -102,13 +135,29 @@ function toPlanted(value: unknown, decoy: boolean): PlantedDefect | null {
   const code = asString(row.code);
   if (code === null) return null;
 
+  // 'known_non_bug' is WS-9's third kind and belongs with decoys here: neither
+  // is a defect, and 05_… §G1 asks for exactly this registry so trainers stop
+  // seeing the same wrong report from every student.
+  const kind = asString(row.kind);
+  const decoy =
+    kind === null ? fallbackDecoy : kind === "decoy" || kind === "known_non_bug";
+
   return {
     code,
     severity: asString(row.severity),
     surface: asString(row.surface),
-    trigger: asString(row.trigger),
+    trigger: readTrigger(row.trigger),
     description: asString(row.description) ?? asString(row.title),
-    keywords: asStringArray(row.keywords),
+    // The shipped scenario's German prose. `reproduction` describes the defect
+    // in the words a student uses; `expected` describes the correct behaviour,
+    // which a report contrasting expected against actual will also echo.
+    // `effect` is a stable slug like "discount-ignored" — three good tokens.
+    keywords: [
+      ...asStringArray(row.keywords),
+      asString(row.reproduction),
+      asString(row.expected),
+      asString(row.effect),
+    ].filter((entry): entry is string => entry !== null && entry.length > 0),
     decoy,
   };
 }
@@ -127,10 +176,15 @@ export function readPlantedDefects(
 ): PlantedDefect[] {
   if (!configuration) return [];
 
+  // `defects` is what the shipped scenario uses and carries its own `kind`
+  // per entry; `planted` + `decoys` is the design sketch. Both are read, so a
+  // scenario authored either way works.
+  const defects = Array.isArray(configuration.defects) ? configuration.defects : [];
   const planted = Array.isArray(configuration.planted) ? configuration.planted : [];
   const decoys = Array.isArray(configuration.decoys) ? configuration.decoys : [];
 
   const rows = [
+    ...defects.map((entry) => toPlanted(entry, false)),
     ...planted.map((entry) => toPlanted(entry, false)),
     ...decoys.map((entry) => toPlanted(entry, true)),
   ].filter((entry): entry is PlantedDefect => entry !== null);
@@ -204,48 +258,46 @@ function reportTokens(report: DefectReport): Set<string> {
 }
 
 /**
- * How much a code token counts relative to a staging token.
+ * A defect describes itself in several independent ways, and a report only has
+ * to align with **one** of them to be about that defect.
  *
- * The code is the defect's *identity* — `TOTAL_IGNORES_DISCOUNT` is a sentence
- * describing the wrong behaviour, and a student who saw that behaviour will
- * reach for those words. `surface` and `trigger` are staging notes for the
- * author: "cart-summary" is a component name and "coupon applied" is a setup
- * step, and a perfectly good report can describe the defect precisely without
- * echoing either.
+ * Each way is its own group and each is scored separately. This is the single
+ * most important decision in the file, and both of its predecessors were wrong
+ * in a way only real data exposed:
  *
- * Weighting them equally is what a first version did, and it measurably
- * mis-ranked: a correct, terse report scored below the suggestion floor purely
- * because it had not repeated the author's internal component name.
+ *  * **One flat token bag, unweighted.** A correct terse report scored below
+ *    the floor because it had not echoed the author's internal component name.
+ *  * **One flat bag with the code weighted double.** Fixed that, then failed
+ *    against the scenario WS-9 actually shipped: its `expected` field is a long
+ *    German explanation — for the decoy, four lines about why the behaviour is
+ *    *not* a bug — and a short report cannot cover thirty tokens. Adding richer
+ *    authoring prose made matching *worse*, which is precisely backwards.
+ *
+ * Best-of-groups has neither failure. A long `expected` can only ever help,
+ * because a group that does not match simply is not the maximum. And it says
+ * something true: "the student's wording aligns closely with how we describe
+ * this defect's reproduction" is strong evidence on its own.
  */
-const CODE_TOKEN_WEIGHT = 2;
-const CONTEXT_TOKEN_WEIGHT = 1;
-
-/**
- * Every word a planted defect offers about itself, with how much each one
- * counts as evidence.
- */
-function plantedTokens(defect: PlantedDefect): Map<string, number> {
-  const weights = new Map<string, number>();
-
-  for (const token of tokenize(defect.code)) {
-    weights.set(token, CODE_TOKEN_WEIGHT);
-  }
-
-  const context = [
-    defect.surface ?? "",
-    defect.trigger ?? "",
-    defect.description ?? "",
-    ...defect.keywords,
-  ].join(" ");
-
-  for (const token of tokenize(context)) {
-    // A word in both the code and the context keeps the higher weight rather
-    // than being counted twice.
-    if (!weights.has(token)) weights.set(token, CONTEXT_TOKEN_WEIGHT);
-  }
-
-  return weights;
+function evidenceGroups(defect: PlantedDefect): string[][] {
+  return [
+    // The identity. TOTAL_IGNORES_DISCOUNT is a sentence about the wrong
+    // behaviour, and a student who saw it reaches for those words.
+    tokenize(defect.code),
+    // A stable slug like "discount-ignored" — few tokens, all of them signal.
+    tokenize(defect.description ?? ""),
+    // Where and when, in the author's vocabulary. Real signal, but a good
+    // report can describe the defect precisely without echoing either.
+    tokenize(`${defect.surface ?? ""} ${defect.trigger ?? ""}`),
+    // Each authoring note stands alone, so a long one cannot drown a short one.
+    ...defect.keywords.map((entry) => tokenize(entry)),
+  ].filter((group) => group.length > 0);
 }
+
+/** A group matched this well counts towards the corroboration bonus. */
+const CORROBORATION_FLOOR = 0.5;
+
+/** Two independent descriptions both matching is worth more than one. */
+const CORROBORATION_BONUS = 0.1;
 
 /* ── Scoring ──────────────────────────────────────────────────────────────── */
 
@@ -277,32 +329,42 @@ export interface MatchSuggestion {
 /**
  * How well one report matches one planted defect.
  *
- * **Weighted coverage, not Jaccard.** The measure is "how much of what we know
- * about this defect did the student say", not "how similar are the two texts".
- * Symmetric similarity punishes a thorough report — a student who writes five
- * detailed reproduction steps would score *lower* than one who wrote a
- * six-word summary, because their extra words dilute the intersection. That is
- * backwards: thoroughness is the thing being taught.
+ * **Coverage, not Jaccard.** The measure is "how much of one description of
+ * this defect did the student's wording cover", not "how similar are the two
+ * texts". Symmetric similarity punishes a thorough report — a student who
+ * writes five detailed reproduction steps would score *lower* than one who
+ * wrote a six-word summary, because their extra words dilute the intersection.
+ * That is backwards: thoroughness is the thing being taught.
  *
- * The weights (see `CODE_TOKEN_WEIGHT`) are what stop the author's internal
- * component names from outvoting the defect's own description.
+ * **Best-of-groups, not one bag** — see `evidenceGroups` for why, and for the
+ * two versions of this function that were wrong before it.
  */
 function scoreAgainst(defect: PlantedDefect, tokens: Set<string>): MatchSuggestion | null {
-  const wanted = plantedTokens(defect);
-  if (wanted.size === 0) return null;
+  const groups = evidenceGroups(defect);
+  if (groups.length === 0) return null;
 
-  let available = 0;
-  let matched = 0;
-  const overlap: string[] = [];
-  for (const [token, weight] of wanted) {
-    available += weight;
-    if (tokens.has(token)) {
-      matched += weight;
-      overlap.push(token);
+  const overlap = new Set<string>();
+  let best = 0;
+  let corroborating = 0;
+
+  for (const group of groups) {
+    const unique = new Set(group);
+    let matched = 0;
+    for (const token of unique) {
+      if (tokens.has(token)) {
+        matched += 1;
+        overlap.add(token);
+      }
     }
+    const coverage = matched / unique.size;
+    if (coverage > best) best = coverage;
+    if (coverage >= CORROBORATION_FLOOR) corroborating += 1;
   }
 
-  let score = available === 0 ? 0 : matched / available;
+  let score = Math.min(
+    1,
+    best + (corroborating >= 2 ? CORROBORATION_BONUS : 0),
+  );
 
   // Naming the code outright is not evidence, it is proof. It also cannot
   // happen by accident — these codes are not shown to students.
@@ -315,7 +377,7 @@ function scoreAgainst(defect: PlantedDefect, tokens: Set<string>): MatchSuggesti
     defect,
     score,
     confidence: score >= STRONG_SUGGESTION_SCORE ? "strong" : "possible",
-    overlap: overlap.sort(),
+    overlap: [...overlap].sort(),
     namedExactly,
   };
 }

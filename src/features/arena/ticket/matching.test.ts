@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+// The real file WS-9 ships, not a copy of it. A fixture would keep passing
+// while the shipped scenario drifted underneath it.
+import CHECKOUT_V1 from "@/features/arena/sandbox/scenarios/checkout-v1.json";
 import { EMPTY_DEFECT, type DefectReport } from "@/features/learning/model";
 import type { HuntFinding, HuntScenario } from "@/features/arena/model";
 import {
@@ -83,6 +86,82 @@ describe("readPlantedDefects", () => {
     // which is the more damaging of the two mistakes.
     expect(planted).toHaveLength(1);
     expect(planted[0]?.decoy).toBe(false);
+  });
+});
+
+/**
+ * ⭐ The compatibility test that matters most.
+ *
+ * WS-9 authored the configuration shape in parallel with this engine, and what
+ * they shipped is **not** the sketch in `05_…` §G1: one `defects` list with a
+ * per-entry `kind`, rather than `planted` + `decoys`. A reader written to the
+ * sketch returns `[]` here — and `[]` renders as "no suggestions", which looks
+ * like a working panel with nothing to say rather than a broken one.
+ *
+ * Reading the real file rather than a copy of it is deliberate. A fixture would
+ * pass forever while the shipped scenario drifted underneath it, which is the
+ * failure this test exists to prevent.
+ */
+describe("the reference scenario WS-9 actually shipped", () => {
+  it("reads all six defects out of checkout-v1.json", () => {
+    const planted = readPlantedDefects(
+      CHECKOUT_V1.configuration as unknown as Record<string, unknown>,
+    );
+    expect(planted).toHaveLength(6);
+  });
+
+  it("classifies decoy AND known_non_bug as not-a-defect", () => {
+    const planted = readPlantedDefects(
+      CHECKOUT_V1.configuration as unknown as Record<string, unknown>,
+    );
+    const nonBugs = planted.filter((d) => d.decoy).map((d) => d.code).sort();
+    expect(nonBugs).toEqual(["SHIPPING_NOT_FREE_BELOW_THRESHOLD", "SLOW_THUMBNAIL"]);
+  });
+
+  it("survives the object-shaped trigger without tokenizing the regex", () => {
+    const email = readPlantedDefects(
+      CHECKOUT_V1.configuration as unknown as Record<string, unknown>,
+    ).find((d) => d.code === "EMAIL_VALIDATION_BYPASS");
+    // { type: 'whenInput', field: 'email', pattern: '^[^\\s@]+@…' }
+    expect(email?.trigger).toBe("whenInput email");
+  });
+
+  it("matches a German report written the way a student would write it", () => {
+    const planted = readPlantedDefects(
+      CHECKOUT_V1.configuration as unknown as Record<string, unknown>,
+    );
+    const matches = rankMatches(
+      report({
+        summary: "Gutschein wird nicht von der Gesamtsumme abgezogen",
+        steps: "1. Gutscheincode WMC10 in der Bestellübersicht eingeben\n2. Auf Einlösen klicken",
+        expected: "Die Rabattzeile wird angezeigt und die Gesamtsumme sinkt",
+        actual: "Die Rabattzeile erscheint, die Gesamtsumme bleibt gleich",
+      }),
+      planted,
+    );
+    expect(matches[0]?.defect.code).toBe("TOTAL_IGNORES_DISCOUNT");
+  });
+
+  it("flags a report about the decoy as the known non-bug it is", () => {
+    const planted = readPlantedDefects(
+      CHECKOUT_V1.configuration as unknown as Record<string, unknown>,
+    );
+    const matches = rankMatches(
+      report({
+        summary: "Produktbilder im Warenkorb laden zu langsam",
+        actual: "Die Produktbilder erscheinen erst eine Sekunde nach dem Rest der Seite",
+      }),
+      planted,
+    );
+    expect(matches[0]?.defect.code).toBe("SLOW_THUMBNAIL");
+    expect(matches[0]?.defect.decoy).toBe(true);
+  });
+
+  it("agrees with the scenario's own expectedFindings", () => {
+    const planted = readPlantedDefects(
+      CHECKOUT_V1.configuration as unknown as Record<string, unknown>,
+    );
+    expect(planted.filter((d) => !d.decoy)).toHaveLength(CHECKOUT_V1.expectedFindings);
   });
 });
 

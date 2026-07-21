@@ -150,6 +150,95 @@ export async function listTicketsForAttempt(
 }
 
 /**
+ * Is this submission a hunt, and if so which scenario?
+ *
+ * Returns the scenario code, or `null` for every other task kind.
+ *
+ * **This exists so the trainer panel needs nothing but a submission id.** The
+ * obvious alternative was to add `externalId` to `ReviewDetail` in
+ * `src/shared/data/review.ts` — a file WS-10 does not own, which would have
+ * made the panel's wiring depend on another workstream editing a shared type.
+ * Resolving it here costs one indexed lookup and reduces the change WS-13 has
+ * to make in the review route to a single self-contained line.
+ *
+ * A trainer can read `public.tasks` (RPC_CONTRACTS.md §10), so this is not a
+ * privileged read; and `tasks_external_pair` guarantees `source_system` and
+ * `external_id` are set or null together, so testing one is testing both.
+ */
+export async function getHuntScenarioCodeForSubmission(
+  submissionId: string,
+): Promise<Result<string | null>> {
+  const supabase = await createServerClient();
+  const result = await fromSupabase<unknown[]>(async () => {
+    const { data, error } = await supabase
+      .from("submissions")
+      .select("task_id, tasks!inner(task_kind, source_system, external_id)")
+      .eq("id", submissionId)
+      .limit(1);
+    return { data: data as unknown[] | null, error };
+  });
+  if (!result.ok) return result;
+
+  const parsed = z
+    .object({
+      tasks: z.object({
+        task_kind: z.string(),
+        source_system: z.string().nullable(),
+        external_id: z.string().nullable(),
+      }),
+    })
+    .safeParse(result.data[0]);
+
+  if (!parsed.success) return ok(null);
+  const task = parsed.data.tasks;
+  if (task.task_kind !== "hunt" || task.source_system !== "arena") return ok(null);
+  return ok(task.external_id);
+}
+
+/* ── The one write ────────────────────────────────────────────────────────── */
+
+/**
+ * Record a trainer's verdict on one ticket.
+ *
+ * `decide_hunt_finding` re-checks authorization server-side with
+ * `decide_submission`'s own pair of checks, so this is not the security
+ * boundary — it is the call site. The boundary is in the database, where it
+ * cannot be skipped by a forged request.
+ *
+ * ⚠️ `expectedVersion` must be the `rowVersion` read in the same request that
+ * produced the click. A stale one is not a conflict on this deployment, it is a
+ * **hang** (I-007 / I-009).
+ */
+export async function decideHuntFinding(args: {
+  findingId: string;
+  verdict: HuntVerdict;
+  plantedCode: string | null;
+  expectedVersion: number;
+}): Promise<Result<HuntTicket | null>> {
+  const supabase = await createServerClient();
+  const result = await fromSupabase<unknown>(async () => {
+    const { data, error } = await supabase.rpc("decide_hunt_finding" as never, {
+      p_finding_id: args.findingId,
+      p_verdict: args.verdict,
+      // Explicitly null rather than omitted: the argument has no SQL default,
+      // and omitting a required argument fails with PGRST202, which reads as
+      // "the function does not exist" (RPC_CONTRACTS.md §0.3).
+      p_planted_code: args.plantedCode,
+      p_expected_version: args.expectedVersion,
+      p_correlation_id: crypto.randomUUID(),
+      // Stable across a retry of the SAME decision, so a double-click replays
+      // instead of writing twice.
+      p_idempotency_key: `hunt-verdict:${args.findingId}:${args.expectedVersion}:${args.verdict}`,
+    } as never);
+    return { data: data as unknown, error };
+  });
+  if (!result.ok) return result;
+
+  const parsed = TicketRow.safeParse(result.data);
+  return ok(parsed.success ? toTicket(parsed.data) : null);
+}
+
+/**
  * The ground truth behind a hunt task: the planted defects and how many count.
  *
  * Resolved through `tasks.source_system = 'arena'` + `tasks.external_id`, which
