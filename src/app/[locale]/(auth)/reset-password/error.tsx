@@ -1,3 +1,10 @@
 "use client";
 
-export { RouteError as default } from "../../(public)/_components/route-error";
+import { RouteError } from "../../(public)/_components/route-error";
+
+export default function Error(props: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return <RouteError {...props} />;
+}

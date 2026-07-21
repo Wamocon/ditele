@@ -37,9 +37,57 @@ export function formatDate(iso: string | null | undefined, locale: string): stri
   }).format(date);
 }
 
+/**
+ * Fills `{name}` placeholders in a translated string.
+ * Keeps counts and page numbers inside the i18n layer instead of concatenating
+ * fragments in JSX, which does not survive translation into other languages.
+ */
+export function interpolate(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in values ? String(values[key]) : match
+  );
+}
+
+const ENTITIES: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&#39;": "'",
+  "&nbsp;": " ",
+};
+
+const decode = (text: string) =>
+  text.replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (entity) => ENTITIES[entity] ?? entity);
+
 /** Strips tags from the RPC's `description_html` for use in a meta description. */
 export function plainText(html: string | null | undefined, max = 160): string {
   if (!html) return "";
-  const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const text = decode(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
+
+/**
+ * Turns `description_html` into an array of plain-text paragraphs.
+ *
+ * ⚠️ Deliberately **not** `dangerouslySetInnerHTML`. That field is authored
+ * copy stored in `content_versions`, and rendering it raw on a page every
+ * anonymous visitor sees turns one compromised author account into stored XSS
+ * for the whole internet. No sanitiser may be added (dependencies are frozen),
+ * and hand-rolling one is how sanitisers get bypassed — so the text is
+ * projected instead: block boundaries become paragraphs, every tag is dropped.
+ *
+ * The cost is that links and emphasis inside a course description do not
+ * survive. Recorded in `plan/status/WS-1.md`; if rich formatting is genuinely
+ * needed, it wants a vetted sanitiser and a dependency decision, not a regex.
+ */
+export function richTextParagraphs(html: string | null | undefined): string[] {
+  if (!html) return [];
+  return html
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/\s*(p|div|li|h[1-6]|tr)\s*>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .split("\n")
+    .map((line) => decode(line).replace(/\s+/g, " ").trim())
+    .filter((line) => line.length > 0);
 }
