@@ -190,7 +190,7 @@
       "minutesShort": "Min."
     },
     "landing": {
-      "eyebrow": "WAMOCON Academy",
+      "eyebrow": "WAMOCON Academy GmbH",
       "title": "Softwaretesten lernt man durch Testen.",
       "subtitle": "DiTeLe verbindet Theorie mit echter Praxis: Sie testen laufende Anwendungen, schreiben professionelle Fehlerberichte und bekommen Feedback von erfahrenen Trainerinnen und Trainern.",
       "ctaPrimary": "Kurse entdecken",
@@ -230,7 +230,7 @@
     },
     "catalog": {
       "title": "Kurskatalog",
-      "description": "Alle veröffentlichten Kurse der WAMOCON Academy.",
+      "description": "Alle veröffentlichten Kurse der WAMOCON Academy GmbH.",
       "searchLabel": "Kurse durchsuchen",
       "searchPlaceholder": "Titel oder Inhalt suchen",
       "searchSubmit": "Suchen",
@@ -277,7 +277,7 @@
     },
     "about": {
       "title": "Über uns",
-      "lead": "DiTeLe ist die Lernplattform der WAMOCON Academy für praktisches Softwaretesten.",
+      "lead": "DiTeLe ist die Lernplattform der WAMOCON Academy GmbH für praktisches Softwaretesten.",
       "missionTitle": "Warum es DiTeLe gibt",
       "missionBody": "Testen lernt man nicht, indem man Definitionen auswendig lernt. Man lernt es, indem man eine echte Anwendung vor sich hat, systematisch vorgeht und aufschreibt, was man findet. Genau dafür ist DiTeLe gebaut: kurze Theorie, viel Praxis und Feedback von Menschen, die den Beruf ausüben.",
       "approachTitle": "Wie wir unterrichten",
@@ -290,13 +290,13 @@
       "audienceTitle": "Für wen der Kurs gedacht ist",
       "audienceBody": "Für Berufseinsteigerinnen und -einsteiger im Testen, für Quereinsteiger aus angrenzenden IT-Rollen und für Teams, die ihre Testpraxis auf ein gemeinsames Niveau bringen wollen. Vorkenntnisse im Programmieren sind nicht nötig.",
       "contactTitle": "Kontakt",
-      "contactBody": "Fragen zur Plattform oder zum Zugang beantwortet Ihre Ansprechperson bei WAMOCON Academy."
+      "contactBody": "Fragen zur Plattform oder zum Zugang beantwortet Ihre Ansprechperson bei WAMOCON Academy GmbH."
     },
     "faq": {
       "title": "Häufige Fragen",
       "description": "Antworten auf die Fragen, die vor dem ersten Kurs am häufigsten gestellt werden.",
       "q1": "Was ist DiTeLe?",
-      "a1": "DiTeLe ist die Lernplattform der WAMOCON Academy für praktisches Softwaretesten. Sie kombiniert kurze Theorieeinheiten mit Praxisaufgaben an echten Anwendungen und mit Feedback durch Trainerinnen und Trainer.",
+      "a1": "DiTeLe ist die Lernplattform der WAMOCON Academy GmbH für praktisches Softwaretesten. Sie kombiniert kurze Theorieeinheiten mit Praxisaufgaben an echten Anwendungen und mit Feedback durch Trainerinnen und Trainer.",
       "q2": "Brauche ich Vorkenntnisse?",
       "a2": "Nein. Die Grundlagenkurse setzen keine Programmierkenntnisse voraus. Sicherer Umgang mit einem Webbrowser genügt für den Einstieg.",
       "q3": "Wie läuft ein Kurs ab?",
@@ -304,7 +304,7 @@
       "q4": "Was ist eine Praxisaufgabe?",
       "a4": "Bei einer Praxisaufgabe öffnet sich eine laufende Testanwendung direkt neben der Aufgabenstellung. Sie testen die Anwendung selbst und dokumentieren Ihre Funde als Fehlerbericht mit Schritten, erwartetem und tatsächlichem Verhalten.",
       "q5": "Wer bewertet meine Abgaben?",
-      "a5": "Eine Trainerin oder ein Trainer der WAMOCON Academy. Sie erhalten entweder eine Annahme mit Kommentar oder die Bitte um Überarbeitung mit konkreten Hinweisen.",
+      "a5": "Eine Trainerin oder ein Trainer der WAMOCON Academy GmbH. Sie erhalten entweder eine Annahme mit Kommentar oder die Bitte um Überarbeitung mit konkreten Hinweisen.",
       "q6": "Wie lange habe ich Zeit?",
       "a6": "Aufgaben können ein Startdatum und eine Frist haben – beides sehen Sie in der Kursübersicht. Ohne Frist arbeiten Sie in Ihrem eigenen Tempo.",
       "q7": "Kann ich eine Aufgabe wiederholen?",
@@ -321,7 +321,7 @@
       "lead": "Wie DiTeLe mit Ihren personenbezogenen Daten umgeht.",
       "pendingNotice": "Die vollständige Datenschutzerklärung mit den Angaben zum Verantwortlichen wird vor dem Start ergänzt. Die folgende Übersicht beschreibt, welche Daten die Plattform tatsächlich verarbeitet.",
       "s1Title": "Verantwortlicher",
-      "s1Body": "Verantwortlich für die Verarbeitung ist die WAMOCON GmbH als Betreiberin der WAMOCON Academy. Die vollständigen Kontaktdaten finden Sie im Impressum.",
+      "s1Body": "Verantwortlich für die Verarbeitung ist die WAMOCON GmbH als Betreiberin der WAMOCON Academy GmbH. Die vollständigen Kontaktdaten finden Sie im Impressum.",
       "s2Title": "Welche Daten wir verarbeiten",
       "s2Body": "Kontodaten (Name, E-Mail-Adresse, Sprache, Zeitzone), Lerndaten (Kursanfragen, Gruppenzugehörigkeit, Aufgabenbearbeitungen, Abgaben, Bewertungen durch Trainer, Fragen und Antworten) sowie technische Protokolle, die für Betrieb und Sicherheit nötig sind.",
       "s3Title": "Zwecke und Rechtsgrundlagen",
@@ -335,18 +335,18 @@
       "s7Title": "Ihre Rechte",
       "s7Body": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch sowie das Recht, sich bei einer Aufsichtsbehörde zu beschweren.",
       "s8Title": "Kontakt",
-      "s8Body": "Für Anliegen zum Datenschutz wenden Sie sich an Ihre Ansprechperson bei WAMOCON Academy oder an die im Impressum genannte Adresse."
+      "s8Body": "Für Anliegen zum Datenschutz wenden Sie sich an Ihre Ansprechperson bei WAMOCON Academy GmbH oder an die im Impressum genannte Adresse."
     },
     "legal": {
       "title": "Impressum",
       "lead": "Angaben gemäß § 5 DDG.",
       "pendingNotice": "Die vollständigen Pflichtangaben (Anschrift, Vertretungsberechtigte, Handelsregister, Umsatzsteuer-Identifikationsnummer) werden vor dem Start ergänzt.",
       "s1Title": "Anbieter",
-      "s1Body": "WAMOCON GmbH – Betreiberin der WAMOCON Academy und der Lernplattform DiTeLe.",
+      "s1Body": "WAMOCON GmbH – Betreiberin der WAMOCON Academy GmbH und der Lernplattform DiTeLe.",
       "s2Title": "Kontakt",
-      "s2Body": "Anfragen zur Plattform richten Sie an Ihre Ansprechperson bei WAMOCON Academy.",
+      "s2Body": "Anfragen zur Plattform richten Sie an Ihre Ansprechperson bei WAMOCON Academy GmbH.",
       "s3Title": "Verantwortlich für den Inhalt",
-      "s3Body": "Die inhaltliche Verantwortung für die Kursinhalte liegt bei der WAMOCON Academy.",
+      "s3Body": "Die inhaltliche Verantwortung für die Kursinhalte liegt bei der WAMOCON Academy GmbH.",
       "s4Title": "Haftung für Inhalte",
       "s4Body": "Als Diensteanbieter sind wir für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Wir sind jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen.",
       "s5Title": "Haftung für Links",

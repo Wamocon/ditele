@@ -1364,7 +1364,7 @@
   },
   "public": {
     "landing": {
-      "eyebrow": "WAMOCON Academy",
+      "eyebrow": "WAMOCON Academy GmbH",
       "title": "You learn software testing by testing.",
       "subtitle": "DiTeLe combines theory with real practice: you test running applications, write professional defect reports and get feedback from experienced trainers.",
       "ctaPrimary": "Explore courses",
@@ -1427,7 +1427,7 @@
     },
     "catalog": {
       "title": "Course catalogue",
-      "description": "All published courses of the WAMOCON Academy.",
+      "description": "All published courses of the WAMOCON Academy GmbH.",
       "searchLabel": "Search courses",
       "searchPlaceholder": "Search title or content",
       "searchSubmit": "Search",
@@ -1474,7 +1474,7 @@
     },
     "about": {
       "title": "About us",
-      "lead": "DiTeLe is the WAMOCON Academy learning platform for hands-on software testing.",
+      "lead": "DiTeLe is the WAMOCON Academy GmbH learning platform for hands-on software testing.",
       "missionTitle": "Why DiTeLe exists",
       "missionBody": "You do not learn testing by memorising definitions. You learn it by having a real application in front of you, working through it systematically and writing down what you find. That is exactly what DiTeLe is built for: short theory, plenty of practice, and feedback from people who do the job.",
       "approachTitle": "How we teach",
@@ -1487,13 +1487,13 @@
       "audienceTitle": "Who the course is for",
       "audienceBody": "For people starting out in testing, for career changers from adjacent IT roles, and for teams that want to bring their testing practice to a shared level. No programming experience is needed.",
       "contactTitle": "Contact",
-      "contactBody": "Your contact person at WAMOCON Academy answers questions about the platform or about access."
+      "contactBody": "Your contact person at WAMOCON Academy GmbH answers questions about the platform or about access."
     },
     "faq": {
       "title": "Frequently asked questions",
       "description": "Answers to the questions asked most often before a first course.",
       "q1": "What is DiTeLe?",
-      "a1": "DiTeLe is the WAMOCON Academy learning platform for hands-on software testing. It combines short theory units with practical tasks on real applications and with feedback from trainers.",
+      "a1": "DiTeLe is the WAMOCON Academy GmbH learning platform for hands-on software testing. It combines short theory units with practical tasks on real applications and with feedback from trainers.",
       "q2": "Do I need prior knowledge?",
       "a2": "No. The foundation courses do not assume any programming knowledge. Being comfortable with a web browser is enough to get started.",
       "q3": "How does a course work?",
@@ -1501,7 +1501,7 @@
       "q4": "What is a practical task?",
       "a4": "In a practical task, a running test application opens right next to the task brief. You test the application yourself and document your findings as a defect report with steps, expected behaviour and actual behaviour.",
       "q5": "Who assesses my submissions?",
-      "a5": "A WAMOCON Academy trainer. You either get an acceptance with a comment, or a request for revision with specific guidance.",
+      "a5": "A WAMOCON Academy GmbH trainer. You either get an acceptance with a comment, or a request for revision with specific guidance.",
       "q6": "How much time do I have?",
       "a6": "Tasks can have a start date and a deadline, and you see both in the course overview. Without a deadline you work at your own pace.",
       "q7": "Can I redo a task?",
@@ -1518,7 +1518,7 @@
       "lead": "How DiTeLe handles your personal data.",
       "pendingNotice": "The full privacy policy, including the details of the controller, will be added before launch. The overview below describes what data the platform actually processes.",
       "s1Title": "Controller",
-      "s1Body": "The controller for the processing is WAMOCON GmbH as the operator of the WAMOCON Academy. You will find the full contact details in the legal notice.",
+      "s1Body": "The controller for the processing is WAMOCON GmbH as the operator of the WAMOCON Academy GmbH. You will find the full contact details in the legal notice.",
       "s2Title": "What data we process",
       "s2Body": "Account data (name, email address, language, time zone), learning data (course requests, cohort membership, task work, submissions, trainer assessments, questions and answers) and technical logs required for operation and security.",
       "s3Title": "Purposes and legal bases",
@@ -1532,18 +1532,18 @@
       "s7Title": "Your rights",
       "s7Body": "You have the right to information, rectification, erasure, restriction of processing, data portability and objection, as well as the right to lodge a complaint with a supervisory authority.",
       "s8Title": "Contact",
-      "s8Body": "For data protection matters, please contact your contact person at WAMOCON Academy or the address given in the legal notice."
+      "s8Body": "For data protection matters, please contact your contact person at WAMOCON Academy GmbH or the address given in the legal notice."
     },
     "legal": {
       "title": "Legal notice",
       "lead": "Information pursuant to section 5 DDG (German Digital Services Act).",
       "pendingNotice": "The full mandatory details (address, authorised representatives, commercial register, VAT identification number) will be added before launch.",
       "s1Title": "Provider",
-      "s1Body": "WAMOCON GmbH, operator of the WAMOCON Academy and of the DiTeLe learning platform.",
+      "s1Body": "WAMOCON GmbH, operator of the WAMOCON Academy GmbH and of the DiTeLe learning platform.",
       "s2Title": "Contact",
-      "s2Body": "Please address enquiries about the platform to your contact person at WAMOCON Academy.",
+      "s2Body": "Please address enquiries about the platform to your contact person at WAMOCON Academy GmbH.",
       "s3Title": "Responsible for the content",
-      "s3Body": "Editorial responsibility for the course content lies with the WAMOCON Academy.",
+      "s3Body": "Editorial responsibility for the course content lies with the WAMOCON Academy GmbH.",
       "s4Title": "Liability for content",
       "s4Body": "As a service provider we are responsible for our own content on these pages under the general laws. However, we are not obliged to monitor third-party information that has been transmitted or stored.",
       "s5Title": "Liability for links",

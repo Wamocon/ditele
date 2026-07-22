@@ -8,9 +8,9 @@ import "./globals.css";
 import { defaultLocale, isLocale } from "@/shared/i18n/config";
 
 export const metadata: Metadata = {
-  title: { default: "DiTeLe — WAMOCON Academy", template: "%s · DiTeLe" },
+  title: { default: "DiTeLe — WAMOCON Academy GmbH", template: "%s · DiTeLe" },
   description:
-    "Softwaretesten lernen — Theorie, realistische Praxis, Nachweise und Trainer-Review. WAMOCON Academy.",
+    "Softwaretesten lernen — Theorie, realistische Praxis, Nachweise und Trainer-Review. WAMOCON Academy GmbH.",
   icons: { icon: "/favicon.ico" },
 };
 

@@ -39,7 +39,7 @@ export function AppFooter({ locale, items, navLabel }: AppFooterProps) {
           */}
           <Image
             src="/footerlogo.svg"
-            alt="WAMOCON Academy · DiTeLe"
+            alt="WAMOCON Academy GmbH · DiTeLe"
             width={189}
             height={43}
             className="theme-light-only h-[43px] w-auto"
@@ -68,7 +68,7 @@ export function AppFooter({ locale, items, navLabel }: AppFooterProps) {
           </nav>
         </div>
         <p className="text-[13px] text-(--color-fg-subtle)">
-          © {year} WAMOCON Academy
+          © {year} WAMOCON Academy GmbH
         </p>
       </Container>
     </footer>
