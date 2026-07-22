@@ -478,7 +478,8 @@
       "gateSkippedNotice": "You skipped this question. The next task stays locked until you answer it.",
       "gateAnswerRequired": "Please enter an answer.",
       "gateSaveFailed": "The answer could not be saved.",
-      "gateChangeAnswer": "Change answer"
+      "gateChangeAnswer": "Change answer",
+      "targetKnownIssue": "Known issue: the test environment sometimes does not appear here. Please open it with \"Open in a new tab\". We are fixing this as soon as possible."
     },
     "notifications": {
       "title": "Notifications",

@@ -668,7 +668,8 @@
       "gateSkippedNotice": "Sie haben diese Frage übersprungen. Die nächste Aufgabe bleibt gesperrt, bis Sie sie beantworten.",
       "gateAnswerRequired": "Bitte geben Sie eine Antwort ein.",
       "gateSaveFailed": "Die Antwort konnte nicht gespeichert werden.",
-      "gateChangeAnswer": "Antwort ändern"
+      "gateChangeAnswer": "Antwort ändern",
+      "targetKnownIssue": "Bekanntes Problem: Die Testumgebung wird hier manchmal nicht angezeigt. Bitte öffne sie über „In neuem Tab öffnen\". Wir beheben das so schnell wie möglich."
     },
     "notifications": {
       "title": "Benachrichtigungen",
