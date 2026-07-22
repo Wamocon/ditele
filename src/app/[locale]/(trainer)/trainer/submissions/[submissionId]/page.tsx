@@ -46,6 +46,7 @@ export default async function Page({
       <>
         <PageHeader
           title={t("trainer.review.notFoundTitle")}
+          locale={locale}
           breadcrumbs={[{ label: t("trainer.queue.title"), href: queueHref }]}
         />
         <ErrorState title={t("trainer.review.notFoundTitle")} message={detail.error.message} />
@@ -95,6 +96,7 @@ export default async function Page({
       <PageHeader
         title={review.taskTitle}
         description={`${review.learnerName} · ${review.cohortName}`}
+        locale={locale}
         breadcrumbs={[
           { label: t("trainer.queue.title"), href: queueHref },
           { label: t("trainer.review.breadcrumb") },

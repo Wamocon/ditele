@@ -38,6 +38,7 @@ export default async function Page({
       <>
         <PageHeader
           title={t("trainer.questions.notFoundTitle")}
+          locale={locale}
           breadcrumbs={[{ label: t("trainer.questions.title"), href: listHref }]}
         />
         <ErrorState title={t("trainer.questions.notFoundTitle")} message={result.error.message} />
@@ -60,6 +61,7 @@ export default async function Page({
       <PageHeader
         title={question.subject}
         description={`${question.learnerName} · ${question.taskTitle}`}
+        locale={locale}
         breadcrumbs={[
           { label: t("trainer.questions.title"), href: listHref },
           { label: t("trainer.questions.threadTitle") },

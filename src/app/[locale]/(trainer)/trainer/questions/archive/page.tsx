@@ -30,6 +30,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       <PageHeader
         title={t("trainer.questions.archiveTitle")}
         description={t("trainer.questions.archiveDescription")}
+        locale={locale}
         breadcrumbs={[
           { label: t("trainer.questions.title"), href: `/${locale}/trainer/questions` },
           { label: t("trainer.questions.archiveTitle") },
