@@ -293,33 +293,79 @@ sees is produced.
 
 ---
 
-## 6. The gap in your latest requirement
+## 5.5 Where each kind of task is worked — decided 2026-07-22
 
-> *"each arena task is dependent on the previous arena task"*
+| | Listed in `/learn/tasks` | Attempted where |
+|---|---|---|
+| **Arena task** (`task_kind='hunt'`) | yes | **Arena only** |
+| **Course task** (`knowledge` / `practical`) | yes | the task page |
 
-**This is not built.** `hunt_scenarios` has no ordering, sequence or prerequisite
-column — verified against `information_schema`. Today every Arena screen is
-independent; a learner could open the third before the first.
+Both kinds appear in the learner's **Aufgaben / Tasks** list so one screen still
+answers "what is outstanding". They must be **visually distinct** — a different
+icon, colour or badge — because they behave differently when opened: an Arena row
+sends the learner to Arena, a course row opens the task.
 
-There are two ways to add it, and they are not equally good:
+The **gate question stays on the course task**, where it is today
+(`GateQuestionPanel` in `task-workspace.tsx`). It belongs to the course task,
+gates that task's completion, and is not part of the Arena attempt.
 
-**Use the existing `prerequisites` table.** Arena tasks *are* `tasks`, and
-`prerequisites` already links `target_task_id` → `required_task_id` with the
-lock logic already reading it. Ordering Arena tasks then costs one row per link
-and no new schema, and a mixed chain — Arena task, then course task, then the
-next Arena task — expresses itself naturally.
+> **Read this if you are implementing it.** The instruction was *"the question
+> will be open there and only and not in the tasks"*, taken to mean the **Arena
+> task** opens in Arena and not from the tasks list — not that the gate question
+> moves into Arena. Moving the gate question into Arena would contradict
+> §1.6, where answering it is what marks the **course** task finished. If the
+> intent was the opposite, this is the paragraph to correct.
 
-**Add a `previous_scenario_id` to `hunt_scenarios`.** Simpler to picture, but it
-puts the ordering on the *screen* rather than on the task the learner attempts,
-so the same screen reused in two courses would drag one course's ordering into
-the other.
+**What this costs.** No migration. `task_kind` is already in the snapshot, but
+`LearningActivity` (`features/learning/model.ts`) does not carry it, so it has to
+be threaded through, then rendered by `TaskListItem`, and an Arena row's link
+pointed at Arena instead of the task workspace.
 
-**I would use `prerequisites`.** It needs no migration, the lock function already
-consults it, and it keeps the ordering attached to what the learner actually
-does.
+---
 
-Worth deciding before it is built: if a learner skips the gate question on
-course task 1, should the **next Arena task** also lock, or only the next course
-task? The requirement as written blocks the next *course* task. Blocking the
-Arena chain as well is a one-line change to the same function, but it is a
-product decision, not a technical one.
+## 5.6 Task ordering and what a skipped question blocks — decided 2026-07-22
+
+**Arena tasks run in sequence, expressed through `prerequisites`.** Arena tasks
+are `tasks`, `prerequisites` already links `target_task_id → required_task_id`,
+and `learner_snapshot_task_lock_reasons` already reads it. One row per link, no
+migration, and a mixed chain — Arena, then course task, then the next Arena
+task — expresses itself naturally. A `previous_scenario_id` column was rejected:
+it would attach ordering to the *screen*, so a screen reused by two courses would
+drag one course's ordering into the other.
+
+**A skipped gate question blocks only the next COURSE task.** The Arena chain is
+unaffected: a learner may keep working through Arena tasks with an unanswered
+question behind them. What they cannot do is start the next course task.
+
+```
+Arena 1 ─ approved ─→ Course 1 ─ question SKIPPED
+   │                                  │
+   ↓ still open                       ↓ blocked
+Arena 2 ─ approved ─→ Course 2   ← locked until Course 1's question is answered
+```
+
+So Arena progress and course progress can legitimately drift apart, and a learner
+can hold several Arena approvals while stuck at course task 1. That is intended.
+
+---
+
+## 6. What is still to build
+
+The decisions are settled (§5.5, §5.6). None of the three below is built yet, and
+none needs a migration.
+
+**1 — Arena tasks in sequence.** Write `prerequisites` rows between consecutive
+hunt tasks, and give the admin a way to set the order. The lock function already
+reads the table, so the learner side should need no change; confirm that rather
+than assume it.
+
+**2 — Distinguish the two kinds in the tasks list.** Thread `task_kind` from the
+snapshot through `LearningActivity` into `TaskListItem`, render a distinct icon
+or colour, and point an Arena row at Arena instead of the task workspace.
+
+**3 — Only course tasks are blocked by a skipped question.** Verify
+`learner_snapshot_task_lock_reasons` does not also lock the next hunt task. If it
+does, restrict that lock reason to non-hunt tasks.
+
+Verify each against a running build, not against the SQL alone: a lock reason can
+be correct in the database and still render as a dead end.
