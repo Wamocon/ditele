@@ -152,10 +152,11 @@ export function TaskEditor({
         startVideoUrl: startVideo === "" ? null : startVideo,
         endVideoUrl: endVideo === "" ? null : endVideo,
         requiredHuntScenarioId: requiredScenarioId === "" ? null : requiredScenarioId,
-        // All three locales or nothing. A partly-filled question would be
-        // refused by set_task_gate_question anyway — the same three-locale rule
-        // the snapshot validator applies — so it is treated as "no question"
-        // rather than sent to fail.
+        // Every content locale, or no question at all. That used to mean "all
+        // three", which was the bug: the form offers one box, so the condition
+        // was satisfiable while the database still demanded en and ru and
+        // refused the write. `CONTENT_LOCALES` is the one source of truth on
+        // both sides now — see 20260804200000_single_content_locale.sql.
         gateQuestion: CONTENT_LOCALES.every(
           (contentLocale) => (gateQuestion[contentLocale] ?? "").trim() !== ""
         )
