@@ -2,6 +2,7 @@ import type { Route } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/shared/ui";
+import { uiStrings } from "@/shared/i18n/ui-strings";
 
 export interface Breadcrumb {
   label: string;
@@ -15,12 +16,19 @@ export interface PageHeaderProps {
   actions?: ReactNode;
   className?: string;
   /**
-   * Accessible name for the breadcrumb landmark. The German default matches the
-   * old hardcoding, so pages that do not pass it are unchanged; pass
-   * `common.breadcrumbNav` to have a screen reader announce it in the user's
-   * own language.
+   * Accessible name for the breadcrumb landmark. Usually left unset — pass
+   * `locale` instead and it resolves from `common.breadcrumbNav`.
    */
   breadcrumbNavLabel?: string;
+  /**
+   * Active locale, used to name the breadcrumb landmark.
+   *
+   * Every breadcrumbed page passed neither this nor `breadcrumbNavLabel`, so
+   * the landmark fell back to the hardcoded "Brotkrümelnavigation" and a screen
+   * reader announced German on /en and /ru. Optional so the pages outside the
+   * learner tree keep their current output until they are localised in turn.
+   */
+  locale?: string;
 }
 
 export function PageHeader({
@@ -29,12 +37,14 @@ export function PageHeader({
   breadcrumbs,
   actions,
   className,
-  breadcrumbNavLabel = "Brotkrümelnavigation",
+  breadcrumbNavLabel,
+  locale,
 }: PageHeaderProps) {
+  const navLabel = breadcrumbNavLabel ?? uiStrings(locale).common.breadcrumbNav;
   return (
     <div className={cn("mb-6 flex flex-col gap-3 lg:mb-8", className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav aria-label={breadcrumbNavLabel}>
+        <nav aria-label={navLabel}>
           <ol className="flex flex-wrap items-center gap-1.5 text-[13px] text-(--color-fg-muted)">
             {breadcrumbs.map((c, i) => (
               <li key={`${c.label}-${i}`} className="flex items-center gap-1.5">

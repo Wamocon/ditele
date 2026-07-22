@@ -29,7 +29,7 @@ export default async function Page({
     return (
       <>
         <PageHeader title={s.course.breadcrumb} />
-        <ErrorState message={result.error.message} locale={locale} />
+        <ErrorState error={result.error} locale={locale} />
       </>
     );
   }
@@ -48,8 +48,7 @@ export default async function Page({
         breadcrumbs={[
           { label: s.courses.title, href: `/${locale}/learn/courses` },
           { label: course.title },
-        ]}
-      />
+        ]} locale={locale} />
 
       <div className="flex flex-col gap-6">
         {/* Progress stays in view while the learner scans the curriculum — on

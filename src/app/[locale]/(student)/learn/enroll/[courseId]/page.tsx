@@ -30,7 +30,7 @@ export default async function EnrollPage({
     const notFound = courseResult.error.code === "PGRST116";
     return (
       <>
-        <PageHeader title={t.title} breadcrumbs={breadcrumbs} />
+        <PageHeader title={t.title} breadcrumbs={breadcrumbs} locale={locale} />
         {notFound ? (
           <EmptyState
             title={t.notFoundTitle}
@@ -45,7 +45,7 @@ export default async function EnrollPage({
         ) : (
           <ErrorState
             title={messages.learn.shared.loadErrorTitle}
-            message={courseResult.error.message}
+            error={courseResult.error}
             locale={locale}
           />
         )}
@@ -58,7 +58,7 @@ export default async function EnrollPage({
 
   return (
     <>
-      <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} />
+      <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} locale={locale} />
 
       <div className="flex flex-col gap-6">
         <Card as="section">

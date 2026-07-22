@@ -37,7 +37,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
         <PageHeader title={t.title} description={t.description} />
         <ErrorState
           title={messages.learn.shared.loadErrorTitle}
-          message={profileResult.error.message}
+          error={profileResult.error}
           locale={locale}
         />
       </>
@@ -121,7 +121,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
           ) : (
             <ErrorState
               title={messages.learn.shared.loadErrorTitle}
-              message={preferencesResult.error.message}
+              error={preferencesResult.error}
               locale={locale}
             />
           )}

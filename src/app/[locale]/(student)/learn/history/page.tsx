@@ -42,7 +42,7 @@ export default async function HistoryPage({
     return (
       <>
         <PageHeader title={t.title} description={t.description} />
-        <ErrorState title={messages.learn.shared.loadErrorTitle} message={result.error.message} locale={locale} />
+        <ErrorState title={messages.learn.shared.loadErrorTitle} error={result.error} locale={locale} />
       </>
     );
   }

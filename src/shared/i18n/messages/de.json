@@ -34,7 +34,11 @@
     "notifications": "Benachrichtigungen",
     "notificationsUnread": "Benachrichtigungen, {count} ungelesen",
     "themeToLight": "Zu hellem Design wechseln",
-    "themeToDark": "Zu dunklem Design wechseln"
+    "themeToDark": "Zu dunklem Design wechseln",
+    "videoWatch": "Video ansehen",
+    "videoWatchIntro": "Einführungsvideo ansehen",
+    "videoOpensNewTab": "Öffnet das Video in einem neuen Tab.",
+    "videoOpensEloomi": "Öffnet die Lernplattform eloomi in einem neuen Tab. Beim ersten Mal ist eine Anmeldung bei eloomi nötig."
   },
   "roles": {
     "guest": "Gast",
@@ -1438,7 +1442,24 @@
     "forbiddenDescription": "Dein Konto darf diese Ressource nicht öffnen.",
     "notFoundTitle": "Seite nicht gefunden",
     "offlineTitle": "Du scheinst offline zu sein",
-    "offlineDescription": "Stelle die Verbindung wieder her und versuche es erneut. Dein Entwurf bleibt lokal erhalten, bis der Server ihn bestätigt."
+    "offlineDescription": "Stelle die Verbindung wieder her und versuche es erneut. Dein Entwurf bleibt lokal erhalten, bis der Server ihn bestätigt.",
+    "data": {
+      "42501": "Keine Berechtigung für diese Aktion.",
+      "23505": "Dieser Eintrag existiert bereits.",
+      "23503": "Der Eintrag verweist auf einen Datensatz, den es nicht gibt.",
+      "23502": "Ein Pflichtfeld fehlt.",
+      "22023": "Die Eingabe ist für diesen Schritt nicht gültig.",
+      "40001": "Der Datensatz wurde zwischenzeitlich geändert. Bitte lade die Seite neu.",
+      "CONFLICT": "Der Datensatz wurde zwischenzeitlich geändert. Bitte lade die Seite neu.",
+      "PGRST116": "Nicht gefunden.",
+      "PGRST205": "Nicht gefunden.",
+      "PGRST202": "Diese Funktion ist nicht verfügbar. Bitte melde den Fehler.",
+      "PGRST003": "Der Server ist gerade ausgelastet. Bitte versuche es erneut.",
+      "NETWORK": "Verbindung zum Server fehlgeschlagen.",
+      "AUTH": "Das Passwort konnte nicht geändert werden. Prüfe die Passwortregeln.",
+      "SHAPE": "Die Daten konnten gerade nicht geladen werden. Bitte versuche es erneut.",
+      "UNKNOWN": "Die Aktion konnte nicht ausgeführt werden."
+    }
   },
   "adminOps": {
     "roleLabels": {

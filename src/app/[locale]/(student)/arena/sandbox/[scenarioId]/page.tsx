@@ -77,7 +77,7 @@ export default async function Page({
   } else {
     const result = await getHuntScenarioByCode(scenarioId);
     if (!result.ok) {
-      return <ErrorState title={s.loadErrorTitle} message={result.error.message} locale={locale} />;
+      return <ErrorState title={s.loadErrorTitle} error={result.error} locale={locale} />;
     }
     // ⭐ The I-050 fallback is GONE, and with it the scope it cost.
     //

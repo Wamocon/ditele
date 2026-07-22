@@ -35,6 +35,7 @@ import { IframePanel } from "./iframe-panel";
 import { format, learnStrings } from "./i18n";
 import { formatTime } from "./format";
 import { useAutosave, useElapsedSeconds } from "./use-autosave";
+import { dataErrorMessage } from "@/shared/i18n/ui-strings";
 
 /**
  * ⭐⭐ The task workspace — the product (MASTER_PLAN §1).
@@ -158,7 +159,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
     });
     setStarting(false);
     if (!result.ok) {
-      setFormError(result.error.message);
+      setFormError(dataErrorMessage(result.error, locale));
       return;
     }
     // Re-render from the server so the draft row version is the real one.
@@ -174,7 +175,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
     const next = [...revealedHintIds, hintId];
     const result = await flush({ usedHintIds: next });
     if (result && !result.ok) {
-      setFormError(result.error.message);
+      setFormError(dataErrorMessage(result.error, locale));
       return false;
     }
     setRevealedHintIds(next);
@@ -263,7 +264,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
     if (saved && !saved.ok) {
       setSubmitting(false);
       setConfirmOpen(false);
-      setFormError(saved.error.message);
+      setFormError(dataErrorMessage(saved.error, locale));
       return;
     }
 
@@ -296,7 +297,7 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
             ? s.errorEvidence
             : result.error.code === "CONFLICT"
               ? s.errorConflict
-            : result.error.message || s.errorSubmit
+            : dataErrorMessage(result.error, locale) || s.errorSubmit
       );
       return;
     }
@@ -544,11 +545,11 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
 
           {/* Workflow B — "Intro-Video ansehen" leads into the scenario. */}
           {task.introVideoUrl && (
-            <VideoEmbed url={task.introVideoUrl} title={task.title} intro />
+            <VideoEmbed url={task.introVideoUrl} title={task.title} intro locale={locale} />
           )}
 
           {/* Workflow A — "Video ansehen" then "PDF-Skript lesen". */}
-          {task.videoUrl && <VideoEmbed url={task.videoUrl} title={task.title} />}
+          {task.videoUrl && <VideoEmbed url={task.videoUrl} title={task.title} locale={locale} />}
 
           {task.documentUrl && (
             /* Material row: a tinted type tile, the name with its format

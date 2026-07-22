@@ -29,7 +29,7 @@ export default async function QuestionThreadPage({
     const notFound = result.error.code === "PGRST116";
     return (
       <>
-        <PageHeader title={t.title} breadcrumbs={breadcrumbs} />
+        <PageHeader title={t.title} breadcrumbs={breadcrumbs} locale={locale} />
         {notFound ? (
           <EmptyState
             title={t.notFoundTitle}
@@ -42,7 +42,7 @@ export default async function QuestionThreadPage({
             }
           />
         ) : (
-          <ErrorState title={messages.learn.shared.loadErrorTitle} message={result.error.message} locale={locale} />
+          <ErrorState title={messages.learn.shared.loadErrorTitle} error={result.error} locale={locale} />
         )}
       </>
     );

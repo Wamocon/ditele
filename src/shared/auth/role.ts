@@ -38,6 +38,11 @@ export function postAuthDestination(role: UiRole): "/learn" | "/trainer" | "/adm
   }
 }
 
+/**
+ * @deprecated German-only, and it leaked "Administrator" onto /ru/admin/settings.
+ * Render role names from `adminOps.roleLabels` in the active locale instead.
+ * Kept only so an old import fails loudly in review rather than silently.
+ */
 export const UI_ROLE_LABEL: Record<UiRole, string> = {
   student: "Teilnehmer",
   trainer: "Trainer",

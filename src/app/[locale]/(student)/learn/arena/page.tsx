@@ -63,7 +63,7 @@ export default async function ArenaPage({
     return (
       <>
         <PageHeader title={t.title} description={t.description} />
-        <ErrorState title={t.loadErrorTitle} message={xp.error.message} locale={locale} />
+        <ErrorState title={t.loadErrorTitle} error={xp.error} locale={locale} />
       </>
     );
   }

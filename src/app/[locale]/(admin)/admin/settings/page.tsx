@@ -3,7 +3,7 @@ import { Badge, DataTable, ErrorState, type Column } from "@/shared/ui";
 import { getPlatformInfo, listRoles, type RoleOption } from "@/shared/data/admin";
 import { getServerEnvironment } from "@/shared/config/server-env";
 import { APP_ROLES, type AppRole } from "@/shared/auth/types";
-import { toUiRole, UI_ROLE_LABEL } from "@/shared/auth/role";
+import { toUiRole } from "@/shared/auth/role";
 import { getAdminDict, roleLabel, type AdminDict } from "@/features/admin/i18n";
 import { DefinitionList, Section } from "@/features/admin/ui";
 
@@ -141,7 +141,20 @@ function roleColumns(t: AdminDict): Column<RoleOption>[] {
       key: "uiRole",
       header: t.settings.colUiRole,
       // Rendered from the real mapping, so this table can never drift from it.
-      cell: (row) => <Badge tone="brand">{UI_ROLE_LABEL[toUiRole([row.code as AppRole])]}</Badge>,
+      // UI_ROLE_LABEL is a hardcoded German map, so this column stayed
+      // "Administrator" on /ru. adminOps.roleLabels is already translated for
+      // all three languages, and learner is the DB code behind the student UI
+      // role, so reuse it rather than add a fourth place role names live.
+      cell: (row) => {
+        const uiRole = toUiRole([row.code as AppRole]);
+        const label =
+          uiRole === "admin"
+            ? t.roleLabels.admin
+            : uiRole === "trainer"
+              ? t.roleLabels.trainer
+              : t.roleLabels.learner;
+        return <Badge tone="brand">{label}</Badge>;
+      },
     },
   ];
 }

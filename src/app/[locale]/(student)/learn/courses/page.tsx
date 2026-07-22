@@ -26,7 +26,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     return (
       <>
         <PageHeader title={s.courses.title} />
-        <ErrorState message={result.error.message} locale={locale} />
+        <ErrorState error={result.error} locale={locale} />
       </>
     );
   }

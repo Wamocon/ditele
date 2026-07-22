@@ -36,7 +36,7 @@ export default async function Page({
     return (
       <>
         <PageHeader title={s.task.breadcrumb} />
-        <ErrorState message={result.error.message} locale={locale} />
+        <ErrorState error={result.error} locale={locale} />
       </>
     );
   }
@@ -54,8 +54,7 @@ export default async function Page({
           { label: s.courses.title, href: `/${locale}/learn/courses` },
           ...(task.courseId ? [{ label: s.course.breadcrumb, href: courseHref }] : []),
           { label: task.title },
-        ]}
-      />
+        ]} locale={locale} />
       <TaskWorkspace
         locale={locale}
         task={task}

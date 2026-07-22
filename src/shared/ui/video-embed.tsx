@@ -1,5 +1,6 @@
 import { ExternalLink, Play } from "lucide-react";
 
+import { uiStrings } from "@/shared/i18n/ui-strings";
 import { cn } from "./cn";
 
 /**
@@ -80,10 +81,19 @@ export interface VideoEmbedProps {
   /** Rendered smaller and labelled as the lead-in for a practical scenario. */
   intro?: boolean;
   className?: string;
+  /**
+   * Active locale, for the link label and its description.
+   *
+   * The eloomi/unknown-provider branch is a plain link with its own copy, and
+   * that copy was hardcoded German — a learner on /en opening a task with a
+   * video read "Video ansehen" under an otherwise English page.
+   */
+  locale?: string;
 }
 
-export function VideoEmbed({ url, title, intro = false, className }: VideoEmbedProps) {
+export function VideoEmbed({ url, title, intro = false, className, locale }: VideoEmbedProps) {
   const provider = detectProvider(url);
+  const s = uiStrings(locale).common;
   const frameClass = cn(
     "aspect-video w-full overflow-hidden rounded-(--radius-lg) border border-(--color-border) bg-black",
     className,
@@ -151,12 +161,10 @@ export function VideoEmbed({ url, title, intro = false, className }: VideoEmbedP
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-semibold leading-6">
-          {intro ? "Einführungsvideo ansehen" : "Video ansehen"}
+          {intro ? s.videoWatchIntro : s.videoWatch}
         </span>
         <span className="block text-[13px] leading-5 text-(--color-fg-muted)">
-          {provider === "eloomi"
-            ? "Öffnet die Lernplattform eloomi in einem neuen Tab. Beim ersten Mal ist eine Anmeldung bei eloomi nötig."
-            : "Öffnet das Video in einem neuen Tab."}
+          {provider === "eloomi" ? s.videoOpensEloomi : s.videoOpensNewTab}
         </span>
       </span>
       <ExternalLink className="size-4 shrink-0 text-(--color-fg-muted)" aria-hidden />

@@ -54,7 +54,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     return (
       <>
         <PageHeader title={s.tasks.title} />
-        <ErrorState message={courses.error.message} locale={locale} />
+        <ErrorState error={courses.error} locale={locale} />
       </>
     );
   }

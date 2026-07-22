@@ -25,8 +25,8 @@ export default async function NewQuestionPage({
   if (!result.ok) {
     return (
       <>
-        <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} />
-        <ErrorState title={messages.learn.shared.loadErrorTitle} message={result.error.message} locale={locale} />
+        <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} locale={locale} />
+        <ErrorState title={messages.learn.shared.loadErrorTitle} error={result.error} locale={locale} />
       </>
     );
   }
@@ -34,7 +34,7 @@ export default async function NewQuestionPage({
   if (result.data.length === 0) {
     return (
       <>
-        <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} />
+        <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} locale={locale} />
         <EmptyState
           title={t.emptyTitle}
           description={t.emptyDescription}
@@ -51,7 +51,7 @@ export default async function NewQuestionPage({
 
   return (
     <>
-      <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} />
+      <PageHeader title={t.title} description={t.description} breadcrumbs={breadcrumbs} locale={locale} />
       <Card>
         <AskForm
           locale={locale}

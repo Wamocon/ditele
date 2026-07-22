@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { uiStrings } from "@/shared/i18n/ui-strings";
+import { dataErrorMessage, uiStrings } from "@/shared/i18n/ui-strings";
 import { cn } from "./cn";
 import { Button } from "./button";
 
@@ -92,6 +92,13 @@ export interface ErrorStateProps {
    * rendered "Etwas ist schiefgelaufen" and "Erneut versuchen" on /en and /ru.
    */
   locale?: string;
+  /**
+   * The failed `Result`'s error. Preferred over `message`: the data layer builds
+   * its message in German with no locale in scope, so passing the error lets the
+   * code be translated here instead of the German sentence going straight to the
+   * screen. `message` still wins if both are given.
+   */
+  error?: { code: string; message: string } | null;
 }
 
 export function ErrorState({
@@ -100,10 +107,12 @@ export function ErrorState({
   onRetry,
   className,
   locale,
+  error,
 }: ErrorStateProps) {
   const s = uiStrings(locale);
   const resolvedTitle = title ?? s.errors.title;
-  const resolvedMessage = message ?? s.errors.description;
+  const resolvedMessage =
+    message ?? (error ? dataErrorMessage(error, locale) : s.errors.description);
 
   return (
     <div

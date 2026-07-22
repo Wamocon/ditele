@@ -48,3 +48,24 @@ const BUNDLES: Record<string, UiStrings> = {
 export function uiStrings(locale: string | undefined): UiStrings {
   return (locale && BUNDLES[locale]) || BUNDLES.de!;
 }
+
+/**
+ * A `DataError` code → the sentence to show the user, in their language.
+ *
+ * The data layer builds `DataError.message` at throw time, deep inside
+ * `server-only` modules that have no locale, so every message it produced was
+ * German and rendered verbatim — "Keine Berechtigung für diese Aktion." on an
+ * otherwise English page. The code travels fine, so the translation happens
+ * here, at render time, where the locale is known.
+ *
+ * Falls back to the message the data layer built, which is still better than a
+ * blank box for a code nobody has mapped yet.
+ */
+export function dataErrorMessage(
+  error: { code: string; message: string } | undefined | null,
+  locale: string | undefined
+): string {
+  if (!error) return uiStrings(locale).errors.description;
+  const map = uiStrings(locale).errors.data as Record<string, string | undefined>;
+  return map[error.code] ?? error.message;
+}
