@@ -69,13 +69,60 @@ export interface RoleOption {
   code: string;
 }
 
-/** The `roles` table, ordered by code. Never hardcode a role id. */
+/**
+ * ⭐ **The three roles an administrator may assign.** `admin` · `trainer` ·
+ * `learner`, in that order — highest privilege first, matching the precedence
+ * in `shared/auth/role.ts`.
+ *
+ * `src/shared/auth/role.ts` opens with "The database keeps 8 roles. The UI
+ * shows 3", and `toUiRole` collapses every one of them onto `admin | trainer |
+ * student`. This function used to return the raw table, so the *only* screens
+ * that contradicted that rule were the ones where a human picks a role: the
+ * create-user form offered all eight, and so did the role-change panel. An
+ * administrator could hand out `dpo` or `integration_admin` — roles that land
+ * on the admin shell anyway, differ only in which permission grants they carry,
+ * and mean nothing to anyone reading the user list.
+ *
+ * Filtering HERE rather than at each call site is deliberate: three screens
+ * read this (create user, the role filter, the role-change panel), and a list
+ * that is right in two of them is the bug all over again.
+ */
+const ASSIGNABLE_ROLE_CODES = ["admin", "trainer", "learner"] as const;
+
+/**
+ * ⚠️ **The other five roles are NOT deleted, and must not be.**
+ *
+ * `organization_admin`, `content_admin`, `support`, `integration_admin` and
+ * `dpo` still exist, still carry their `role_permissions` grants, and RLS still
+ * answers `app_private.has_permission(...)` from them. Two concrete reasons
+ * this is a UI filter and not a migration:
+ *
+ *   1. `org-admin@ditele.local` holds `organization_admin` **and nothing else**.
+ *      Deleting the role removes that account's only grant — a locked-out user,
+ *      not a tidier list.
+ *   2. The eight roles carry 42 permission grants between them. Dropping five
+ *      means rewriting authorization, which is a far larger and riskier change
+ *      than the one that was asked for.
+ *
+ * An account that already holds one of the five keeps working and still reads
+ * as its mapped UI role everywhere. It simply cannot be *handed out* any more,
+ * and changing such a user's role moves them onto one of the three for good.
+ */
 export async function listRoles(): Promise<Result<RoleOption[]>> {
   const supabase = await createServerClient();
-  return fromSupabase(async () => {
-    const { data, error } = await supabase.from("roles").select("id, code").order("code");
+  const result = await fromSupabase<RoleOption[]>(async () => {
+    const { data, error } = await supabase
+      .from("roles")
+      .select("id, code")
+      .in("code", ASSIGNABLE_ROLE_CODES as unknown as string[]);
     return { data, error };
   });
+  if (!result.ok) return result;
+
+  // Ordered by privilege, not alphabetically — `.order("code")` would put the
+  // learner between the admin and the trainer, which reads as arbitrary.
+  const rank = (code: string) => ASSIGNABLE_ROLE_CODES.indexOf(code as never);
+  return ok([...result.data].sort((a, b) => rank(a.code) - rank(b.code)));
 }
 
 /**
