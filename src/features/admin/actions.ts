@@ -14,7 +14,6 @@ import {
   setUserRole,
   transitionCohortState,
   updateCohortSchedule,
-  updateOwnAdminProfile,
   updateSupportIssueState,
   COHORT_STATES,
   type CohortState,
@@ -266,28 +265,10 @@ export async function updateSupportIssueStateAction(
 
 /* ── Own profile ────────────────────────────────────────────────────────── */
 
-export async function updateOwnProfileAction(
-  _prev: ActionState,
-  formData: FormData
-): Promise<ActionState> {
-  return guarded(async () => {
-    const displayName = text(formData, "displayName");
-    const locale = text(formData, "locale");
-    const timezone = text(formData, "timezone");
-    const expectedVersion = Number.parseInt(text(formData, "expectedVersion"), 10);
-
-    if (displayName.length === 0) return failure("Bitte geben Sie einen Anzeigenamen an.");
-    if (Number.isNaN(expectedVersion)) return failure("Bitte laden Sie die Seite neu.");
-
-    const result = await updateOwnAdminProfile({
-      displayName,
-      locale: locale || "de",
-      timezone: timezone || "UTC",
-      expectedVersion,
-    });
-    if (!result.ok) return failure(result.error.message);
-
-    revalidatePath("/[locale]/(admin)/admin/profile", "page");
-    return success("Profil gespeichert.");
-  });
-}
+/**
+ * The admin's own profile is written by `features/profile/actions.ts` now — the
+ * same action the learner and trainer screens post to, because it is the same
+ * row, the same RPC and the same rules. The admin-only copy that used to live
+ * here is gone; German error text hardcoded in two places was how the three
+ * screens ended up disagreeing about what "name required" sounds like.
+ */

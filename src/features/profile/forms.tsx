@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { LogOut } from "lucide-react";
-import { Button, Field, Input, Select } from "@/shared/ui";
+
+import { Button, Field, Input, PasswordInput, Select } from "@/shared/ui";
 import { Checkbox } from "@/features/questions/components/checkbox";
 import { FormStatus } from "@/features/questions/components/form-status";
 import { SubmitButton } from "@/features/questions/components/submit-button";
@@ -14,6 +15,7 @@ import {
   signOutAction,
   type ProfileFormState,
 } from "./actions";
+import type { ProfileStrings } from "./strings";
 
 /**
  * Declared here, not in `actions.ts`: a `"use server"` module may export only
@@ -22,30 +24,23 @@ import {
  */
 const INITIAL: ProfileFormState = { error: null, success: null, fieldErrors: {} };
 
-/* ── Account ────────────────────────────────────────────────────────────── */
-
-export interface AccountLabels {
-  displayName: string;
-  email: string;
-  emailHint: string;
-  language: string;
-  languageHint: string;
-  timezone: string;
-  timezoneHint: string;
-  save: string;
-  languages: { de: string; en: string; ru: string };
-}
+/* ── Identity: photo lives beside this, name and time zone in it ─────────── */
 
 export function AccountForm({
   locale,
-  labels,
-  defaults,
+  strings,
   timezones,
+  defaults,
 }: {
   locale: string;
-  labels: AccountLabels;
-  defaults: { displayName: string; email: string; profileLocale: string; timezone: string; version: number };
+  strings: ProfileStrings;
   timezones: string[];
+  defaults: {
+    displayName: string;
+    profileLocale: string;
+    timezone: string;
+    version: number;
+  };
 }) {
   const [state, action] = useActionState(saveProfileAction, INITIAL);
 
@@ -53,28 +48,21 @@ export function AccountForm({
     <form action={action} className="flex max-w-[68ch] flex-col gap-5">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="expectedVersion" value={defaults.version} />
+      {/* `update_own_profile` takes the locale as a required argument and this
+          screen no longer offers a picker for it, so the stored value rides
+          along unchanged. Language is a header control on every page. */}
+      <input type="hidden" name="profileLocale" value={defaults.profileLocale} />
 
       <Field
-        label={labels.displayName}
+        label={strings.displayName}
+        hint={strings.displayNameHint}
         required
         {...(state.fieldErrors.displayName ? { error: state.fieldErrors.displayName } : {})}
       >
         <Input name="displayName" defaultValue={defaults.displayName} maxLength={160} />
       </Field>
 
-      <Field label={labels.email} hint={labels.emailHint}>
-        <Input name="email" type="email" defaultValue={defaults.email} disabled readOnly />
-      </Field>
-
-      <Field label={labels.language} hint={labels.languageHint}>
-        <Select name="profileLocale" defaultValue={defaults.profileLocale}>
-          <option value="de">{labels.languages.de}</option>
-          <option value="en">{labels.languages.en}</option>
-          <option value="ru">{labels.languages.ru}</option>
-        </Select>
-      </Field>
-
-      <Field label={labels.timezone} hint={labels.timezoneHint}>
+      <Field label={strings.timezone} hint={strings.timezoneHint}>
         <Select name="timezone" defaultValue={defaults.timezone}>
           {timezones.map((zone) => (
             <option key={zone} value={zone}>
@@ -88,7 +76,7 @@ export function AccountForm({
       <FormStatus tone="success" message={state.success} />
 
       <div>
-        <SubmitButton>{labels.save}</SubmitButton>
+        <SubmitButton>{strings.save}</SubmitButton>
       </div>
     </form>
   );
@@ -96,23 +84,16 @@ export function AccountForm({
 
 /* ── Notification preferences ───────────────────────────────────────────── */
 
-export interface PreferenceLabels {
-  inApp: string;
-  email: string;
-  push: string;
-  save: string;
-}
-
 export function PreferenceForm({
   locale,
   preference,
   familyLabel,
-  labels,
+  strings,
 }: {
   locale: string;
   preference: FamilyPreference;
   familyLabel: string;
-  labels: PreferenceLabels;
+  strings: ProfileStrings;
 }) {
   const [state, action] = useActionState(saveNotificationPreferenceAction, INITIAL);
 
@@ -139,13 +120,13 @@ export function PreferenceForm({
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <Checkbox name="inApp" label={labels.inApp} defaultChecked={preference.inApp.enabled} />
+        <Checkbox name="inApp" label={strings.channelInApp} defaultChecked={preference.inApp.enabled} />
         {/* Email and push have no delivery channel configured yet (MASTER_PLAN
             §16 Q5), so they are shown disabled rather than silently ignored. */}
-        <Checkbox label={labels.email} defaultChecked={preference.email.enabled} disabled />
-        <Checkbox label={labels.push} defaultChecked={preference.push.enabled} disabled />
+        <Checkbox label={strings.channelEmail} defaultChecked={preference.email.enabled} disabled />
+        <Checkbox label={strings.channelPush} defaultChecked={preference.push.enabled} disabled />
         <SubmitButton variant="outline" size="sm">
-          {labels.save}
+          {strings.save}
         </SubmitButton>
       </div>
     </form>
@@ -154,14 +135,7 @@ export function PreferenceForm({
 
 /* ── Password ───────────────────────────────────────────────────────────── */
 
-export interface PasswordLabels {
-  newPassword: string;
-  newPasswordRepeat: string;
-  hint: string;
-  submit: string;
-}
-
-export function PasswordForm({ locale, labels }: { locale: string; labels: PasswordLabels }) {
+export function PasswordForm({ locale, strings }: { locale: string; strings: ProfileStrings }) {
   const [state, action] = useActionState(changePasswordAction, INITIAL);
 
   return (
@@ -169,23 +143,33 @@ export function PasswordForm({ locale, labels }: { locale: string; labels: Passw
       <input type="hidden" name="locale" value={locale} />
 
       <Field
-        label={labels.newPassword}
-        hint={labels.hint}
+        label={strings.newPassword}
+        hint={strings.passwordHint}
         required
         {...(state.fieldErrors.password ? { error: state.fieldErrors.password } : {})}
       >
-        <Input name="password" type="password" autoComplete="new-password" />
+        <PasswordInput
+          name="password"
+          autoComplete="new-password"
+          showLabel={strings.showPassword}
+          hideLabel={strings.hidePassword}
+        />
       </Field>
 
-      <Field label={labels.newPasswordRepeat} required>
-        <Input name="passwordRepeat" type="password" autoComplete="new-password" />
+      <Field label={strings.newPasswordRepeat} required>
+        <PasswordInput
+          name="passwordRepeat"
+          autoComplete="new-password"
+          showLabel={strings.showPassword}
+          hideLabel={strings.hidePassword}
+        />
       </Field>
 
       <FormStatus tone="error" message={state.error} />
       <FormStatus tone="success" message={state.success} />
 
       <div>
-        <SubmitButton variant="outline">{labels.submit}</SubmitButton>
+        <SubmitButton variant="outline">{strings.changePassword}</SubmitButton>
       </div>
     </form>
   );

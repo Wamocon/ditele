@@ -1,10 +1,10 @@
 "use client";
 
-import { useId, useState } from "react";
-import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { useId } from "react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useFormStatus } from "react-dom";
 
-import { Button, Input, cn } from "@/shared/ui";
+import { Button, PasswordInput, cn } from "@/shared/ui";
 
 /**
  * WS-1's auth form building blocks. Shared by all four auth screens so the
@@ -66,6 +66,10 @@ export interface PasswordFieldProps {
  * Not built on `Field`: that component clones its single child to attach the
  * label's `id`, and a password box with a toggle needs a wrapper element around
  * the input. The ARIA wiring is therefore done explicitly here.
+ *
+ * The input and its eye are `PasswordInput` from `@/shared/ui` — the same
+ * control the profile and admin password forms use, so the toggle behaves
+ * identically wherever a password is typed.
  */
 export function PasswordField({
   name,
@@ -77,7 +81,6 @@ export function PasswordField({
   hideLabel,
 }: PasswordFieldProps) {
   const id = useId();
-  const [visible, setVisible] = useState(false);
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
@@ -91,27 +94,16 @@ export function PasswordField({
         </span>
       </label>
 
-      <div className="relative">
-        <Input
-          id={id}
-          name={name}
-          type={visible ? "text" : "password"}
-          autoComplete={autoComplete}
-          required
-          invalid={Boolean(error)}
-          aria-describedby={describedBy}
-          className="pr-12"
-        />
-        <button
-          type="button"
-          onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? hideLabel : showLabel}
-          aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-(--radius-md) text-(--color-fg-muted) hover:text-(--color-fg)"
-        >
-          {visible ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
-        </button>
-      </div>
+      <PasswordInput
+        id={id}
+        name={name}
+        autoComplete={autoComplete}
+        required
+        invalid={Boolean(error)}
+        aria-describedby={describedBy}
+        showLabel={showLabel}
+        hideLabel={hideLabel}
+      />
 
       {hint && !error && (
         <p id={hintId} className="text-[13px] leading-5 text-(--color-fg-muted)">

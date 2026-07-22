@@ -4,6 +4,8 @@ export { AppHeader } from "./app-header";
 export { AppFooter } from "./app-footer";
 export { MobileTabBar } from "./mobile-tab-bar";
 export { ThemeToggle } from "./theme-toggle";
+/** Exported for the (auth) group, which builds its own chrome rather than using AppShell. */
+export { LocaleSwitcher } from "./locale-switcher";
 export { Container, type ContainerProps } from "./container";
 export { PageHeader, type PageHeaderProps, type Breadcrumb } from "./page-header";
 export {

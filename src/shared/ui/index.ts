@@ -10,6 +10,7 @@ export { cn } from "./cn";
 export { Button, type ButtonProps } from "./button";
 export { Card, CardTitle, CardDescription, type CardProps } from "./card";
 export { Input, Textarea, Select, type InputProps, type TextareaProps, type SelectProps } from "./input";
+export { PasswordInput, type PasswordInputProps } from "./password-input";
 export { Field, type FieldProps } from "./field";
 export { Badge, type BadgeProps } from "./badge";
 export { StatusBadge, statusLabel } from "./status-badge";

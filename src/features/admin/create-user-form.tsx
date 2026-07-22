@@ -3,7 +3,7 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { useActionState } from "react";
-import { Input, Select } from "@/shared/ui";
+import { Input, PasswordInput, Select } from "@/shared/ui";
 import { createUserAction } from "./actions";
 import { initialCreateUserState } from "./action-state";
 import { ActionMessage, SubmitButton } from "./form-ui";
@@ -69,7 +69,16 @@ export function CreateUserForm({
             *
           </span>
         </span>
-        <Input name="password" type="password" autoComplete="new-password" required minLength={12} />
+        {/* An admin types a password here that someone else will have to use,
+            and had no way to see what they typed. */}
+        <PasswordInput
+          name="password"
+          autoComplete="new-password"
+          required
+          minLength={12}
+          showLabel={t.common.showPassword}
+          hideLabel={t.common.hidePassword}
+        />
         <span className="text-[13px] leading-5 text-(--color-fg-muted)">
           {t.userNew.passwordHint}
         </span>

@@ -1253,69 +1253,6 @@ export async function getTrainerDashboard(locale: string): Promise<Result<Traine
   }
 }
 
-/* ── Profile ────────────────────────────────────────────────────────────── */
-
-export interface TrainerProfile {
-  userId: string;
-  displayName: string;
-  locale: string;
-  timezone: string;
-  rowVersion: number;
-  /** Null until the trainer uploads one; the bucket is public. */
-  avatarObjectKey: string | null;
-}
-
-export async function getTrainerProfile(userId: string): Promise<Result<TrainerProfile>> {
-  try {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("user_id,display_name,locale,timezone,row_version,avatar_object_key")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (error) return err(mapReviewError(error));
-    if (!data) {
-      return err({ code: "PGRST116", message: "Profil nicht gefunden.", retryable: false });
-    }
-    return ok({
-      userId: data.user_id,
-      displayName: data.display_name,
-      locale: data.locale,
-      timezone: data.timezone,
-      rowVersion: data.row_version,
-      avatarObjectKey: data.avatar_object_key,
-    });
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
-export async function updateTrainerProfile(args: {
-  displayName: string;
-  locale: string;
-  timezone: string;
-  expectedVersion: number;
-}): Promise<Result<null>> {
-  if (args.displayName.trim().length === 0) {
-    return err({ code: "NAME_REQUIRED", message: "Bitte geben Sie einen Namen ein.", retryable: false });
-  }
-  try {
-    const supabase = await createServerClient();
-    const { error } = await supabase.rpc("update_own_profile" as never, {
-      p_display_name: args.displayName.trim(),
-      p_locale: args.locale,
-      p_timezone: args.timezone,
-      p_expected_version: args.expectedVersion,
-      p_correlation_id: crypto.randomUUID(),
-      p_idempotency_key: idempotencyKey("profile", args.displayName.trim().slice(0, 8), args.expectedVersion),
-    } as never);
-    if (error) return err(mapReviewError(error));
-    return ok(null);
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
 /* ── Shared fallback ────────────────────────────────────────────────────── */
 
 function unexpected(cause: unknown): DataError {

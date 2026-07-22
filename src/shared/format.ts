@@ -59,45 +59,70 @@ const TIME: Intl.DateTimeFormatOptions = {
 export interface FormatOptions {
   /** Rendered when the value is null, undefined or unparseable. Default `"—"`. */
   fallback?: string;
+  /**
+   * IANA zone to render in, e.g. `"Europe/Berlin"`. Omitted, the runtime's own
+   * zone is used — which in a Server Component is the *server's*, not the
+   * reader's.
+   *
+   * `profiles.timezone` has been a stored, editable setting since the first
+   * schema and nothing ever read it, so the profile screen offered a control
+   * that changed no pixel anywhere. Passing it here is what makes the field
+   * mean something. Threading it through the rest of the application's dates is
+   * a separate job; this is the parameter that job will use.
+   *
+   * An unknown zone makes `Intl` throw, so it is validated before use and
+   * ignored if it is not a zone this runtime knows.
+   */
+  timeZone?: string | undefined;
 }
 
 function render(
   iso: string | null | undefined,
   locale: string,
   options: Intl.DateTimeFormatOptions,
-  fallback: string
+  fallback: string,
+  timeZone?: string | undefined
 ): string {
   if (!iso) return fallback;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return fallback;
-  return new Intl.DateTimeFormat(intlTag(locale), options).format(date);
+  try {
+    return new Intl.DateTimeFormat(intlTag(locale), {
+      ...options,
+      ...(timeZone ? { timeZone } : {}),
+    }).format(date);
+  } catch {
+    // A zone the runtime does not recognise must not blank out a date that is
+    // otherwise perfectly renderable.
+    return new Intl.DateTimeFormat(intlTag(locale), options).format(date);
+  }
 }
 
 /** `21.07.2026` */
 export function formatDate(
   iso: string | null | undefined,
   locale: string,
-  { fallback = "—" }: FormatOptions = {}
+  { fallback = "—", timeZone }: FormatOptions = {}
 ): string {
-  return render(iso, locale, DATE, fallback);
+  return render(iso, locale, DATE, fallback, timeZone);
 }
 
 /** `21.07.2026, 14:30` */
 export function formatDateTime(
   iso: string | null | undefined,
   locale: string,
-  { fallback = "—" }: FormatOptions = {}
+  { fallback = "—", timeZone }: FormatOptions = {}
 ): string {
-  return render(iso, locale, { ...DATE, ...TIME }, fallback);
+  return render(iso, locale, { ...DATE, ...TIME }, fallback, timeZone);
 }
 
 /** `14:30` */
 export function formatTime(
   iso: string | null | undefined,
   locale: string,
-  { fallback = "—" }: FormatOptions = {}
+  { fallback = "—", timeZone }: FormatOptions = {}
 ): string {
-  return render(iso, locale, TIME, fallback);
+  return render(iso, locale, TIME, fallback, timeZone);
 }
 
 /** Locale-aware number with a fixed number of decimals — rating averages, scores. */

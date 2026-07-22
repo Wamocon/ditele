@@ -107,27 +107,62 @@ export function AppHeader({
           className="flex min-h-11 shrink-0 items-center lg:min-h-0"
           aria-label={brandHomeLabel}
         >
-          <Image
-            src="/logo.svg"
-            alt="DiTeLe"
-            width={167}
-            height={17}
-            priority
-            className="hidden h-[17px] w-auto sm:block"
-          />
+          {/* Two files per breakpoint, not one — the same reason app-footer.tsx
+              carries a pair. next/image renders an <img>, and an <img> cannot
+              inherit currentColor, so the navy ink in the wordmark (#243036 —
+              the middle dot and the letterforms) stayed navy on the dark
+              surface and simply vanished. The dark artwork restates it in
+              #EDF2F5/#E4505C, the palette footerlogo-dark.svg already uses. */}
+          {/* The breakpoint lives on the wrapper, not on the images. Putting
+              both on one element does not work: `:root[data-theme="dark"]
+              .theme-dark-only` is more specific than Tailwind's `hidden` and
+              `sm:block`, so in dark mode the desktop wordmark would have won at
+              every width and shown up alongside the mobile one. With the span
+              owning the width rule, the theme classes only ever choose between
+              two files that are already at the right breakpoint. */}
+          <span className="hidden sm:block">
+            <Image
+              src="/logo.svg"
+              alt="DiTeLe"
+              width={167}
+              height={17}
+              priority
+              className="theme-light-only h-[17px] w-auto"
+            />
+            <Image
+              src="/logo-dark.svg"
+              alt=""
+              aria-hidden
+              width={167}
+              height={17}
+              priority
+              className="theme-dark-only h-[17px] w-auto"
+            />
+          </span>
           {/* mobilelogo.svg is 47×12, not the square its old props claimed. With
               width/height declared as 32×32 and rendered at h-8, `w-auto` gave
               it the real 3.92:1 ratio and it came out 125px wide — most of a
               320px viewport, which pushed the right-hand controls 9px off
               screen. Declared at its true size and rendered near 1:1. */}
-          <Image
-            src="/mobilelogo.svg"
-            alt="DiTeLe"
-            width={47}
-            height={12}
-            priority
-            className="h-4 w-auto sm:hidden"
-          />
+          <span className="sm:hidden">
+            <Image
+              src="/mobilelogo.svg"
+              alt="DiTeLe"
+              width={47}
+              height={12}
+              priority
+              className="theme-light-only h-4 w-auto"
+            />
+            <Image
+              src="/mobilelogo-dark.svg"
+              alt=""
+              aria-hidden
+              width={47}
+              height={12}
+              priority
+              className="theme-dark-only h-4 w-auto"
+            />
+          </span>
         </Link>
 
         {/* Desktop nav — hidden below lg, where the tab bar takes over. */}

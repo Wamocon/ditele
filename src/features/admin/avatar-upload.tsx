@@ -44,10 +44,31 @@ export function AvatarUpload({
   };
 }) {
   const [preview, setPreview] = useState<string | null>(publicUrl);
+  /** Set when the stored key's object cannot be fetched — see the render. */
+  const [broken, setBroken] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  /**
+   * Both failure paths used to `setError(strings.failed)` and drop the real
+   * reason on the floor. "The photo could not be saved" is the same sentence
+   * whether the bucket is missing, the storage policy refused the key, the
+   * session had expired or the RPC is not deployed — so the one screen that
+   * could tell you which told you nothing, on all three roles at once.
+   *
+   * The friendly sentence stays first; the cause is appended after it.
+   */
+  function fail(cause: unknown) {
+    const detail =
+      cause instanceof Error
+        ? cause.message
+        : typeof cause === "object" && cause !== null && "message" in cause
+          ? String((cause as { message: unknown }).message)
+          : "";
+    setError(detail ? `${strings.failed} (${detail})` : strings.failed);
+  }
 
   async function upload(file: File) {
     setError(null);
@@ -62,6 +83,16 @@ export function AvatarUpload({
     }
 
     const supabase = createBrowserClient();
+
+    // Storage writes are `to authenticated` and the RPC raises 28000 without a
+    // caller, so a browser client with no session fails with a storage error
+    // that reads like a bucket problem. Checked first, and named for what it is.
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) {
+      fail(new Error("no browser session"));
+      return;
+    }
+
     const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
     const key = `${userId}/avatar-${Date.now()}.${extension}`;
 
@@ -70,7 +101,7 @@ export function AvatarUpload({
       .upload(key, file, { cacheControl: "3600", upsert: true, contentType: file.type });
 
     if (uploaded.error) {
-      setError(strings.failed);
+      fail(uploaded.error);
       return;
     }
 
@@ -80,11 +111,12 @@ export function AvatarUpload({
       p_avatar_object_key: key,
     });
     if (saved.error) {
-      setError(strings.failed);
+      fail(saved.error);
       return;
     }
 
     const { data } = supabase.storage.from("avatars").getPublicUrl(key);
+    setBroken(false); // a fresh upload replaces whatever was unfetchable before
     setPreview(data.publicUrl);
     // The header avatar is server-rendered, so it needs a refresh to catch up.
     startTransition(() => router.refresh());
@@ -97,7 +129,7 @@ export function AvatarUpload({
       p_avatar_object_key: null,
     });
     if (cleared.error) {
-      setError(strings.failed);
+      fail(cleared.error);
       return;
     }
     setPreview(null);
@@ -112,13 +144,20 @@ export function AvatarUpload({
           "bg-(--color-brand) text-[24px] font-semibold text-(--color-brand-fg)"
         )}
       >
-        {preview ? (
+        {/* `broken` is why this is not just `preview ? <Image/> : initials`.
+            `profiles.avatar_object_key` can outlive the object it points at —
+            a bucket recreated, an object pruned — and then the derived public
+            URL 404s. The <img> rendered as an empty box inside the brand-red
+            circle, which looked like a styling bug rather than a missing file,
+            and the initials that would have been correct never appeared. */}
+        {preview && !broken ? (
           <Image
             src={preview}
             alt=""
             width={80}
             height={80}
             className="size-20 object-cover"
+            onError={() => setBroken(true)}
             unoptimized
           />
         ) : (

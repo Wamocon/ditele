@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Button, Input, Select } from "@/shared/ui";
+import { Button, PasswordInput, Select } from "@/shared/ui";
 import { resetUserPasswordAction, setUserActiveAction, setUserRoleAction } from "./actions";
 import { idleState } from "./action-state";
 import { ActionMessage, InlineConfirm, SubmitButton } from "./form-ui";
@@ -118,12 +118,13 @@ export function PasswordPanel({ userId, t }: { userId: string; t: AdminDict }) {
           <input type="hidden" name="userId" value={userId} />
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-semibold leading-4">{t.userDetail.newPassword}</span>
-            <Input
+            <PasswordInput
               name="password"
-              type="password"
               autoComplete="new-password"
               required
               minLength={12}
+              showLabel={t.common.showPassword}
+              hideLabel={t.common.hidePassword}
             />
           </label>
           <div>

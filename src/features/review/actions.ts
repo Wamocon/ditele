@@ -10,7 +10,6 @@ import {
   answerQuestion,
   transferQuestion,
   archiveQuestion,
-  updateTrainerProfile,
   type CriterionScore,
 } from "@/shared/data/review";
 
@@ -106,24 +105,6 @@ export async function archiveQuestionAction(input: {
     revalidateQuestions(input.locale, input.questionId);
     revalidatePath(`/${input.locale}/trainer/questions/archive`);
   }
-  return result;
-}
-
-export async function updateTrainerProfileAction(input: {
-  locale: string;
-  displayName: string;
-  profileLocale: string;
-  timezone: string;
-  expectedVersion: number;
-}): Promise<Result<null>> {
-  await guard(input.locale);
-  const result = await updateTrainerProfile({
-    displayName: input.displayName,
-    locale: input.profileLocale,
-    timezone: input.timezone,
-    expectedVersion: input.expectedVersion,
-  });
-  if (result.ok) revalidatePath(`/${input.locale}/trainer/profile`);
   return result;
 }
 

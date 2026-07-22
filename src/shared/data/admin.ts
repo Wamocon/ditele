@@ -776,105 +776,14 @@ export async function updateSupportIssueState(args: {
   return ok(null);
 }
 
-/* ── Own profile (admin) ────────────────────────────────────────────────── */
-
-export interface ProfileBadge {
-  id: string;
-  awardedAt: string;
-  code: string;
-  label: string;
-}
-
-export interface OwnProfile {
-  userId: string;
-  displayName: string;
-  locale: string;
-  timezone: string;
-  email: string | null;
-  roleCode: string | null;
-  rowVersion: number;
-  /** Storage key in the public `avatars` bucket, or null for initials. */
-  avatarObjectKey: string | null;
-  createdAt: string;
-  lastSeenAt: string | null;
-  state: string;
-  /** Empty until badge rules exist — the page says so rather than hiding it. */
-  badges: ProfileBadge[];
-}
-
-export async function getOwnProfile(userId: string): Promise<Result<OwnProfile>> {
-  const supabase = await createServerClient();
-
-  const [profileRes, roleRes, authRes] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("user_id, display_name, locale, timezone, row_version, avatar_object_key, created_at, last_seen_at, state")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    supabase
-      .from("user_roles")
-      .select("roles(code)")
-      .eq("user_id", userId)
-      .is("revoked_at", null)
-      .limit(1),
-    supabase.auth.getUser(),
-  ]);
-
-  if (profileRes.error) return err(mapPostgrestError(profileRes.error));
-  if (!profileRes.data) return err({ code: "PGRST116", message: "Nicht gefunden.", retryable: false });
-
-  // Badges are read here rather than in a second call so the profile page stays
-  // one round trip. The tables exist but no badge rules are defined yet, so this
-  // is normally empty — the page says so honestly instead of hiding the section.
-  const awards = await supabase
-    .from("badge_awards")
-    .select("id, awarded_at, badges(code, labels)")
-    .eq("learner_id", userId)
-    .order("awarded_at", { ascending: false });
-
-  return ok({
-    userId: profileRes.data.user_id,
-    displayName: profileRes.data.display_name,
-    locale: profileRes.data.locale,
-    timezone: profileRes.data.timezone,
-    email: authRes.data.user?.email ?? null,
-    roleCode: roleRes.data?.[0]?.roles?.code ?? null,
-    rowVersion: profileRes.data.row_version,
-    avatarObjectKey: profileRes.data.avatar_object_key ?? null,
-    createdAt: profileRes.data.created_at,
-    lastSeenAt: profileRes.data.last_seen_at ?? null,
-    state: profileRes.data.state,
-    badges: (awards.data ?? []).map((a) => ({
-      id: a.id,
-      awardedAt: a.awarded_at,
-      code: a.badges?.code ?? "?",
-      label: (a.badges?.labels as Record<string, string> | null)?.de ?? a.badges?.code ?? "?",
-    })),
-  });
-}
+/* ── Own profile ────────────────────────────────────────────────────────── */
 
 /**
- * `profiles` is not directly writable even by an admin — `update_own_profile`
- * is a SECURITY DEFINER RPC and the only write path, own row only.
+ * The own-profile reader and writer that used to sit here are gone. Every role
+ * now reads its profile through `features/profile/data.ts` and writes it
+ * through `features/profile/actions.ts`, because the row, the RLS policy and
+ * the RPC were never admin-specific — only the screen that called them was.
  */
-export async function updateOwnAdminProfile(args: {
-  displayName: string;
-  locale: string;
-  timezone: string;
-  expectedVersion: number;
-}): Promise<Result<null>> {
-  const supabase = await createServerClient();
-  const { error } = await supabase.rpc("update_own_profile", {
-    p_display_name: args.displayName,
-    p_locale: args.locale,
-    p_timezone: args.timezone,
-    p_expected_version: args.expectedVersion,
-    p_correlation_id: crypto.randomUUID(),
-    p_idempotency_key: `profile:${args.expectedVersion}:${args.displayName}`,
-  });
-  if (error) return err(mapPostgrestError(error));
-  return ok(null);
-}
 
 /* ── Platform settings (read-only reference) ────────────────────────────── */
 
