@@ -1082,7 +1082,14 @@
       "archive": "Archive course",
       "archiveHint": "An archived course disappears from the catalogue. Published versions are kept.",
       "archiveConfirm": "Really archive this course?",
-      "unarchive": "Reactivate course"
+      "unarchive": "Reactivate course",
+      "sectionTasks": "Tasks",
+      "tasksHint": "The tasks participants see in this course.",
+      "tasksEmpty": "This course has no tasks yet. Create the first one.",
+      "taskAdd": "Add task",
+      "tasksOpen": "Edit tasks",
+      "tasksCount": "{count} tasks in {stages} sections",
+      "tasksNoVersion": "Create a version first to add tasks."
     },
     "studio": {
       "title": "Content studio",

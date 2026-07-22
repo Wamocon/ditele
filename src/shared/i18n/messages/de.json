@@ -1360,7 +1360,14 @@
       "archive": "Kurs archivieren",
       "archiveHint": "Ein archivierter Kurs verschwindet aus dem Katalog. Veröffentlichte Versionen bleiben erhalten.",
       "archiveConfirm": "Kurs wirklich archivieren?",
-      "unarchive": "Kurs wieder aktivieren"
+      "unarchive": "Kurs wieder aktivieren",
+      "sectionTasks": "Aufgaben",
+      "tasksHint": "Die Aufgaben, die Teilnehmende in diesem Kurs sehen.",
+      "tasksEmpty": "Dieser Kurs hat noch keine Aufgaben. Legen Sie die erste an.",
+      "taskAdd": "Aufgabe hinzufügen",
+      "tasksOpen": "Aufgaben bearbeiten",
+      "tasksCount": "{count} Aufgaben in {stages} Abschnitten",
+      "tasksNoVersion": "Legen Sie zuerst eine Version an, um Aufgaben hinzuzufügen."
     },
     "studio": {
       "title": "Content-Studio",

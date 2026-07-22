@@ -91,6 +91,67 @@ export function CourseDetail({
         </p>
       )}
 
+      {/**
+        * ── TASKS, first ────────────────────────────────────────────────────
+        *
+        * This card exists because there was no way to reach a task from the
+        * course. Tasks lived two clicks down, behind a "Versions" list and an
+        * "Edit content" button — and a version is an internal concept an admin
+        * never asked for. The reported symptom was exactly that: "I cannot see
+        * the option to add task in the course."
+        *
+        * So the course page now opens with its tasks, and the version it edits
+        * is chosen here rather than by the admin:
+        *
+        *   a DRAFT version if there is one   — edits go to the draft, as they must
+        *   otherwise the PUBLISHED one       — "Edit tasks" then creates the draft
+        *
+        * The Versions card below is kept for the cases it is genuinely for —
+        * publishing history, and deliberately starting a second draft — but it
+        * is no longer the only door to a task.
+        */}
+      {(() => {
+        const draft = course.versions.find((version) => version.state === "draft");
+        const published = course.versions.find((version) => version.state === "published");
+        const editable = draft ?? course.versions.find((v) => v.state === "in_review") ?? published;
+        return (
+          <Card className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <CardTitle>{s.sectionTasks}</CardTitle>
+                <p className="mt-1 text-[13px] leading-5 text-(--color-fg-muted)">{s.tasksHint}</p>
+              </div>
+              {editable && (
+                <Link
+                  href={`/${locale}/admin/courses/${course.id}/versions/${editable.id}` as Route}
+                >
+                  <Button iconLeft={<Plus className="size-4" aria-hidden />}>
+                    {editable.taskCount === 0 ? s.taskAdd : s.tasksOpen}
+                  </Button>
+                </Link>
+              )}
+            </div>
+
+            {!editable ? (
+              <p className="rounded-(--radius-md) border border-dashed border-(--color-border-strong) px-3 py-6 text-center text-[13px] text-(--color-fg-muted)">
+                {s.tasksNoVersion}
+              </p>
+            ) : editable.taskCount === 0 ? (
+              <p className="rounded-(--radius-md) border border-dashed border-(--color-border-strong) px-3 py-6 text-center text-[13px] text-(--color-fg-muted)">
+                {s.tasksEmpty}
+              </p>
+            ) : (
+              <p className="text-[15px]">
+                {format(s.tasksCount, {
+                  count: editable.taskCount,
+                  stages: editable.stageCount,
+                })}
+              </p>
+            )}
+          </Card>
+        );
+      })()}
+
       {/* ── metadata ──────────────────────────────────────────────────── */}
       <Card className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
