@@ -69,6 +69,24 @@ export const STUDENT_NAV: NavItem[] = [
    * WS-11 shipped it in `6844509`; verified live by WS-13.
    */
   { path: "/learn/arena", label: "Arena", labelKey: "arena", primary: true, owner: "WS-11" },
+  /**
+   * ⭐ The course catalogue, for a signed-in learner.
+   *
+   * `/catalog` was in `PUBLIC_NAV` only, so a student had no link to it
+   * anywhere — and that is not merely a missing shortcut. `/learn/courses`
+   * shows the courses a learner is ALREADY enrolled in, and the enrolment
+   * request lives at `/learn/enroll/[courseId]`, which is reached from a
+   * catalogue card. With no catalogue entry, a signed-in learner could not
+   * discover or request a single course they were not already in; the only way
+   * through was typing the URL.
+   *
+   * Non-primary on purpose. The mobile tab bar caps at 5 including "Mehr", the
+   * four primary slots are the daily loop (Start · Kurse · Aufgaben · Arena),
+   * and browsing the catalogue is something a learner does occasionally rather
+   * than every day. It sits first in the sheet, directly under "Kurse", because
+   * "my courses" and "all courses" are the pair a learner is choosing between.
+   */
+  { path: "/catalog", label: "Katalog", labelKey: "catalog", owner: "WS-1" },
   { path: "/learn/questions", label: "Fragen", labelKey: "questions", owner: "WS-3" },
   { path: "/learn/history", label: "Verlauf", labelKey: "learningHistory", owner: "WS-3" },
   { path: "/learn/certificates", label: "Zertifikate", labelKey: "certificates", owner: "WS-3" },
