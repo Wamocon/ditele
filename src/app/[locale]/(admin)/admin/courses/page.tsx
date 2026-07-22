@@ -2,25 +2,31 @@ import type { Route } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/shared/layout";
-import {
-  Button,
-  DataTable,
-  EmptyState,
-  ErrorState,
-  StatusBadge,
-  statusLabel,
-  type Column,
-} from "@/shared/ui";
+import { Button, EmptyState, ErrorState, statusLabel } from "@/shared/ui";
 import { requireRole } from "@/shared/auth/guard";
 import { listAdminCourses } from "@/shared/data/content";
-import { adminStrings, formatDate } from "@/features/content/i18n";
+import { countCourseEnrollments, countCourseTrainers } from "@/shared/data/assignment";
+import { adminStrings } from "@/features/content/i18n";
 import { ListFilters } from "@/features/content/components/list-filters";
 import { Pager } from "@/features/content/components/pager";
-import type { AdminCourseRow, RecordState } from "@/features/content/model";
+import { CourseCard } from "@/features/content/components/course-card";
+import type { RecordState } from "@/features/content/model";
 
 const PAGE_SIZE = 20;
 const COURSE_STATES: RecordState[] = ["draft", "active", "inactive", "archived"];
 
+/**
+ * The course list, as **cards two per row** (FEATURE_BUILD_PLAN §1.3).
+ *
+ * It was a DataTable of seven columns. The product owner asked for cards
+ * showing "the course, how many users are on it, other course facts, and its
+ * active / inactive state" — and the two figures that request turns on,
+ * enrolled learners and assigned trainers, were the two the table did not have.
+ *
+ * Both counts are fetched once for the whole page rather than per card. Twenty
+ * cards each asking their own question is twenty round trips for a number that
+ * one `in (…)` answers.
+ */
 export default async function Page({
   params,
   searchParams,
@@ -67,56 +73,33 @@ export default async function Page({
 
   const { rows, total } = result.data;
   const filtering = Boolean(q?.trim() || filter);
+  const ids = rows.map((row) => row.id);
 
-  const columns: Column<AdminCourseRow>[] = [
-    {
-      key: "title",
-      header: s.columnTitle,
-      cell: (row) => (
-        <Link
-          href={`/${locale}/admin/courses/${row.id}` as Route}
-          className="font-medium hover:text-(--color-brand) hover:underline"
-        >
-          {row.title}
-        </Link>
-      ),
-    },
-    {
-      key: "slug",
-      header: s.columnSlug,
-      cell: (row) => <span className="text-[13px] text-(--color-fg-muted)">{row.slug}</span>,
-    },
-    { key: "state", header: s.columnState, cell: (row) => <StatusBadge state={row.state} locale={locale} /> },
-    {
-      key: "latest",
-      header: s.columnLatest,
-      cell: (row) =>
-        row.latestVersionState ? (
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="tabular text-[13px]">v{row.latestVersionNumber}</span>
-            <StatusBadge state={row.latestVersionState} locale={locale} />
-          </span>
-        ) : (
-          <span className="text-[13px] text-(--color-fg-muted)">{s.noVersion}</span>
-        ),
-    },
-    {
-      key: "versions",
-      header: s.columnVersions,
-      numeric: true,
-      cell: (row) => row.versionCount,
-    },
-    { key: "tasks", header: s.columnTasks, numeric: true, cell: (row) => row.taskCount },
-    {
-      key: "updated",
-      header: s.columnUpdated,
-      cell: (row) => (
-        <span className="text-[13px] text-(--color-fg-muted)">
-          {formatDate(row.updatedAt, locale)}
-        </span>
-      ),
-    },
-  ];
+  // A count that fails to load must not take the page down with it: the cards
+  // still say everything else useful, so a failed count degrades to zero rather
+  // than to an error screen.
+  const [learnerCounts, trainerCounts] = await Promise.all([
+    countCourseEnrollments(ids),
+    countCourseTrainers(ids),
+  ]);
+  const learners = learnerCounts.ok ? learnerCounts.data : new Map<string, number>();
+  const trainers = trainerCounts.ok ? trainerCounts.data : new Map<string, number>();
+
+  const cardLabels = {
+    learners: s.cardLearners,
+    trainers: s.cardTrainers,
+    tasks: s.cardTasks,
+    versions: s.cardVersions,
+    duration: s.cardDuration,
+    hours: s.cardHours,
+    noDuration: s.cardNoDuration,
+    open: s.openCourse,
+    people: s.managePeople,
+    duplicate: s.duplicate,
+    duplicateSlugLabel: s.duplicateSlugLabel,
+    duplicateSlugHint: s.duplicateSlugHint,
+    duplicateSubmit: s.duplicateSubmit,
+  };
 
   return (
     <>
@@ -134,25 +117,35 @@ export default async function Page({
         filterOptions={COURSE_STATES.map((value) => ({ value, label: statusLabel(value, locale) }))}
       />
 
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(row) => row.id}
-        caption={s.title}
-        emptyState={
-          <EmptyState
-            title={filtering ? s.emptyFilteredTitle : s.emptyTitle}
-            description={filtering ? s.emptyFilteredDescription : s.emptyDescription}
-            action={
-              filtering ? undefined : (
-                <Link href={`/${locale}/admin/courses/new` as Route}>
-                  <Button>{s.new}</Button>
-                </Link>
-              )
-            }
-          />
-        }
-      />
+      {rows.length === 0 ? (
+        <EmptyState
+          title={filtering ? s.emptyFilteredTitle : s.emptyTitle}
+          description={filtering ? s.emptyFilteredDescription : s.emptyDescription}
+          action={
+            filtering ? undefined : (
+              <Link href={`/${locale}/admin/courses/new` as Route}>
+                <Button>{s.new}</Button>
+              </Link>
+            )
+          }
+        />
+      ) : (
+        // Two per row, as asked. One per row below `md`, because two 4-stat
+        // cards side by side on a phone truncate every figure they exist to show.
+        <ul className="grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-2">
+          {rows.map((course) => (
+            <li key={course.id}>
+              <CourseCard
+                locale={locale}
+                course={course}
+                learnerCount={learners.get(course.id) ?? 0}
+                trainerCount={trainers.get(course.id) ?? 0}
+                labels={cardLabels}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
 
       <Pager
         basePath={`/${locale}/admin/courses`}

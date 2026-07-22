@@ -1465,6 +1465,176 @@ export type Database = {
           },
         ]
       }
+      learner_trainers: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          learner_id: string
+          organization_id: string
+          removed_at: string | null
+          trainer_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          learner_id: string
+          organization_id: string
+          removed_at?: string | null
+          trainer_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          learner_id?: string
+          organization_id?: string
+          removed_at?: string | null
+          trainer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_trainers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hunt_scenario_defects: {
+        Row: {
+          code: string
+          created_at: string
+          expected_behaviour: string
+          id: string
+          location_hint: string
+          position: number
+          reproduction: string
+          scenario_id: string
+          severity: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expected_behaviour?: string
+          id?: string
+          location_hint?: string
+          position?: number
+          reproduction?: string
+          scenario_id: string
+          severity?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expected_behaviour?: string
+          id?: string
+          location_hint?: string
+          position?: number
+          reproduction?: string
+          scenario_id?: string
+          severity?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hunt_scenario_defects_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "hunt_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_gate_questions: {
+        Row: {
+          created_at: string
+          id: string
+          question_translations: Json
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_translations: Json
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_translations?: Json
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_gate_questions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_gate_responses: {
+        Row: {
+          answer_text: string | null
+          answered_at: string | null
+          created_at: string
+          enrollment_id: string
+          gate_question_id: string
+          id: string
+          learner_id: string
+          organization_id: string
+          row_version: number
+          state: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer_text?: string | null
+          answered_at?: string | null
+          created_at?: string
+          enrollment_id: string
+          gate_question_id: string
+          id?: string
+          learner_id: string
+          organization_id: string
+          row_version?: number
+          state: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer_text?: string | null
+          answered_at?: string | null
+          created_at?: string
+          enrollment_id?: string
+          gate_question_id?: string
+          id?: string
+          learner_id?: string
+          organization_id?: string
+          row_version?: number
+          state?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_gate_responses_gate_question_id_fkey"
+            columns: ["gate_question_id"]
+            isOneToOne: false
+            referencedRelation: "task_gate_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           archived_at: string | null
@@ -2130,6 +2300,9 @@ export type Database = {
           state: Database["public"]["Enums"]["record_state"]
           title: string
           updated_at: string
+          end_media_url: string | null
+          html: string | null
+          start_media_url: string | null
         }
         Insert: {
           code: string
@@ -2144,6 +2317,9 @@ export type Database = {
           state?: Database["public"]["Enums"]["record_state"]
           title: string
           updated_at?: string
+          end_media_url?: string | null
+          html?: string | null
+          start_media_url?: string | null
         }
         Update: {
           code?: string
@@ -2158,6 +2334,9 @@ export type Database = {
           state?: Database["public"]["Enums"]["record_state"]
           title?: string
           updated_at?: string
+          end_media_url?: string | null
+          html?: string | null
+          start_media_url?: string | null
         }
         Relationships: [
           {
@@ -5366,6 +5545,7 @@ export type Database = {
           target_url: string | null
           task_kind: string
           updated_at: string
+          required_hunt_scenario_id: string | null
         }
         Insert: {
           bug_category_id?: string | null
@@ -5384,6 +5564,7 @@ export type Database = {
           target_url?: string | null
           task_kind?: string
           updated_at?: string
+          required_hunt_scenario_id?: string | null
         }
         Update: {
           bug_category_id?: string | null
@@ -5402,6 +5583,7 @@ export type Database = {
           target_url?: string | null
           task_kind?: string
           updated_at?: string
+          required_hunt_scenario_id?: string | null
         }
         Relationships: [
           {
@@ -5789,6 +5971,204 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      assign_trainer_to_course: {
+        Args: {
+          p_correlation_id?: string
+          p_course_id: string
+          p_trainer_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assigned_by: string | null
+          course_id: string
+          organization_id: string
+          removed_at: string | null
+          trainer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "course_trainers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assign_trainer_to_learner: {
+        Args: {
+          p_correlation_id?: string
+          p_learner_id: string
+          p_organization_id?: string
+          p_trainer_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assigned_by: string | null
+          learner_id: string
+          organization_id: string
+          removed_at: string | null
+          trainer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "learner_trainers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      remove_trainer_from_course: {
+        Args: {
+          p_correlation_id?: string
+          p_course_id: string
+          p_trainer_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assigned_by: string | null
+          course_id: string
+          organization_id: string
+          removed_at: string | null
+          trainer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "course_trainers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      remove_trainer_from_learner: {
+        Args: {
+          p_correlation_id?: string
+          p_learner_id: string
+          p_trainer_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assigned_by: string | null
+          learner_id: string
+          organization_id: string
+          removed_at: string | null
+          trainer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "learner_trainers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      enroll_learner_in_course: {
+        Args: {
+          p_correlation_id?: string
+          p_course_id: string
+          p_learner_id: string
+          p_reason?: string
+        }
+        Returns: {
+          cohort_id: string | null
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          id: string
+          idempotency_key: string
+          learner_id: string
+          organization_id: string
+          request_note: string | null
+          row_version: number
+          state: Database["public"]["Enums"]["enrollment_state"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "enrollments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      remove_learner_from_course: {
+        Args: {
+          p_correlation_id?: string
+          p_course_id: string
+          p_learner_id: string
+          p_reason?: string
+        }
+        Returns: {
+          cohort_id: string | null
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          id: string
+          idempotency_key: string
+          learner_id: string
+          organization_id: string
+          request_note: string | null
+          row_version: number
+          state: Database["public"]["Enums"]["enrollment_state"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "enrollments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      duplicate_course: {
+        Args: {
+          p_new_slug: string
+          p_source_course_id: string
+          p_title_suffix?: string
+        }
+        Returns: string
+      }
+      set_task_gate_question: {
+        Args: {
+          p_correlation_id?: string
+          p_question_translations: Json
+          p_task_id: string
+        }
+        Returns: Json
+      }
+      answer_task_gate_question: {
+        Args: {
+          p_answer_text: string
+          p_correlation_id?: string
+          p_task_id: string
+        }
+        Returns: Json
+      }
+      skip_task_gate_question: {
+        Args: { p_correlation_id?: string; p_task_id: string }
+        Returns: Json
+      }
+      upsert_hunt_scenario: {
+        Args: {
+          p_code: string
+          p_correlation_id?: string
+          p_description: string
+          p_end_media_url?: string
+          p_expected_findings?: number
+          p_html?: string
+          p_organization_id?: string
+          p_start_media_url?: string
+          p_state?: Database["public"]["Enums"]["record_state"]
+          p_title: string
+        }
+        Returns: Json
+      }
+      set_hunt_scenario_defects: {
+        Args: {
+          p_correlation_id?: string
+          p_defects: Json
+          p_scenario_id: string
+        }
+        Returns: number
       }
       claim_question: {
         Args: {
