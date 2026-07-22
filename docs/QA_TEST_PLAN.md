@@ -315,10 +315,10 @@ The request comes from a browser extension or a service worker left registered b
 another project on `localhost`. Remove it in DevTools → Application → Service
 Workers.
 
-### 8.4 Badge names are German on `/en` and `/ru`
-All eleven badges carry German labels only. The migration that adds English and
-Russian exists in the repository but has **not been applied** to the database
-(see [§10](#10-database)). Everything else on the Arena page translates normally.
+### 8.4 ~~Badge names are German on `/en` and `/ru`~~ — fixed
+Fixed on 2026-07-22 by applying `20260727120000_arena_badge_labels_en_ru.sql`.
+All eleven badges now carry German, English and Russian labels. Badge names on
+`/en` and `/ru` **are** a valid bug again — please report them if you see any.
 
 ### 8.5 "Zu viele Versuche" after repeated sign-ins
 Sign-in is rate limited: **5 attempts per email address and 30 per browser, per
@@ -362,26 +362,22 @@ Do not write test cases against these; they do not exist.
 The whole schema is in the repository: **62 migrations** in
 `supabase/migrations/` plus five seed files in `supabase/`.
 
-**One thing to know before a production migration.** The development database's
-migration ledger does not match the repository: 45 versions are recorded, but 18
-repository migrations are applied without being recorded, and one recorded
-version (`20260717100170`) no longer has a file because the feature was removed
-deliberately.
+**The ledger is in sync as of 2026-07-22.** All 62 repository migrations are
+recorded as applied on the development database, and no recorded version lacks a
+file. A production `supabase db push` runs all 62 in order and produces the same
+schema. Nothing to work around.
 
-- **A fresh production database is fine.** `supabase db push` runs all 62 files
-  in order and produces the correct schema.
-- **The existing development database is not.** A push against it would try to
-  re-run 18 migrations that are already applied.
+It was not always so, and the repair is worth knowing about if you see it again:
+17 migrations had been applied by hand with `psql` without being recorded, and
+one recorded version had no file because the feature behind it was deliberately
+removed. Each of the 17 was confirmed applied **by schema effect** — the table,
+column, function or constraint it creates was checked to exist — before being
+recorded, because marking an unapplied migration as applied would leave a silent
+hole in the schema. The orphan was marked reverted. One migration turned out to
+be genuinely unapplied and was run properly, which is [§8.4](#84-badge-names-are-german-on-en-and-ru).
 
-Verified applied on the development database despite being unrecorded:
-`hunt_scenarios`, `hunt_findings`, `xp_ledger`, `learner_streaks`, `badges`,
-`course_trainers`; `rate_course` and `rate_task` correctly removed;
-`tasks.video_url` and `tasks.intro_video_url` present; `task_kind` accepts
-`hunt`.
-
-**Outstanding:** `20260727120000_arena_badge_labels_en_ru.sql` is committed but
-not applied, which is [§8.4](#84-badge-names-are-german-on-en-and-ru). It is an
-idempotent JSONB merge, so it is safe to apply late.
+**If you ever apply a migration by hand, record it.** `supabase migration repair
+--status applied <version>` exists for this.
 
 ---
 
