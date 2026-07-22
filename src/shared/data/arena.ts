@@ -7,6 +7,7 @@ import {
   HUNT_VERDICTS,
   type HuntFinding,
   type HuntScenario,
+  type HuntScenarioDefect,
   type HuntVerdict,
 } from "@/features/arena/model";
 
@@ -40,8 +41,23 @@ const HuntScenarioRow = z.object({
   title: z.string(),
   description: z.string(),
   configuration: z.unknown(),
+  html: z.string().nullish().transform((v) => v ?? null),
+  start_media_url: z.string().nullish().transform((v) => v ?? null),
+  end_media_url: z.string().nullish().transform((v) => v ?? null),
   expected_findings: z.number(),
   state: z.string(),
+});
+
+const HuntScenarioDefectRow = z.object({
+  id: z.string(),
+  scenario_id: z.string(),
+  code: z.string(),
+  position: z.number(),
+  title: z.string(),
+  location_hint: z.string(),
+  expected_behaviour: z.string(),
+  reproduction: z.string(),
+  severity: z.string(),
 });
 
 const HuntFindingRow = z.object({
@@ -67,8 +83,25 @@ function toScenario(row: z.infer<typeof HuntScenarioRow>): HuntScenario {
       row.configuration && typeof row.configuration === "object" && !Array.isArray(row.configuration)
         ? (row.configuration as Record<string, unknown>)
         : {},
+    html: row.html,
+    startMediaUrl: row.start_media_url,
+    endMediaUrl: row.end_media_url,
     expectedFindings: row.expected_findings,
     state: row.state,
+  };
+}
+
+function toDefect(row: z.infer<typeof HuntScenarioDefectRow>): HuntScenarioDefect {
+  return {
+    id: row.id,
+    scenarioId: row.scenario_id,
+    code: row.code,
+    position: row.position,
+    title: row.title,
+    locationHint: row.location_hint,
+    expectedBehaviour: row.expected_behaviour,
+    reproduction: row.reproduction,
+    severity: row.severity,
   };
 }
 
@@ -89,7 +122,11 @@ function toFinding(row: z.infer<typeof HuntFindingRow>): HuntFinding {
 }
 
 const SCENARIO_COLUMNS =
-  "id, code, scenario_version, title, description, configuration, expected_findings, state";
+  "id, code, scenario_version, title, description, configuration, html, " +
+  "start_media_url, end_media_url, expected_findings, state";
+const DEFECT_COLUMNS =
+  "id, scenario_id, code, position, title, location_hint, expected_behaviour, " +
+  "reproduction, severity";
 const FINDING_COLUMNS =
   "id, attempt_id, submission_id, scenario_id, reported_summary, planted_code, verdict, severity, decided_at";
 
@@ -200,14 +237,77 @@ export async function listHuntFindingsForSubmission(
   return ok(findings);
 }
 
+/* ── Planted defects — the answer key ─────────────────────────────────────── */
+
+/**
+ * The planted defects for one scenario.
+ *
+ * ⚠️ **Staff only, and enforced in the database rather than here.**
+ * `hunt_scenario_defects` carries exactly one RLS policy and it requires
+ * `content.manage` or `review.manage`. A learner calling this gets an empty
+ * array, not an error — so never branch on "empty means no defects" in a
+ * learner-facing path, because for a learner it always will be.
+ *
+ * `expectedBehaviour` and `reproduction` are worked answers. They belong on the
+ * trainer's review screen and the admin's authoring screen, and nowhere near
+ * the sandbox iframe.
+ */
+export async function listHuntScenarioDefects(
+  scenarioId: string,
+): Promise<Result<HuntScenarioDefect[]>> {
+  const supabase = await createServerClient();
+  const result = await fromSupabase<unknown[]>(async () => {
+    const { data, error } = await supabase
+      .from("hunt_scenario_defects")
+      .select(DEFECT_COLUMNS)
+      .eq("scenario_id", scenarioId)
+      .order("position", { ascending: true })
+      .order("code", { ascending: true });
+    return { data: data as unknown[] | null, error };
+  });
+  if (!result.ok) return result;
+
+  const defects: HuntScenarioDefect[] = [];
+  for (const row of result.data) {
+    const parsed = HuntScenarioDefectRow.safeParse(row);
+    // A malformed row is skipped rather than blanking the list, for the same
+    // reason listHuntScenarios does it: a half-authored scenario should not
+    // take the trainer's review panel down with it.
+    if (parsed.success) defects.push(toDefect(parsed.data));
+  }
+  return ok(defects);
+}
+
+/** Defect counts per scenario, for the admin list. One query, not one per row. */
+export async function countDefectsByScenario(): Promise<Result<Map<string, number>>> {
+  const supabase = await createServerClient();
+  const result = await fromSupabase<unknown[]>(async () => {
+    const { data, error } = await supabase
+      .from("hunt_scenario_defects")
+      .select("scenario_id");
+    return { data: data as unknown[] | null, error };
+  });
+  if (!result.ok) return result;
+
+  const counts = new Map<string, number>();
+  for (const row of result.data) {
+    const id = (row as { scenario_id?: unknown }).scenario_id;
+    if (typeof id === "string") counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return ok(counts);
+}
+
 /* ── Re-exports, so callers import from one place ─────────────────────────── */
 
 export {
   HUNT_VERDICTS,
   LOCK_REASON_CODES,
+  arenaHubHref,
   countsAsFound,
+  gateQuestionLock,
   huntPrerequisite,
   huntProgress,
+  huntScenarioLock,
   huntTaskHref,
   isPending,
   toLockReason,
@@ -216,6 +316,7 @@ export {
 export type {
   HuntFinding,
   HuntScenario,
+  HuntScenarioDefect,
   HuntVerdict,
   LockReason,
   LockReasonCode,

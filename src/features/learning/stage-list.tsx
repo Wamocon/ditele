@@ -6,12 +6,20 @@ import {
   Circle,
   CircleDot,
   Clock,
+  HelpCircle,
   Lock,
   RotateCcw,
   Swords,
 } from "lucide-react";
 import { Badge, StatusBadge, cn } from "@/shared/ui";
-import { huntPrerequisite, huntTaskHref, type LockReason } from "@/features/arena/model";
+import {
+  arenaHubHref,
+  gateQuestionLock,
+  huntPrerequisite,
+  huntScenarioLock,
+  huntTaskHref,
+  type LockReason,
+} from "@/features/arena/model";
 import type { LearningActivity, LearningStage } from "./model";
 import { format, type LearnStrings } from "./i18n";
 import { formatDate } from "./format";
@@ -38,6 +46,31 @@ import { formatDate } from "./format";
  */
 function lockReasonText(reason: LockReason | undefined, strings: LearnStrings["course"]): string {
   const value = (reason?.code ?? "").toLowerCase();
+
+  /**
+   * ⚠️ THE TWO PHASE-1C CODES ARE MATCHED FIRST, AND EXACTLY.
+   *
+   * The substring rules below are deliberately loose, and that is a trap for
+   * these two. `required_hunt` contains "required", so it would have fallen
+   * into the prerequisite branch and told a learner to "finish the previous
+   * tasks" when what they actually need is to pass a hunt in the Arena — advice
+   * that is not merely vague but wrong, and that sends them looking in the one
+   * place the answer is not.
+   *
+   * `gate_question` matched nothing and fell to `lockReasonDefault`, the
+   * vaguest sentence there is.
+   */
+  if (value === "required_hunt") {
+    return reason?.scenarioTitle
+      ? format(strings.lockReasonHuntNamed, { scenario: reason.scenarioTitle })
+      : strings.lockReasonHunt;
+  }
+  if (value === "gate_question") {
+    return reason?.previousTaskTitle
+      ? format(strings.lockReasonGateQuestionNamed, { task: reason.previousTaskTitle })
+      : strings.lockReasonGateQuestion;
+  }
+
   if (value.includes("schedul") || value.includes("available") || value.includes("time")) {
     return strings.lockReasonSchedule;
   }
@@ -92,6 +125,24 @@ export function TaskListItem({
 
   // The hunt that unlocks this task, if a hunt is what it is waiting on.
   const hunt = activity.locked ? huntPrerequisite(activity.lockReasons) : null;
+  // The Phase 1c gates. Both can be outstanding at once — §1.6 is explicit that
+  // the next task stays locked until the question is answered "even if its own
+  // Arena task is already approved" — so they are read separately and both are
+  // shown, rather than taking `lockReasons[0]` and hoping it is the useful one.
+  const scenarioLock = activity.locked ? huntScenarioLock(activity.lockReasons) : null;
+  const gateLock = activity.locked ? gateQuestionLock(activity.lockReasons) : null;
+
+  /**
+   * Every distinct reason, in order, deduped by the sentence it produces.
+   *
+   * The previous code rendered `lockReasons[0]` alone. With one reason that was
+   * right; with two it silently hid one, so a learner who cleared the hunt
+   * would come back to a task that was still locked and now showed a message
+   * they had already satisfied.
+   */
+  const lockSentences = activity.locked
+    ? [...new Set(activity.lockReasons.map((reason) => lockReasonText(reason, strings)))]
+    : [];
 
   const body = (
     <>
@@ -112,10 +163,19 @@ export function TaskListItem({
           // Show WHY it is locked. Greying a row out and saying nothing is the
           // most common way a learner concludes the platform is broken.
           <>
-            <p className="text-[13px] leading-5 text-(--color-fg-subtle)">
-              {courseTitle ? `${courseTitle} · ` : ""}
-              {lockReasonText(activity.lockReasons[0], strings)}
-            </p>
+            {lockSentences.length === 0 ? (
+              <p className="text-[13px] leading-5 text-(--color-fg-subtle)">
+                {courseTitle ? `${courseTitle} · ` : ""}
+                {strings.lockReasonDefault}
+              </p>
+            ) : (
+              lockSentences.map((sentence, index) => (
+                <p key={sentence} className="text-[13px] leading-5 text-(--color-fg-subtle)">
+                  {index === 0 && courseTitle ? `${courseTitle} · ` : ""}
+                  {sentence}
+                </p>
+              ))
+            )}
             {hunt && (
               /**
                * ⭐ G8, the half that never landed — `05_…` calls this "the whole
@@ -144,6 +204,50 @@ export function TaskListItem({
                 {hunt.requiredTaskTitle
                   ? format(strings.lockPlayHuntNamed, { title: hunt.requiredTaskTitle })
                   : strings.lockPlayHunt}
+                <span aria-hidden>→</span>
+              </Link>
+            )}
+
+            {/**
+             * The Phase 1c Arena gate. Unlike `hunt` above it names a SCENARIO
+             * rather than a task, and an accepted hunt of that scenario counts
+             * from anywhere — so there is no task id to link to and the Arena
+             * hub is the honest destination. `!hunt` so a task waiting on both
+             * kinds does not grow two nearly identical buttons.
+             */}
+            {scenarioLock && !hunt && (
+              <Link
+                href={arenaHubHref(locale) as Route}
+                className={cn(
+                  "mt-1 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-(--radius-sm)",
+                  "px-2 text-[13px] font-semibold leading-5 text-(--color-brand)",
+                  "underline-offset-4 hover:bg-(--color-brand-soft) hover:underline"
+                )}
+              >
+                <Swords className="size-4 shrink-0" aria-hidden />
+                {strings.lockGoToArena}
+                <span aria-hidden>→</span>
+              </Link>
+            )}
+
+            {/**
+             * The pre-task question gate points BACKWARDS: §1.6 says a skipped
+             * question blocks progression past its task, not the task itself.
+             * So the link goes to the PREVIOUS task, which is where the question
+             * is asked — sending the learner to the locked task would be a door
+             * they cannot open.
+             */}
+            {gateLock?.previousTaskId && (
+              <Link
+                href={huntTaskHref(locale, gateLock.previousTaskId) as Route}
+                className={cn(
+                  "mt-1 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-(--radius-sm)",
+                  "px-2 text-[13px] font-semibold leading-5 text-(--color-brand)",
+                  "underline-offset-4 hover:bg-(--color-brand-soft) hover:underline"
+                )}
+              >
+                <HelpCircle className="size-4 shrink-0" aria-hidden />
+                {strings.lockAnswerQuestion}
                 <span aria-hidden>→</span>
               </Link>
             )}

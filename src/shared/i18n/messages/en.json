@@ -77,7 +77,8 @@
     "integrations": "Integrations",
     "settings": "Settings",
     "more": "More",
-    "arena": "Arena"
+    "arena": "Arena",
+    "arenaAdmin": "Arena"
   },
   "home": {
     "title": "Learn software testing by doing it.",
@@ -256,7 +257,13 @@
       "emptyDescription": "Content appears here as soon as your trainer publishes it.",
       "emptyStage": "There are no tasks in this stage yet.",
       "lockPlayHunt": "Play the hunt to unlock",
-      "lockPlayHuntNamed": "Play \"{title}\" to unlock"
+      "lockPlayHuntNamed": "Play \"{title}\" to unlock",
+      "lockReasonHunt": "Pass the bug hunt in the Arena first.",
+      "lockReasonHuntNamed": "Pass the bug hunt “{scenario}” first.",
+      "lockGoToArena": "Go to the Arena",
+      "lockReasonGateQuestion": "Answer the question on the previous task first.",
+      "lockReasonGateQuestionNamed": "Answer the question on “{task}” first.",
+      "lockAnswerQuestion": "Answer the question"
     },
     "tasks": {
       "title": "Tasks",
@@ -379,7 +386,18 @@
       "defectEnvironmentHint": "Browser, operating system and window size. Pre-filled — correct it if you tested somewhere else.",
       "defectEnvironmentPlaceholder": "e.g. Chrome 131 · Windows · 1440×900",
       "defectScreenshots": "Screenshots",
-      "errorEvidenceUri": "The affected address must start with https://. Copy the full address from the practice environment."
+      "errorEvidenceUri": "The affected address must start with https://. Copy the full address from the practice environment.",
+      "gateHeading": "Question before the task",
+      "gateIntro": "Answer this question before moving on. You may also skip it and answer later — this task stays editable, but the NEXT task remains locked until the question is answered.",
+      "gateAnswerLabel": "Your answer",
+      "gateAnswerPlaceholder": "Answer in your own words…",
+      "gateAnswerNow": "Answer now",
+      "gateSkip": "Skip and answer later",
+      "gateAnswered": "Answered",
+      "gateSkippedNotice": "You skipped this question. The next task stays locked until you answer it.",
+      "gateAnswerRequired": "Please enter an answer.",
+      "gateSaveFailed": "The answer could not be saved.",
+      "gateChangeAnswer": "Change answer"
     },
     "notifications": {
       "title": "Notifications",
@@ -878,6 +896,20 @@
       "reopen": "Reset assessment",
       "decided": "This submission is closed. The assessment can no longer be changed.",
       "decoyWarning": "This is a deliberately built-in non-defect. Only confirm it if it turns out to be a real defect after all."
+    },
+    "arena": {
+      "answerKeyWarning": "This list is the answer key. It is for trainers and is never shown to learners.",
+      "defects": "Planted defects",
+      "empty": "No bug hunts have been created yet.",
+      "emptyDescription": "As soon as an administrator creates a scenario it appears here.",
+      "expected": "Needed to pass",
+      "expectedBehaviour": "What should happen",
+      "noDefects": "No defects are recorded for this hunt.",
+      "reproduction": "How to trigger it",
+      "severity": "Severity",
+      "subtitle": "The bug hunts and the defects planted in them — what your review match is scored against.",
+      "title": "Arena hunts",
+      "where": "Where"
     }
   },
   "admin": {
@@ -1179,6 +1211,55 @@
       "trainersHeading": "Trainers on this course",
       "unenrolFailed": "The person could not be removed.",
       "unenrolSuccess": "The person was removed from the course."
+    },
+    "arena": {
+      "backToList": "Back to scenarios",
+      "codeInvalid": "Please give an identifier like checkout-v1.",
+      "columnCode": "Identifier",
+      "columnDefects": "Planted defects",
+      "columnMode": "Rendering",
+      "columnState": "Status",
+      "columnTitle": "Title",
+      "defectAdd": "Add defect",
+      "defectCode": "Identifier",
+      "defectCodeInvalid": "Every defect needs an identifier and a short description.",
+      "defectExpected": "What should happen",
+      "defectLocation": "Where in the screen",
+      "defectRemove": "Remove",
+      "defectReproduction": "How to trigger it",
+      "defectSeverity": "Severity",
+      "defectTitle": "Short description",
+      "defectsDescription": "The answer key. Learners never see this list — it is what the trainer's match is scored against.",
+      "defectsHeading": "Planted defects",
+      "defectsNone": "No defects recorded yet.",
+      "edit": "Edit",
+      "emptyDescription": "Create a bug hunt so learners can play it in the Arena.",
+      "emptyTitle": "No scenarios yet",
+      "formCancel": "Cancel",
+      "formCode": "Identifier",
+      "formCodeHint": "Lower case, digits and hyphens, e.g. checkout-v1. Tasks point at a scenario through this identifier.",
+      "formDescription": "Description",
+      "formEndMedia": "Image or video at the end",
+      "formHtml": "HTML of the screen",
+      "formHtmlHint": "HTML, CSS and JavaScript. The screen runs in a sandboxed frame with no access to the learner's session.",
+      "formSave": "Save",
+      "formStartMedia": "Image or video at the start",
+      "formState": "Status",
+      "formTitle": "Title",
+      "formTitleHint": "Course material — written in German.",
+      "modeHtml": "HTML",
+      "modeNone": "Nothing yet",
+      "modeRegistry": "Components",
+      "new": "Create scenario",
+      "preview": "Preview",
+      "previewDescription": "This is what the learner sees. The defect list is not included here.",
+      "previewEmpty": "No HTML has been written for this scenario yet.",
+      "previewTitle": "Preview",
+      "saveFailed": "The scenario could not be saved.",
+      "saved": "The scenario was saved.",
+      "subtitle": "Create bug hunts, write the screen, and record the defects planted in it.",
+      "title": "Arena scenarios",
+      "titleRequired": "Please give a title."
     }
   },
   "status": {

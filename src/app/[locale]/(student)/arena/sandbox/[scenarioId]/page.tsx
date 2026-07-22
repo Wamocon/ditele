@@ -6,6 +6,7 @@ import { sandboxStrings } from "@/features/arena/sandbox/i18n";
 import { parseScenarioConfiguration } from "@/features/arena/sandbox/model";
 import { registryMismatches } from "@/features/arena/sandbox/registry";
 import { getDraftScenario } from "@/features/arena/sandbox/scenarios";
+import { HtmlSandbox } from "@/features/arena/sandbox/html-sandbox";
 import { SandboxFrame } from "@/features/arena/sandbox/sandbox-frame";
 import { SandboxRuntime } from "@/features/arena/sandbox/sandbox-runtime";
 import { KNOWN_SURFACES } from "@/features/arena/sandbox/surface-effects";
@@ -64,12 +65,18 @@ export default async function Page({
   // reach a draft even by guessing its code.
   const useDraft = authoring && query.draft === "1";
 
-  /** Only the four fields this route needs, from either source. */
+  /** Only the fields this route needs, from either source. */
   let scenario: {
     code: string;
     scenarioVersion: number;
     description: string;
     configuration: unknown;
+    /**
+     * Phase 1c. Non-null means an ADMIN wrote this screen by hand and it is
+     * rendered as free-form HTML in a sandboxed iframe instead of by the
+     * component-registry engine. A draft from `scenarios/*.json` never has one.
+     */
+    html?: string | null;
   } | null;
 
   if (useDraft) {
@@ -107,6 +114,40 @@ export default async function Page({
     // workspace's frame would look like the platform had broken, which is the
     // one impression this feature cannot afford to give.
     return <EmptyState title={s.notFoundTitle} description={s.notFoundDescription} />;
+  }
+
+  /**
+   * ⭐ The HTML branch, and it must come BEFORE the configuration parse.
+   *
+   * An admin-authored scenario has no `surfaces[]` — the bug is written into
+   * the markup by hand, not injected by the engine — so
+   * `parseScenarioConfiguration` correctly rejects it as misconfigured. Running
+   * that parse first would send every HTML scenario to the "this scenario is
+   * broken" error state, which is exactly the impression §2.2 says this
+   * feature cannot afford to give.
+   *
+   * The two modes are mutually exclusive and the database enforces it for an
+   * active scenario (`hunt_scenarios_one_render_mode`), so this is a real fork
+   * rather than a fallback.
+   */
+  const authoredHtml = typeof scenario.html === "string" ? scenario.html.trim() : "";
+  if (authoredHtml !== "") {
+    return (
+      <SandboxFrame
+        strings={s}
+        scenarioCode={scenario.code}
+        scenarioVersion={scenario.scenarioVersion}
+        // The scenario's own German title is the app name here; an HTML
+        // scenario has no `configuration.appName` to read.
+        appName=""
+        description={scenario.description}
+        defectsEnabled={defectsEnabled}
+        authoring={authoring}
+        embedded={embedded}
+      >
+        <HtmlSandbox html={authoredHtml} title={s.frameLabel} />
+      </SandboxFrame>
+    );
   }
 
   const { configuration, errors } = parseScenarioConfiguration(

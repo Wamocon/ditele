@@ -77,7 +77,8 @@
     "reports": "Berichte",
     "integrations": "Integrationen",
     "settings": "Einstellungen",
-    "more": "Mehr"
+    "more": "Mehr",
+    "arenaAdmin": "Arena"
   },
   "home": {
     "title": "Softwaretesten lernt man durch Testen.",
@@ -446,7 +447,13 @@
       "lockPlayHuntNamed": "»{title}« spielen, um freizuschalten",
       "emptyTitle": "Dieser Kurs hat noch keine Inhalte",
       "emptyDescription": "Sobald die Trainerin oder der Trainer Inhalte veröffentlicht, erscheinen sie hier.",
-      "emptyStage": "In dieser Stufe gibt es noch keine Aufgaben."
+      "emptyStage": "In dieser Stufe gibt es noch keine Aufgaben.",
+      "lockReasonHunt": "Bestehen Sie zuerst die Fehlerjagd in der Arena.",
+      "lockReasonHuntNamed": "Bestehen Sie zuerst die Fehlerjagd „{scenario}“.",
+      "lockGoToArena": "Zur Arena",
+      "lockReasonGateQuestion": "Beantworten Sie zuerst die Frage zur vorherigen Aufgabe.",
+      "lockReasonGateQuestionNamed": "Beantworten Sie zuerst die Frage zu „{task}“.",
+      "lockAnswerQuestion": "Frage beantworten"
     },
     "tasks": {
       "title": "Aufgaben",
@@ -569,7 +576,18 @@
       "stepReviewed": "Vom Trainer geprüft",
       "stepReviewedHint": "Rückmeldung erhalten",
       "materialsTitle": "Material",
-      "materialOpen": "Öffnen"
+      "materialOpen": "Öffnen",
+      "gateHeading": "Frage vor der Aufgabe",
+      "gateIntro": "Beantworten Sie diese Frage, bevor Sie weitergehen. Sie können sie auch überspringen und später beantworten — die Aufgabe bleibt bearbeitbar, aber die NÄCHSTE Aufgabe bleibt gesperrt, bis die Frage beantwortet ist.",
+      "gateAnswerLabel": "Ihre Antwort",
+      "gateAnswerPlaceholder": "Antworten Sie in eigenen Worten…",
+      "gateAnswerNow": "Jetzt beantworten",
+      "gateSkip": "Überspringen und später beantworten",
+      "gateAnswered": "Beantwortet",
+      "gateSkippedNotice": "Sie haben diese Frage übersprungen. Die nächste Aufgabe bleibt gesperrt, bis Sie sie beantworten.",
+      "gateAnswerRequired": "Bitte geben Sie eine Antwort ein.",
+      "gateSaveFailed": "Die Antwort konnte nicht gespeichert werden.",
+      "gateChangeAnswer": "Antwort ändern"
     },
     "notifications": {
       "title": "Benachrichtigungen",
@@ -1171,6 +1189,20 @@
       "reopen": "Bewertung zurücksetzen",
       "decided": "Diese Einreichung ist abgeschlossen. Die Bewertung kann nicht mehr geändert werden.",
       "decoyWarning": "Das ist ein bewusst eingebauter Nicht-Fehler. Bestätige nur, wenn es doch ein echter Fehler ist."
+    },
+    "arena": {
+      "answerKeyWarning": "Diese Liste ist die Lösung. Sie ist für Trainerinnen und Trainer bestimmt und wird Lernenden nie angezeigt.",
+      "defects": "Eingebaute Fehler",
+      "empty": "Es sind noch keine Fehlerjagden angelegt.",
+      "emptyDescription": "Sobald eine Administratorin oder ein Administrator ein Szenario anlegt, erscheint es hier.",
+      "expected": "Zum Bestehen nötig",
+      "expectedBehaviour": "Was richtig wäre",
+      "noDefects": "Für diese Jagd sind keine Fehler hinterlegt.",
+      "reproduction": "Wie man ihn auslöst",
+      "severity": "Schweregrad",
+      "subtitle": "Die Fehlerjagden und die darin eingebauten Fehler — die Grundlage für Ihren Abgleich beim Review.",
+      "title": "Arena-Jagden",
+      "where": "Wo"
     }
   },
   "admin": {
@@ -1472,6 +1504,55 @@
       "trainersHeading": "Trainer im Kurs",
       "unenrolFailed": "Die Person konnte nicht entfernt werden.",
       "unenrolSuccess": "Die Person wurde aus dem Kurs entfernt."
+    },
+    "arena": {
+      "backToList": "Zurück zu den Szenarien",
+      "codeInvalid": "Bitte eine Kennung wie kasse-v1 angeben.",
+      "columnCode": "Kennung",
+      "columnDefects": "Eingebaute Fehler",
+      "columnMode": "Darstellung",
+      "columnState": "Status",
+      "columnTitle": "Titel",
+      "defectAdd": "Fehler hinzufügen",
+      "defectCode": "Kennung",
+      "defectCodeInvalid": "Jeder Fehler braucht eine Kennung und eine Kurzbeschreibung.",
+      "defectExpected": "Was richtig wäre",
+      "defectLocation": "Wo im Bildschirm",
+      "defectRemove": "Entfernen",
+      "defectReproduction": "Wie man ihn auslöst",
+      "defectSeverity": "Schweregrad",
+      "defectTitle": "Kurzbeschreibung",
+      "defectsDescription": "Die Lösung. Lernende sehen diese Liste nie — sie ist die Grundlage für den Abgleich beim Trainer.",
+      "defectsHeading": "Eingebaute Fehler",
+      "defectsNone": "Noch keine Fehler festgelegt.",
+      "edit": "Bearbeiten",
+      "emptyDescription": "Legen Sie eine Fehlerjagd an, damit Lernende sie in der Arena spielen können.",
+      "emptyTitle": "Noch keine Szenarien",
+      "formCancel": "Abbrechen",
+      "formCode": "Kennung",
+      "formCodeHint": "Kleinbuchstaben, Ziffern und Bindestriche, z. B. kasse-v1. Aufgaben verweisen über diese Kennung auf das Szenario.",
+      "formDescription": "Beschreibung",
+      "formEndMedia": "Bild oder Video am Ende",
+      "formHtml": "HTML des Bildschirms",
+      "formHtmlHint": "HTML, CSS und JavaScript. Der Bildschirm läuft in einem abgeschotteten Rahmen ohne Zugriff auf die Sitzung der lernenden Person.",
+      "formSave": "Speichern",
+      "formStartMedia": "Bild oder Video am Anfang",
+      "formState": "Status",
+      "formTitle": "Titel",
+      "formTitleHint": "Kursmaterial — auf Deutsch.",
+      "modeHtml": "HTML",
+      "modeNone": "Noch nichts",
+      "modeRegistry": "Komponenten",
+      "new": "Szenario anlegen",
+      "preview": "Vorschau",
+      "previewDescription": "So sieht der Bildschirm für die lernende Person aus. Die Fehlerliste ist hier nicht enthalten.",
+      "previewEmpty": "Für dieses Szenario ist noch kein HTML hinterlegt.",
+      "previewTitle": "Vorschau",
+      "saveFailed": "Das Szenario konnte nicht gespeichert werden.",
+      "saved": "Das Szenario wurde gespeichert.",
+      "subtitle": "Fehlerjagden anlegen, den Bildschirm schreiben und die eingebauten Fehler festlegen.",
+      "title": "Arena-Szenarien",
+      "titleRequired": "Bitte einen Titel angeben."
     }
   },
   "status": {

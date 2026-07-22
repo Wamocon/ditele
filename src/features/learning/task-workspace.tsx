@@ -28,6 +28,7 @@ import {
   type LearningTask,
 } from "./model";
 import { saveDraftAction, startAttemptAction, submitAttemptAction } from "./actions";
+import { GateQuestionPanel } from "./gate-question";
 import { DefectForm, formatDefectReport, isDefectComplete } from "./defect-form";
 import { HintCascade } from "./hint-cascade";
 import { VideoEmbed } from "@/shared/ui";
@@ -407,6 +408,20 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
             <p className="text-[13px] leading-5 text-(--color-fg-muted)">{s.revisionDescription}</p>
           </div>
         </div>
+      )}
+
+      {/**
+        * Before the assessment, because §1.6 asks it "before attempting" —
+        * and above everything the learner would otherwise start typing into,
+        * so it is met rather than scrolled past.
+        */}
+      {task.gateQuestion && (
+        <GateQuestionPanel
+          taskId={task.id}
+          locale={locale}
+          gate={task.gateQuestion}
+          strings={s}
+        />
       )}
 
       {assessmentBlock}

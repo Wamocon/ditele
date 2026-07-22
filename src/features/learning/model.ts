@@ -114,6 +114,29 @@ export interface LearningTask {
   cohortState: string;
   assessment: TaskAssessment | null;
   hints: TaskHint[];
+  /**
+   * The pre-task question (§1.6), or null when this task has none.
+   *
+   * ⚠️ NOT the same thing as `assessment`, and the distinction is the reason
+   * decision §2.3 exists. `assessment` is the IN-task test, embedded in every
+   * published snapshot since long before this feature. This is asked BEFORE the
+   * attempt, may be skipped, and gates the NEXT task rather than this one.
+   */
+  gateQuestion: TaskGateQuestion | null;
+}
+
+/**
+ * `unanswered` and `skipped` are different states even though the lock treats
+ * them the same: only one of them should say "Sie haben diese Frage
+ * übersprungen" on screen.
+ */
+export type TaskGateState = "unanswered" | "skipped" | "answered";
+
+export interface TaskGateQuestion {
+  id: string;
+  question: string;
+  state: TaskGateState;
+  answerText: string;
 }
 
 /* ── Attempts ────────────────────────────────────────────────────────────── */

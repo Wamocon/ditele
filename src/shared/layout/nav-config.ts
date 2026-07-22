@@ -98,6 +98,23 @@ export const TRAINER_NAV: NavItem[] = [
   { path: "/trainer", label: "Übersicht", labelKey: "overview", primary: true, owner: "WS-4" },
   { path: "/trainer/submissions", label: "Reviews", labelKey: "submissions", primary: true, owner: "WS-4" },
   { path: "/trainer/questions", label: "Fragen", labelKey: "questions", primary: true, owner: "WS-4" },
+  /**
+   * The Arena, for a trainer — Phase 4.
+   *
+   * Arena existed in `STUDENT_NAV` alone, so a trainer met it only inside one
+   * submission review and had nowhere to read the planted-defect list before
+   * the queue. `/trainer/arena` is that page.
+   *
+   * Non-primary: the three primary slots are the daily loop (Übersicht ·
+   * Reviews · Fragen), and the ground truth is something a trainer reads when
+   * preparing rather than every day. Placed first in the sheet because it is
+   * the one item there that feeds the work in the primary row.
+   *
+   * ⚠️ Added only now that the route renders. TC-NAV-02 requires every
+   * navigation item to open a page with real content, so a nav entry ahead of
+   * its route turns a missing feature into a failing test and a 404 in a demo.
+   */
+  { path: "/trainer/arena", label: "Arena", labelKey: "arenaAdmin", owner: "WS-4" },
   { path: "/trainer/progress", label: "Fortschritt", labelKey: "learnerProgress", owner: "WS-4" },
   { path: "/trainer/history", label: "Verlauf", labelKey: "learningHistory", owner: "WS-4" },
   { path: "/trainer/questions/archive", label: "Frage-Archiv", labelKey: "reviewHistory", owner: "WS-4" },
@@ -109,6 +126,15 @@ export const ADMIN_NAV: NavItem[] = [
   { path: "/admin/courses", label: "Kurse", labelKey: "courses", primary: true, owner: "WS-5" },
   { path: "/admin/users", label: "Benutzer", labelKey: "users", primary: true, owner: "WS-6" },
   { path: "/admin/tasks", label: "Aufgaben", labelKey: "tasks", owner: "WS-5" },
+  /**
+   * Arena authoring — Phase 4, and the caller `upsert_hunt_scenario` and
+   * `set_hunt_scenario_defects` were missing.
+   *
+   * QA_TEST_PLAN §9 recorded "no admin screen for Arena content; hunt scenarios
+   * are seeded through SQL". `/admin/arena` is that screen, so the line comes
+   * out of §9 with this one.
+   */
+  { path: "/admin/arena", label: "Arena", labelKey: "arenaAdmin", owner: "WS-5" },
   /**
    * The learner progress board. Added by WS-13 under `ISSUES.md` I-056 — WS-12
    * built the route but §7 grants the nav exception to WS-8 only, so it shipped

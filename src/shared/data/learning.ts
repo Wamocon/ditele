@@ -179,6 +179,18 @@ const TaskRow = z.object({
   content_version_id: uuid,
   content_version_state: text,
   assessment: AssessmentRow.nullish().transform((v) => v ?? null),
+  // Added by 20260801100000. Optional for the same reason `media` is: the key
+  // is absent from anything the older projection returned, and a required field
+  // would blank the whole task screen rather than one panel.
+  gate_question: z
+    .object({
+      id: z.string(),
+      question: Localized,
+      state: text,
+      answer_text: z.string().nullish().transform((v) => v ?? ""),
+    })
+    .nullish()
+    .transform((v) => v ?? null),
   // ⚠️ Came back as a single object on the seeded task, which has exactly one
   // hint. Accept both so a multi-hint course does not need a code change.
   hint: z.union([HintRow, z.array(HintRow)]).nullish().transform((v) => v ?? null),
@@ -374,6 +386,22 @@ export async function getMyLearningTask(
       id: hint.id,
       content: pickLocale(toLocalized(hint.content), locale),
     })),
+    gateQuestion: row.gate_question
+      ? {
+          id: row.gate_question.id,
+          question: pickLocale(toLocalized(row.gate_question.question), locale),
+          // Anything the database has not taught us about is treated as
+          // unanswered, which is the safe direction: it shows the question
+          // rather than hiding it behind a state nobody recognises.
+          state:
+            row.gate_question.state === "answered"
+              ? "answered"
+              : row.gate_question.state === "skipped"
+                ? "skipped"
+                : "unanswered",
+          answerText: row.gate_question.answer_text,
+        }
+      : null,
   });
 }
 

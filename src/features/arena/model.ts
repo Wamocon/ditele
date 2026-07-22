@@ -26,6 +26,25 @@ export const LOCK_REASON_CODES = [
   "configuration",
   "required_task",
   "required_skill",
+  /**
+   * Phase 1c added these two, and they are the gate chain from
+   * FEATURE_BUILD_PLAN §1.6.
+   *
+   * `required_hunt` — this course task is waiting on an Arena scenario whose
+   * hunt the learner has not had ACCEPTED yet. Carries `scenario_code` and
+   * `scenario_title`.
+   *
+   * `gate_question` — the PREVIOUS task's pre-task question has not been
+   * answered. Carries `previous_task_id` and `previous_task_title`.
+   *
+   * ⚠️ They are separate reasons on purpose and both can be present at once.
+   * §1.6: the next task stays locked until the question is answered "even if
+   * its own Arena task is already approved". Collapsing them into one would
+   * tell a learner about whichever the code happened to check first and leave
+   * them stuck on the other.
+   */
+  "required_hunt",
+  "gate_question",
 ] as const;
 
 export type LockReasonCode = (typeof LOCK_REASON_CODES)[number];
@@ -44,6 +63,12 @@ export const LockReasonSchema = z.object({
   required_task_title: z.string().nullish(),
   current_basis_points: z.number().nullish(),
   minimum_basis_points: z.number().nullish(),
+  /** `required_hunt` — which Arena scenario opens this task. */
+  scenario_code: z.string().nullish(),
+  scenario_title: z.string().nullish(),
+  /** `gate_question` — whose question is still unanswered. */
+  previous_task_id: z.string().nullish(),
+  previous_task_title: z.string().nullish(),
 });
 
 export type LockReasonRow = z.infer<typeof LockReasonSchema>;
@@ -53,7 +78,22 @@ export interface LockReason {
   requiredTaskId: string | null;
   requiredTaskKind: string | null;
   requiredTaskTitle: string | null;
+  scenarioCode: string | null;
+  scenarioTitle: string | null;
+  previousTaskId: string | null;
+  previousTaskTitle: string | null;
 }
+
+/** Every enriched field, absent. Keeps the construction sites below in step. */
+const EMPTY_LOCK_DETAIL = {
+  requiredTaskId: null,
+  requiredTaskKind: null,
+  requiredTaskTitle: null,
+  scenarioCode: null,
+  scenarioTitle: null,
+  previousTaskId: null,
+  previousTaskTitle: null,
+} as const;
 
 /**
  * Normalises one lock reason.
@@ -65,7 +105,7 @@ export interface LockReason {
  */
 export function toLockReason(value: unknown): LockReason | null {
   if (typeof value === "string") {
-    return { code: value, requiredTaskId: null, requiredTaskKind: null, requiredTaskTitle: null };
+    return { code: value, ...EMPTY_LOCK_DETAIL };
   }
 
   /**
@@ -89,6 +129,14 @@ export function toLockReason(value: unknown): LockReason | null {
         requiredTaskId: already.requiredTaskId ?? null,
         requiredTaskKind: already.requiredTaskKind ?? null,
         requiredTaskTitle: already.requiredTaskTitle ?? null,
+        // Carried through for the same reason the three above are: an
+        // already-normalised reason that loses these on a second pass is the
+        // non-idempotence trap documented above, and it would take the unlock
+        // link with it.
+        scenarioCode: already.scenarioCode ?? null,
+        scenarioTitle: already.scenarioTitle ?? null,
+        previousTaskId: already.previousTaskId ?? null,
+        previousTaskTitle: already.previousTaskTitle ?? null,
       };
     }
   }
@@ -100,6 +148,10 @@ export function toLockReason(value: unknown): LockReason | null {
     requiredTaskId: parsed.data.required_task_id ?? null,
     requiredTaskKind: parsed.data.required_task_kind ?? null,
     requiredTaskTitle: parsed.data.required_task_title ?? null,
+    scenarioCode: parsed.data.scenario_code ?? null,
+    scenarioTitle: parsed.data.scenario_title ?? null,
+    previousTaskId: parsed.data.previous_task_id ?? null,
+    previousTaskTitle: parsed.data.previous_task_title ?? null,
   };
 }
 
@@ -125,6 +177,39 @@ export function huntTaskHref(locale: string, taskId: string): string {
   return `/${locale}/learn/tasks/${taskId}`;
 }
 
+/**
+ * The Phase 1c Arena gate: this task is waiting on a hunt of a named SCENARIO,
+ * not on a particular task.
+ *
+ * Distinct from `huntPrerequisite` above, which reads the older
+ * `required_task` reason where the gate points at one specific hunt task in the
+ * same course. `required_hunt` points at a scenario code and is satisfied by an
+ * accepted hunt of that scenario anywhere — the Arena is a cross-course
+ * practice ground, and a learner who has already found the planted defects in
+ * `checkout-v1` should not have to repeat the identical screen.
+ *
+ * That is also why there is no task id here to link to: the hunt that satisfies
+ * it may not be in this course at all, so the Arena hub is the honest
+ * destination.
+ */
+export function huntScenarioLock(reasons: unknown): LockReason | null {
+  return toLockReasons(reasons).find((r) => r.code === "required_hunt") ?? null;
+}
+
+/** Straight to the Arena hub, which lists the hunts open to this learner. */
+export function arenaHubHref(locale: string): string {
+  return `/${locale}/learn/arena`;
+}
+
+/**
+ * The pre-task question gate. §1.6: a skipped question does not block its own
+ * task, it blocks progression PAST it — so this reason always names the
+ * PREVIOUS task, and the link goes there rather than to the locked task.
+ */
+export function gateQuestionLock(reasons: unknown): LockReason | null {
+  return toLockReasons(reasons).find((r) => r.code === "gate_question") ?? null;
+}
+
 /* ── Scenarios ────────────────────────────────────────────────────────────── */
 
 /**
@@ -140,8 +225,42 @@ export interface HuntScenario {
   description: string;
   /** WS-9 owns this shape and documents it in features/arena/sandbox/README.md. */
   configuration: Record<string, unknown>;
+  /**
+   * Phase 1c. Free-form HTML/CSS/JS written by an admin, rendered in an iframe
+   * with `sandbox="allow-scripts"` and nothing else.
+   *
+   * `null` means this scenario is rendered by the component-registry engine
+   * from `configuration.surfaces` instead. The two modes are mutually
+   * exclusive and the database enforces it for an active scenario
+   * (`hunt_scenarios_one_render_mode`).
+   */
+  html: string | null;
+  /** §1.7: an image or video for the start and the end of the scenario. */
+  startMediaUrl: string | null;
+  endMediaUrl: string | null;
   expectedFindings: number;
   state: string;
+}
+
+/**
+ * One planted defect, as the trainer grades against it.
+ *
+ * ⚠️ NEVER send this to a learner and never into the sandbox iframe.
+ * `expectedBehaviour` and `reproduction` are the worked answers — the whole
+ * hunt becomes a reading exercise if they leak. The database enforces it:
+ * `hunt_scenario_defects` has exactly one policy and it requires
+ * `content.manage` or `review.manage`.
+ */
+export interface HuntScenarioDefect {
+  id: string;
+  scenarioId: string;
+  code: string;
+  position: number;
+  title: string;
+  locationHint: string;
+  expectedBehaviour: string;
+  reproduction: string;
+  severity: string;
 }
 
 /* ── Findings ─────────────────────────────────────────────────────────────── */

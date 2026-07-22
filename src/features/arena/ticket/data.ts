@@ -6,6 +6,7 @@ import { fromSupabase, ok, type Result } from "@/shared/data/result";
 import { DefectReportSchema, EMPTY_DEFECT, type DefectReport } from "@/features/learning/model";
 import { HUNT_VERDICTS, type HuntFinding, type HuntVerdict } from "@/features/arena/model";
 import { readPlantedDefects, type PlantedDefect } from "./matching";
+import { listHuntScenarioDefects } from "@/shared/data/arena";
 
 /**
  * Ticket data access.
@@ -250,6 +251,22 @@ export async function decideHuntFinding(args: {
  * built — WS-9 seeds it. The trainer panel must therefore be useful with no
  * ground truth at all, showing the report and the field checklist and simply
  * omitting the suggestions.
+ *
+ * ⭐ TWO SOURCES, AND THE TABLE WINS.
+ *
+ * `configuration.defects` describes how the component-registry ENGINE injects a
+ * bug — `effect`, `trigger`, `params` — and happens to carry grading notes
+ * alongside. `hunt_scenario_defects` (Phase 1c) is the grading answer key
+ * proper, and for an admin-authored HTML scenario it is the ONLY source: the
+ * bug is written into the markup by hand, so `configuration.defects` is empty
+ * and reading it alone would leave the trainer with no suggestions on exactly
+ * the scenarios an admin just authored — the failure decision §2.2 exists to
+ * prevent.
+ *
+ * Both are read and merged by code. The table wins a collision because it is
+ * the canonical grading source; `20260730100000` backfilled the registry
+ * scenario's grading half into it, so for `checkout-v1` the two agree and the
+ * merge is a no-op.
  */
 export async function getScenarioGroundTruth(scenarioCode: string): Promise<
   Result<{ planted: PlantedDefect[]; expectedFindings: number; title: string } | null>
@@ -258,7 +275,7 @@ export async function getScenarioGroundTruth(scenarioCode: string): Promise<
   const result = await fromSupabase<unknown[]>(async () => {
     const { data, error } = await supabase
       .from("hunt_scenarios")
-      .select("title, configuration, expected_findings")
+      .select("id, title, configuration, expected_findings")
       .eq("code", scenarioCode)
       .eq("state", "active")
       .order("scenario_version", { ascending: false })
@@ -268,7 +285,7 @@ export async function getScenarioGroundTruth(scenarioCode: string): Promise<
   if (!result.ok) return result;
 
   const row = result.data[0] as
-    | { title?: unknown; configuration?: unknown; expected_findings?: unknown }
+    | { id?: unknown; title?: unknown; configuration?: unknown; expected_findings?: unknown }
     | undefined;
   if (!row) return ok(null);
 
@@ -277,8 +294,39 @@ export async function getScenarioGroundTruth(scenarioCode: string): Promise<
       ? (row.configuration as Record<string, unknown>)
       : {};
 
+  const fromConfiguration = readPlantedDefects(configuration);
+
+  // The answer-key table. A trainer holds `review.manage`, which is one of the
+  // two permissions its only RLS policy accepts; a learner reaches this code
+  // path never, and would read zero rows if they did.
+  let fromTable: PlantedDefect[] = [];
+  if (typeof row.id === "string") {
+    const defects = await listHuntScenarioDefects(row.id);
+    if (defects.ok) {
+      fromTable = defects.data.map((defect) => ({
+        code: defect.code,
+        severity: defect.severity,
+        surface: defect.locationHint === "" ? null : defect.locationHint,
+        trigger: defect.reproduction === "" ? null : defect.reproduction,
+        description: defect.title,
+        // The words a report about this defect is likely to use. The author
+        // wrote all three fields in German prose, so they are exactly the
+        // vocabulary the matcher wants.
+        keywords: [defect.title, defect.expectedBehaviour, defect.reproduction].filter(
+          (value) => value.trim() !== ""
+        ),
+        decoy: false,
+      }));
+    }
+  }
+
+  const merged = new Map<string, PlantedDefect>();
+  for (const defect of fromConfiguration) merged.set(defect.code, defect);
+  // Second, so the table overwrites on a shared code.
+  for (const defect of fromTable) merged.set(defect.code, defect);
+
   return ok({
-    planted: readPlantedDefects(configuration),
+    planted: [...merged.values()],
     expectedFindings:
       typeof row.expected_findings === "number" ? row.expected_findings : 0,
     // Course material, German only (CONTENT_LOCALES === ["de"]).
