@@ -67,8 +67,15 @@ export function AppFooter({ locale, items, navLabel }: AppFooterProps) {
             </ul>
           </nav>
         </div>
+        {/*
+          An explicit <br />, because JSX collapses the newline in the source
+          into a single space — the two lines below read as one sentence in the
+          editor and rendered as one line in the browser.
+        */}
         <p className="text-[13px] text-(--color-fg-subtle)">
           © {year} WAMOCON Academy GmbH
+          <br />
+          Alle Rechte vorbehalten.
         </p>
       </Container>
     </footer>
