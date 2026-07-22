@@ -26,6 +26,79 @@ can carry hints, videos and a gate question exactly like a course task.
 
 ---
 
+## 1a. How a course holds its tasks
+
+A task is not created on its own and then attached. **It is created inside a
+course, and it stays there.**
+
+```
+course                         /admin/courses/[courseId]
+ └── content version           the editable draft; publishing freezes it
+      └── stage                a section of the course
+           └── task            course task OR Arena task, in order
+                ├── localizations   de · en · ru
+                ├── model answer    trainer only
+                ├── hints
+                ├── test + options  (during the task)
+                └── gate question   (before the task)
+```
+
+`tasks.course_id` is `NOT NULL` and there is **no join table** — verified. So a
+task belongs to exactly **one** course, for its whole life.
+
+### What "add an existing task" has to mean
+
+Because a task cannot belong to two courses, an "add existing task" button
+**cannot share** one. It can only **copy** it into this course: a new `tasks`
+row, new localizations, new options, new gate question.
+
+That is a real product consequence, not a technical detail: **editing the
+original afterwards will not change the copy.** If courses are meant to share a
+task and track its edits, that needs a join table and is a different feature.
+
+### The version is the unit of editing
+
+The admin never edits a live course directly. Tasks hang off a
+**content version**, and a version is either a `draft` being edited or
+`published` and frozen. Publishing writes
+`content_versions.snapshot` — the frozen JSON the learner actually reads.
+
+**Consequence for the admin:** a task added to a published course is not visible
+to any learner until a new version is published. Editing something and not seeing
+it as a student is usually this, not a bug.
+
+### Where Arena sits
+
+| | Scope | Reusable? |
+|---|---|---|
+| **Arena screen** (`hunt_scenarios`) | organisation | **yes** — one screen can gate tasks in many courses |
+| **Arena task** (`tasks`, `task_kind='hunt'`) | one course | no |
+
+This is the sense in which "the Arena task is independent": the **screen** is
+independent and lives at `/admin/arena`. The task a learner attempts sits in a
+course, in a stage, in order, next to the course tasks — which is what lets one
+stage read *practical → hunt → knowledge*, as the seeded courses already do.
+
+### The admin's path
+
+```
+/admin/courses                     cards, two per row, active/inactive
+      → + Kurs anlegen             create   (§2)
+      → open a course              /admin/courses/[courseId]
+            ├── course fields      §2
+            ├── People             /admin/courses/[courseId]/people   (§5.2)
+            ├── Duplicate          deep copy, incl. every task
+            ├── Activate/deactivate
+            └── Version            /admin/courses/[courseId]/versions/[versionId]
+                  └── stages → tasks
+                        ├── create task   (modal, §3)
+                        └── add existing  (copies it in, see above)
+
+/admin/arena                       the interactive screens (§4)
+```
+
+---
+
 ## 2. Course — what the admin fills in
 
 `courses` — one row.
@@ -140,22 +213,37 @@ so its name, description, hint and videos come from §3.
 
 ### 5.1 Admin authors
 
-```
-create course ──> course_localizations (de / en / ru)
-      │
-      ├── create Arena screen ──> hunt_scenarios.html
-      │                      └──> hunt_scenario_defects   (the answer key)
-      │
-      ├── create Arena task    (tasks, task_kind='hunt')
-      │
-      └── create course task   (tasks, task_kind='knowledge'|'practical')
-                │
-                ├── required_hunt_scenario_id ──> the Arena screen above
-                ├── task_gate_questions        ──> the question asked first
-                ├── task_assessments + options ──> the in-task test
-                └── task_model_answers         ──> trainer-only answer
+The order matters: a course task cannot point at an Arena screen that does not
+exist yet, so the screen is authored first.
 
-publish ──> content_versions.snapshot is frozen and validated
+```
+1  /admin/arena
+   create Arena screen ──> hunt_scenarios.html            the interactive UI
+                      └──> hunt_scenario_defects          the answer key
+                                                          org-scoped, reusable
+
+2  /admin/courses → + Kurs anlegen
+   create course ──> courses + course_localizations (de / en / ru)
+                     lands on the course, with a draft version
+
+3  /admin/courses/[courseId]/versions/[versionId]
+   inside the course, per stage, add tasks in order:
+
+      Arena task     tasks, task_kind='hunt'
+                     the screen the learner works in
+
+      course task    tasks, task_kind='knowledge' | 'practical'
+        ├── required_hunt_scenario_id ──> the screen from step 1
+        ├── task_gate_questions        ──> asked BEFORE attempting, skippable
+        ├── task_assessments + options ──> the test DURING the task
+        ├── task_model_answers         ──> trainer-only answer
+        └── task_hints, videos, category
+
+4  /admin/courses/[courseId]/people
+   enrol students, assign trainers
+
+5  publish ──> content_versions.snapshot frozen and validated
+              ONLY NOW does any of it reach a learner
 ```
 
 **Nothing reaches a learner until publish.** Learners never read `tasks`; they
