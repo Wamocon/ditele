@@ -1,7 +1,7 @@
 # DiTeLe — QA Test Plan
 
 **For:** the testing team
-**Applies to:** commit `b5fbdde` and later
+**Applies to:** commit `73f68f0` and later
 **Last verified against a running build:** 2026-07-22
 
 Every step, label and expected result below was executed against a production
@@ -71,14 +71,14 @@ behind **Mehr / More**.
 | Role | Primary (DE) | Behind "Mehr" (DE) |
 |---|---|---|
 | Learner | Start · Kurse · Aufgaben · Arena | Fragen · Verlauf · Zertifikate · Benachrichtigungen · Profil |
-| Trainer | Übersicht · Reviews · Fragen | Fortschritt · Verlauf · Frage-Archiv · Profil |
-| Admin | Übersicht · Kurse · Benutzer | Aufgaben · Fortschritt · Kursanfragen · Fehlermeldungen · Einstellungen · Profil |
+| Trainer | Übersicht · Reviews · Fragen | **Arena** · Fortschritt · Verlauf · Frage-Archiv · Profil |
+| Admin | Übersicht · Kurse · Benutzer | Aufgaben · **Arena** · Fortschritt · Kursanfragen · Fehlermeldungen · Einstellungen · Profil |
 
 | Role | Primary (EN) | Behind "More" (EN) |
 |---|---|---|
 | Learner | Home · Courses · Tasks · Arena | Questions · Learning history · Certificates · Notifications · Profile |
-| Trainer | Overview · Submissions · Questions | Learner progress · Learning history · Review history · Profile |
-| Admin | Overview · Courses · Users | Tasks · Learner progress · Applications · Reports · Settings · Profile |
+| Trainer | Overview · Submissions · Questions | **Arena** · Learner progress · Learning history · Review history · Profile |
+| Admin | Overview · Courses · Users | Tasks · **Arena** · Learner progress · Applications · Reports · Settings · Profile |
 
 ### TC-NAV-01 — exactly one item is highlighted
 1. Sign in as any role.
@@ -352,6 +352,92 @@ access to the course.
 
 ---
 
+## 7a. Arena authoring (admin) and the gate chain
+
+### TC-ARENA-10 — author a bug hunt
+1. Sign in as admin → **Mehr** → **Arena** → **Szenario anlegen**.
+2. Fill in a Kennung like `kasse-v2`, a title, a description.
+3. In **HTML des Bildschirms**, paste a small page — a heading, a number and a
+   button that changes it. Plain HTML, CSS and JavaScript all work.
+4. Under **Eingebaute Fehler**, add one: a Kennung, a Kurzbeschreibung, and what
+   should have happened.
+5. Set the status to **Aktiv** and save.
+
+**Expect:** the modal closes and the scenario appears in the list, showing the
+badge **HTML** and *Eingebaute Fehler: 1*.
+
+### TC-ARENA-11 — the screen really runs
+1. On that scenario, click **Vorschau** (opens a new tab).
+
+**Expect:** your page renders as a **working UI**, never as source. Click the
+button — the JavaScript runs and the number changes.
+
+**Also expect:** nothing anywhere on that page mentions your planted defect, its
+Kennung or what should have happened. That list is the answer key and is for
+trainers only.
+
+### TC-ARENA-12 — the trainer can read the answer key, the learner cannot
+1. Sign in as **trainer** → **Mehr** → **Arena**.
+
+**Expect:** every active hunt, each listing its planted defects with severity,
+where to look, what should have happened and how to trigger it — under a warning
+that says this list is never shown to learners.
+
+2. Sign in as **learner** and type `/de/trainer/arena`.
+
+**Expect:** you do not see the page.
+
+### TC-ARENA-13 — a hunt nobody points at is not reachable by guessing
+1. As a **learner**, type the sandbox URL of a scenario no task uses:
+   `/de/arena/sandbox/kasse-v2`.
+
+**Expect:** *"Szenario nicht gefunden"* — not the screen. A learner may only
+open a hunt some task in their own course points at. "No such scenario" and
+"not yours" are deliberately the **same** answer, so the page cannot be used to
+find out which scenarios exist. The admin's **Vorschau** still works.
+
+### TC-ARENA-14 — put a gate on a course task
+1. As admin, open a course in **Entwurf**, open a stage, click a task.
+
+**Expect:** the task editor opens **in a modal** over the page, not inline.
+
+2. Set **Vorausgesetzte Fehlerjagd** to a scenario.
+3. On the *previous* task in the list, fill in **Frage vor der Aufgabe** in all
+   three languages. Save.
+
+**Expect:** both save without error. Leaving one language blank stores no
+question at all — that is intended; it is all three or none.
+
+### TC-ARENA-15 — the gate chain, as a learner
+Needs a published course carrying the gates from TC-ARENA-14 and a learner
+enrolled on it.
+
+1. Sign in as that learner → **Kurse** → open the course.
+
+**Expect:** the gated task is locked and says **why** — *"Bestehen Sie zuerst
+die Fehlerjagd …"* — with a link through to it. If its question is also
+outstanding you see **both** sentences, not just one.
+
+2. Open the task that carries the question.
+
+**Expect:** a **Frage vor der Aufgabe** panel above the task, offering *Jetzt
+beantworten* and *Überspringen und später beantworten*. The task itself is fully
+usable either way — the question is not a barrier.
+
+3. Click **Überspringen und später beantworten**.
+
+**Expect:** the task stays open and now says you skipped it and that the next
+task stays locked until you answer. **This is correct — do not file it.**
+
+4. Go back to the course. The following task is still locked.
+5. Return, type an answer, click **Jetzt beantworten**.
+
+**Expect:** the panel says *Beantwortet*, and the following task's question lock
+is gone. It may still be locked by its Arena gate; that is a separate reason and
+is shown separately.
+
+---
+
 ## 8. Known issues
 
 Please do **not** file these.
@@ -397,54 +483,52 @@ Automated test runs trip it quickly.
 
 Do not write test cases against these; they do not exist.
 
-- **No admin screen for Arena content.** Hunt scenarios are seeded through SQL
-  (`supabase/seed_arena_scenarios.sql`), not authored in the UI. There is no
-  admin page to create, edit or retire a hunt, and no admin page to define badges
-  or XP rules. The database side landed on 2026-07-22 — the tables, the HTML
-  column and the commands all exist and are tested — but **nothing calls them
-  yet**.
-- **No trainer Arena screen.** A trainer meets Arena only inside a submission
-  review, through the *Fehlerjagd — Abgleich* panel. There is no separate hunt
-  overview, and **no Arena entry in the trainer or admin navigation**. Do not
-  report either as missing.
-- **The two new task locks have no words on screen.** A course task can now be
-  gated on an Arena hunt, and on the previous task's pre-task question. The
-  database produces both lock reasons correctly, but the learner UI does not
-  render them yet, so such a task appears locked with no explanation. Nothing in
-  the seeded data is gated this way, so you should not meet it — if you do, it
-  is expected, not a bug.
-- **No pre-task question on screen.** "Jetzt beantworten / Später beantworten"
-  does not exist in the UI yet.
-- **Course form fields.** Cover image, the two motivational videos and course
-  duration have database columns but **no input anywhere**. The course editor
-  cannot set them.
-- **No task modal.** Tasks are still edited in the existing content studio, not
-  in the modal the redesign calls for.
+- **A duplicated course cannot be published.** `Duplizieren` copies the content
+  correctly, but not the review rubrics, and a course whose practical tasks have
+  no rubric is refused at *Zur Prüfung einreichen* with *"every practical task
+  requires an active non-empty review rubric"*. There is no screen that
+  re-attaches them. Known and recorded; do not file it.
+- **No locale tabs for course media.** The cover image and the two motivational
+  videos are written for German only. The fields exist once, not three times.
+- **The course editor cannot change media after creation.** Cover image and
+  videos can be set when the course is created and not edited afterwards.
+- **No "retire" action for an Arena scenario.** The status can be changed in the
+  authoring modal, but there is no confirmation step and no warning if a task
+  still points at the scenario being retired.
 - **Group (cohort) administration.** There are no `/admin/groups` pages at all —
   the section was removed from the product and from the navigation. Do not test
   creating, editing or listing groups, and do not report the absence of a
   "Gruppen" navigation item as a bug. Groups still exist in the data and appear
   as a **column** on the trainer queue and the admin progress board.
-  A group is now created automatically, named **Standard**, the first time an
-  admin enrols somebody on a course that has none.
+  A group is created automatically, named **Standard**, the first time an admin
+  enrols somebody on a course that has none.
 - **Legal content.** `/de/legal` and `/de/privacy` still need real company
   details; the pages exist, the text is placeholder.
 
-**No longer in this list** — these were built on 2026-07-22 and now have test
-cases above: adding and removing course members by hand (TC-ADMIN-02c),
-assigning a trainer to a course and to a learner (TC-ADMIN-02c), and duplicating
-a course (TC-ADMIN-02b).
+**No longer in this list.** Everything below was in §9 and is now built, with
+test cases above — please do test these:
+
+| Was missing | Now | Test case |
+|---|---|---|
+| adding/removing course members by hand | `/admin/courses/…/people` | TC-ADMIN-02c |
+| assigning a trainer to a course and to a learner | same screen | TC-ADMIN-02c |
+| duplicating a course | card action | TC-ADMIN-02b |
+| an admin screen for Arena content | `/admin/arena` | TC-ARENA-10/11 |
+| a trainer Arena screen | `/trainer/arena` | TC-ARENA-12 |
+| Arena in the trainer and admin navigation | behind **Mehr** | TC-NAV-02 |
+| the pre-task question on screen | task page | TC-ARENA-15 |
+| the two new task locks having words | course page | TC-ARENA-15 |
 
 ---
 
 ## 10. Database
 
-The whole schema is in the repository: **74 migrations** in
+The whole schema is in the repository: **77 migrations** in
 `supabase/migrations/` plus five seed files in `supabase/`.
 
-**The ledger is in sync as of 2026-07-22.** All 74 repository migrations are
+**The ledger is in sync as of 2026-07-22.** All 77 repository migrations are
 recorded as applied on the development database, and no recorded version lacks a
-file. A production `supabase db push` runs all 74 in order and produces the same
+file. A production `supabase db push` runs all 77 in order and produces the same
 schema. Nothing to work around.
 
 It was not always so, and the repair is worth knowing about if you see it again:

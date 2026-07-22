@@ -1,15 +1,22 @@
 # DiTeLe — Course Authoring & Arena Build
 
-**Status:** Phases 0, 1a, 1b, 1c and 2 shipped. **Phase 3 is next**, and Phase 4
-is blocked behind it.
-**Last updated:** 2026-07-22, at commit `b5fbdde`.
+**Status:** **All phases shipped** — 0, 1a, 1b, 1c, 2, 3, 4 and 5.
+**Last updated:** 2026-07-22, at commit `73f68f0`.
+
+The gate chain of [§1.6](#16-the-gate-chain) has been walked end to end against
+a production build: a course duplicated, both gates authored on its draft,
+published, a learner enrolled, the locked task showing both reasons, the
+question skipped and then answered. `npm run verify` passes.
+
+Open items are in [§8](#8-what-is-left); the traps this build found are in
+[§7](#7-three-things-a-psql-test-cannot-see).
 
 This is the working spec for the current build. It exists because the
 requirements and the design decisions behind them were agreed in conversation
 and nothing in the repository recorded them — a later session would have had to
 guess. Read this before writing code.
 
-Rules of engagement are in [§6](#6-how-to-work-in-this-repository). They are not
+Rules of engagement are in [§5](#5-how-to-work-in-this-repository). They are not
 style preferences; each one is there because ignoring it has already cost time.
 
 ---
@@ -172,7 +179,7 @@ course and mint attempts nobody made.
 
 ---
 
-## 3. Shipped so far
+## 3. What shipped, phase by phase
 
 ### Phase 0 — migration ledger (`3ab611d`)
 
@@ -267,70 +274,77 @@ one on demand, `flexible` rather than `scheduled` — a scheduled cohort with no
 - `task_gate_questions` + `task_gate_responses`, and the
   `gate_question` lock reason.
 
-### Phase 2 — admin UI, partly (`b5fbdde`)
+### Phase 2 — admin UI (`b5fbdde`, completed in `73f68f0`)
 
-**Done:** card grid two per row with enrolled/trainer counts and
-active/inactive; the duplicate button (`duplicate_course` had shipped in Phase
-1a with no caller); `/admin/courses/[courseId]/people`, which wires all six
-Phase 1b commands.
+- **Card grid, two per row** with enrolled and trainer counts and the
+  active/inactive badge (§1.3). Both counts are fetched once for the page, not
+  once per card.
+- **The duplicate button.** `duplicate_course` had shipped in Phase 1a with no
+  caller — and, it turned out, could never have worked from one; see
+  [§7](#7-three-things-a-psql-test-cannot-see).
+- **`/admin/courses/[courseId]/people`**, wiring all six Phase 1b commands.
+  Before it, an admin's only route to putting a learner on a course was to wait
+  for the learner to request it and then approve.
+- **Course media on the create form** — cover image and both motivational
+  videos (§1.1), whose columns had shipped in Phase 1a with no input anywhere.
+  Deliberately **no redirect-URL field**; a comment on the form says why, because
+  re-adding it from the mock-up is the easiest mistake to make there.
+- **The task modal** (§1.4). `TaskEditor` already had every field that section
+  lists; what was wrong was that it expanded inline in the stage list. Wrapped
+  in a `<dialog>` rather than rebuilt — a second editor writing the same tables
+  would drift from the first on the next change to either.
+- **Both gates became authorable**, which was the real hole Phase 3 left: the
+  Arena gate and the pre-task question had columns, snapshot keys, validators,
+  lock reasons and learner UI, and nothing in the studio could set either, so
+  the whole chain was reachable only by SQL. The task editor now offers a
+  scenario picker (active scenarios only) and a three-locale question,
+  all-or-nothing because `set_task_gate_question` enforces the same three-locale
+  rule the snapshot validator applies later.
 
-**Not done, and still Phase 2:**
+### Phase 3 — Arena authoring and the sandbox (`ccf007a`)
 
-- **Course form fields.** `hero_image_url`, `exam_video_url`,
-  `completion_video_url` and course duration exist in the schema since Phase 1a
-  but have no input on `/admin/courses/new` or the course editor. En/De/Ru tabs
-  per §1.1.
-- **The task modal** (§1.4). Every field already has schema (§5) —
-  `task_model_answers`, `task_assessments`, `task_options`,
-  `task_option_answers`, `task_hints`, `tasks.intro_video_url` / `.video_url`,
-  `tasks.bug_category_id` — plus the two added in Phase 1c,
-  `required_hunt_scenario_id` and `task_gate_questions`. A **modal**, explicitly
-  not a page and not a dropdown.
-- **`set_task_gate_question` has no caller.** It is granted and tested; nothing
-  in the UI invokes it.
+- `/admin/arena` with a scenario **modal** (§1.7): title, description, the HTML
+  box, start/end media, and the planted-defect list added and removed a row at
+  a time. Calls `upsert_hunt_scenario` and `set_hunt_scenario_defects`, which
+  had shipped in Phase 1c with no caller.
+- **`HtmlSandbox`** — `srcdoc` with `sandbox="allow-scripts"` and nothing else.
+  `html-sandbox.test.tsx` exists solely to fail if anyone adds
+  `allow-same-origin`; verified by mutation, adding the flag turns 6 passing
+  assertions into 2 failures. It nests inside the practice iframe, which does
+  carry `allow-same-origin`; sandbox flags intersect, so the inner frame keeps
+  its opaque origin.
+- The **pre-task question** panel, and both lock reasons rendered as sentences.
+- The trainer's ground truth merges `hunt_scenario_defects` with
+  `configuration.defects`, table wins — for an HTML scenario the config array is
+  empty, so reading it alone left the ranked match with nothing on exactly the
+  scenarios an admin had just authored.
 
-### Phase 3 — Arena authoring and the sandbox — NOT STARTED
+### Phase 4 — Arena for trainer and admin (`ccf007a`)
 
-Admin authoring modal, the sandboxed renderer, the student ticket form, the
-trainer review, the course-task gate in the learner UI.
+`/admin/arena` and `/trainer/arena`, plus their nav entries — added only once
+both routes rendered, per TC-NAV-02.
 
-The whole database side of this is built, tested and callable. What is missing
-is entirely UI. Specifically:
-
-- `upsert_hunt_scenario` and `set_hunt_scenario_defects` are granted, typed in
-  `database.types.ts`, and have **no caller**.
-- The sandboxed renderer for `hunt_scenarios.html` does not exist. The existing
-  `sandbox-frame.tsx` renders the *registry* engine, not free-form HTML. §2.1 is
-  not negotiable: `sandbox="allow-scripts"` and **nothing else**.
-- The learner UI ignores the two new lock reasons. `required_hunt` and
-  `gate_question` are produced correctly by
-  `learner_snapshot_task_lock_reasons` and nothing renders them, so a gated task
-  is locked with no explanation on screen.
-- `answer_task_gate_question` / `skip_task_gate_question` have no caller, so
-  "ANSWER NOW or SKIP AND DO IT LATER" cannot be chosen.
-
-### Phase 4 — Arena for trainer and admin — BLOCKED ON PHASE 3
-
-New routes plus nav entries. Arena is missing from those headers today because
-`/learn/arena` exists only in `STUDENT_NAV`.
-
-⚠️ **Add the routes before the nav entries.** QA plan TC-NAV-02 requires that
-every navigation item open a page with real content; a nav entry pointing at a
-route that does not exist yet turns a missing feature into a failing test and a
-404 in a demo.
+The trainer page needed a migration to exist at all: `hunt_scenarios` had two
+SELECT-admitting policies, a learner-reachability one and a `FOR ALL`
+`content.manage` one, and a trainer satisfied neither. Measured over the API, a
+trainer read one scenario — and only because a seeded task happens to point at
+it. `hunt_scenario_defects`, the *more* sensitive table, already admitted
+`review.manage`, so a trainer could read the answer key but not the scenario it
+hangs off.
 
 ### Phase 5 — verification
 
-`npm run verify`, a three-role click-through, and an update to
-`docs/QA_TEST_PLAN.md`.
+`npm run verify` passes end to end: i18n 1711/1711 in all three locales,
+secrets, contrast, typecheck, **0 lint errors**, 178 tests, production build.
 
-`npm run verify` runs `i18n:check`, `secrets:check`, `a11y:contrast`,
-`typecheck`, `lint`, `test` and `build`. As of `b5fbdde` the first four and the
-build pass; the full chain has not been run end to end in one go.
+Three-role click-through against `npm start`, signed in: 35 destinations across
+admin, trainer and learner, including the new screens in de/en/ru. Plus both
+sides of the scenario read scope — a learner cannot open a scenario no task
+points at, while the admin who wrote it can preview it.
 
 ---
 
-## 5. What already exists (do not rebuild it)
+## 4. What already exists (do not rebuild it)
 
 Most of the task fields in §1.4 already have schema. Check before creating
 anything.
@@ -356,9 +370,9 @@ sandbox runtime, and the trainer's `HuntPanel` (mounted at
 
 ---
 
-## 6. How to work in this repository
+## 5. How to work in this repository
 
-### 6.1 Migrations
+### 5.1 Migrations
 
 Apply through the CLI so the ledger stays honest:
 
@@ -378,7 +392,7 @@ like a wrong password.
   constraint or function, and check its *definition* where a migration replaces
   something rather than adds it.
 
-### 6.2 Writes are RPC-only
+### 5.2 Writes are RPC-only
 
 Domain tables refuse direct `insert`/`update` from the app (I-003). Every write
 is a `SECURITY DEFINER` function. The idiom, from the existing commands:
@@ -391,7 +405,7 @@ end if;
 if not app_private.has_role('admin', v_organization_id, null) then ...
 ```
 
-### 6.3 The snapshot is the dangerous part
+### 5.3 The snapshot is the dangerous part
 
 Learners never read `tasks`. They read `content_versions.snapshot`, a frozen
 JSON blob shaped `{schema_version, course, content_version, stages[].tasks[]}`,
@@ -406,7 +420,7 @@ Relevant functions: `app_private.build_content_snapshot`,
 `snapshot_task_payload`, `is_valid_learner_content_snapshot`,
 `learner_snapshot_task_lock_reasons`.
 
-### 6.3a A plpgsql local must never share a name with a column
+### 5.3a A plpgsql local must never share a name with a column
 
 This cost time **four** times in one session and it is the single most expensive
 habit in this schema:
@@ -433,7 +447,7 @@ what a lock test expects to see.
 Name locals `<thing>_row`, `<thing>_record`, `target_<thing>` or
 `resolved_<thing>`, as the surrounding code already does.
 
-### 6.3b Postgres regular expressions are not Perl's
+### 5.3b Postgres regular expressions are not Perl's
 
 Two traps, both of which turned `sanitize_scenario_html` into a silent no-op
 before it was caught (`20260730100000`):
@@ -449,7 +463,7 @@ Both were caught only because the verification asserts on the **result** of
 sanitising a hostile string, not on the function existing. A security control
 that quietly does nothing looks identical to one that works.
 
-### 6.3c A rolled-back test cannot find a second-request bug
+### 5.3c A rolled-back test cannot find a second-request bug
 
 Testing inside `begin; … rollback;` is right for most things and wrong for
 anything whose failure needs a previous request to have **committed**. Two bugs
@@ -462,7 +476,7 @@ with a real JWT, which also proves the `execute` grants, the overload
 resolution, and that `auth.uid()` is the signed-in user rather than null. A
 200 from a page while signed OUT proves only that the redirect works.
 
-### 6.4 Testing
+### 5.4 Testing
 
 Sign-in is rate limited to **5 attempts per address and 30 per browser per 15
 minutes**, and once tripped it refuses the correct password too. Automated runs
@@ -473,7 +487,7 @@ trip it quickly. Buckets live in
 defined` for code that is correct. Confirm against `npm run build && npm start`
 before believing it.
 
-### 6.5 Other sessions may be editing this tree
+### 5.5 Other sessions may be editing this tree
 
 It has happened repeatedly (ISSUES I-042): files changing mid-edit, and work
 swept into another session's commit. Check `git status` before you start and
@@ -493,9 +507,9 @@ the only way to find it, and the commit message will not help you.
 
 ---
 
-## 7. Where each phase actually landed
+## 6. Where each phase actually landed
 
-Because §6.5 happened, the commit a phase is *in* is not always the commit that
+Because §5.5 happened, the commit a phase is *in* is not always the commit that
 *claims* it.
 
 | Phase | Commit | Message says |
@@ -505,3 +519,60 @@ Because §6.5 happened, the commit a phase is *in* is not always the commit that
 | **1b** | **`6546be3`** | **no — says "Profiles… profile photo"** |
 | 1c | `ac9ec9c` | yes |
 | 2 (part) | `b5fbdde` | yes |
+| 3 and 4 | `ccf007a` | yes |
+| 2 (rest) | `73f68f0` | yes |
+
+---
+
+## 7. Three things a psql test cannot see
+
+Every failure below passed every `psql` check and appeared only over HTTP. They
+are listed together because they are one lesson: **`psql` proves the SQL, not
+the request.**
+
+| | Found in | Why psql missed it |
+|---|---|---|
+| missing `execute` grant / overload resolution | Phase 1b | psql calls the function directly |
+| a permanently-taken idempotency key, and a duplicated cohort membership | `20260731100000` | both need a previous request to have **committed**; a rolled-back test cannot reach them |
+| **`duplicate_course` never worked over the API** | `20260801300000` | `safeupdate` is loaded for `authenticator`, not for `postgres` |
+
+The third is the one to remember. `duplicate_course` cleared its temp tables
+with `delete from tmp_x;`, and this deployment sets
+`session_preload_libraries=safeupdate` on the role PostgREST connects as, which
+rejects any UPDATE or DELETE with no WHERE — inside a `SECURITY DEFINER`
+function too, because definer's rights change *who may touch a row*, not *which
+statements the loaded hooks allow*.
+
+Phase 1a verified that function in detail, counting source and copy row by row,
+and every assertion was true. The function was correct; it could not be
+**called** the way the application calls it. `set local role authenticated` does
+not reproduce it either — `session_preload_libraries` is applied when the
+connection is established, not when the role is switched.
+
+It shipped, was documented as verified, and Phase 2's "Duplizieren" button would
+have failed on first click.
+
+---
+
+## 8. What is left
+
+Nothing in §1 is unbuilt. These are the things found along the way and
+deliberately not done:
+
+- **`duplicate_course` does not copy `task_rubric_assignments`.**
+  `submit_content_for_review` refuses a version whose practical tasks have no
+  active rubric, so **a duplicated course cannot be published** until somebody
+  re-attaches them — and no screen does. Unlike the omissions the function
+  documents deliberately (enrolments, cohorts, attempts, `course_trainers`,
+  `task_schedules`) this one is not mentioned in its header, so it reads as an
+  oversight. Fixing it means a follow-up migration that copies the assignments
+  onto the new version.
+- **Course media has no locale tabs.** §1.1 marks the two motivational videos
+  translated and `course_localizations` keeps a row per locale, but the form
+  writes German only — the same convention as every other field on it
+  (`CONTENT_LOCALES === ["de"]`). Add tabs when content translation starts.
+- **The course editor cannot change media after creation.** `updateCourseMeta`
+  accepts `heroImageUrl`; the studio has no field for it yet.
+- **No screen retires an Arena scenario.** The modal can set any
+  `record_state`, so it is reachable, but there is no explicit "retire" action
+  and no warning that tasks may still point at the scenario being retired.
