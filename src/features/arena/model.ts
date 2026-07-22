@@ -172,9 +172,36 @@ export function huntPrerequisite(reasons: unknown): LockReason | null {
   );
 }
 
-/** Where that button goes. A hunt is a task, so it lives on the task route. */
-export function huntTaskHref(locale: string, taskId: string): string {
+/**
+ * A COURSE task's own page. Named for what it is, because it is also used for
+ * the gate-question link, which points at a knowledge task and must not be
+ * dragged into the Arena when `arenaHuntHref` changes.
+ */
+export function learningTaskHref(locale: string, taskId: string): string {
   return `/${locale}/learn/tasks/${taskId}`;
+}
+
+/**
+ * Where an Arena task is played (§5.5: "an Arena row sends the learner to
+ * Arena").
+ *
+ * A hunt is a `tasks` row like any other, so for a long time this returned the
+ * ordinary task route — and a learner who clicked a Jagd in the Arena landed on
+ * a page headed **Aufgabe**. The workspace is still what renders underneath;
+ * what changes here is that the hunt keeps an Arena URL and Arena framing all
+ * the way through, so "Arena tasks are worked in the Arena" is true of the
+ * address bar and the breadcrumb, not only of the intent.
+ */
+export function arenaHuntHref(locale: string, taskId: string): string {
+  return `/${locale}/learn/arena/${taskId}`;
+}
+
+/**
+ * @deprecated Ambiguous — it was used both for hunts and for course tasks.
+ * Use {@link arenaHuntHref} for a hunt and {@link learningTaskHref} otherwise.
+ */
+export function huntTaskHref(locale: string, taskId: string): string {
+  return arenaHuntHref(locale, taskId);
 }
 
 /**

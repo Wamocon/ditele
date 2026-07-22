@@ -3,7 +3,12 @@ import "server-only";
 import { z } from "zod";
 import { createServerClient } from "@/shared/database/server";
 import { fromSupabase, ok, type Result } from "@/shared/data/result";
-import { huntPrerequisite, huntTaskHref, type LockReason } from "@/features/arena/model";
+import {
+  arenaHuntHref,
+  huntPrerequisite,
+  toLockReasons,
+  type LockReason,
+} from "@/features/arena/model";
 import {
   levelForXp,
   type BadgeAward,
@@ -180,19 +185,43 @@ export interface OpenHunt {
   /** The task this hunt unlocks — the reason to play it. */
   unlocksTitle: string;
   href: string;
+  /**
+   * Listed, but not yet playable. The hub shows these so a learner can see the
+   * road ahead; only an unlocked one is a link, because the task route refuses
+   * a locked task and the row would otherwise be a trapdoor.
+   */
+  locked: boolean;
+  /** For a locked hunt: the task standing in front of it. */
+  lockedAfterTitle: string;
 }
 
 const CourseListRow = z.object({ course_id: z.string() });
 
 /**
- * The hunts standing between the learner and a locked task.
+ * The hunts this learner can play **right now**.
  *
- * This is `05_…` §G8 read from the other end: instead of asking "why is this
- * task locked", it asks "what should I play next", and both answers come from
- * the same enriched `required_task` lock reason WS-8 added. Nothing here reads
- * `tasks` — a learner reads zero rows from that table (`RPC_CONTRACTS.md` §10)
- * — so every title comes from the learner's own published-content projection,
- * which is what keeps the deep link free of a content leak.
+ * ⚠️ It used to answer a subtly different question, and the difference was a
+ * wall of dead links. It read every task's `required_task` lock reason and
+ * listed the hunt named in it — "what is standing between me and this locked
+ * task" — without ever asking whether that hunt was itself open. With one hunt
+ * per course and no ordering between hunts, those two questions had the same
+ * answer and the bug could not appear.
+ *
+ * The Praxiskurs import made them differ. 43 days chained through
+ * `prerequisites` means at most one task in the whole course is available, so
+ * the hub cheerfully listed **36 offene Jagden**, every one of them locked, and
+ * each link led to `get_my_learning_task` — which returns NULL for a locked
+ * task, by design — and rendered "Etwas ist schiefgelaufen · Nicht gefunden".
+ * Every single row on the page was a trapdoor.
+ *
+ * So the list is now built from the hunt activities themselves, filtered to the
+ * ones the learner can actually open. The "unlocks" subtitle is still the point
+ * of playing it, so it is looked up afterwards from whichever task names this
+ * hunt in its lock reasons.
+ *
+ * Nothing here reads `tasks` — a learner reads zero rows from that table
+ * (`RPC_CONTRACTS.md` §10) — so every title still comes from the learner's own
+ * published-content projection.
  *
  * Costs one `get_my_learning_course` call per enrolled course. That is two
  * round trips at today's scale and would need rethinking at twenty courses; it
@@ -224,24 +253,73 @@ export async function listOpenHunts(locale: string): Promise<Result<OpenHunt[]>>
     // One unreadable course must not hide the hunts in the others.
     if (!detail.ok) continue;
 
-    for (const activity of activitiesOf(detail.data)) {
+    const activities = activitiesOf(detail.data);
+
+    // taskId → the title of a task that this hunt would unlock. Built once per
+    // course rather than scanned per hunt.
+    const unlocks = new Map<string, string>();
+    for (const activity of activities) {
       const reason: LockReason | null = huntPrerequisite(activity.lock_reasons);
-      if (!reason?.requiredTaskId || seen.has(reason.requiredTaskId)) continue;
-      seen.add(reason.requiredTaskId);
+      if (reason?.requiredTaskId && !unlocks.has(reason.requiredTaskId)) {
+        unlocks.set(reason.requiredTaskId, activity.title);
+      }
+    }
+
+    for (const activity of activities) {
+      if (activity.task_kind !== "hunt" || !activity.id) continue;
+      // Already played and accepted — it is no longer something to do next.
+      if (activity.state === "accepted" || activity.state === "completed") continue;
+      if (seen.has(activity.id)) continue;
+
+      seen.add(activity.id);
       hunts.push({
-        taskId: reason.requiredTaskId,
-        title: reason.requiredTaskTitle ?? "",
-        unlocksTitle: activity.title,
-        href: huntTaskHref(locale, reason.requiredTaskId),
+        taskId: activity.id,
+        title: activity.title,
+        unlocksTitle: unlocks.get(activity.id) ?? "",
+        // Only an OPEN hunt gets a destination. `activity.locked` is the
+        // learner projection's own verdict, so it cannot disagree with what the
+        // route will decide when the link is followed — which is the whole
+        // reason the dead links existed.
+        href: activity.locked ? "" : arenaHuntHref(locale, activity.id),
+        locked: activity.locked,
+        lockedAfterTitle: activity.locked
+          ? (huntPrerequisite(activity.lock_reasons)?.requiredTaskTitle ??
+             requiredTaskTitleOf(activity.lock_reasons))
+          : "",
       });
     }
   }
 
-  return ok(hunts);
+  // Playable first — the hub's job is "what should I play next", and a learner
+  // should not have to scroll past thirty locked days to find it.
+  return ok([
+    ...hunts.filter((hunt) => !hunt.locked),
+    ...hunts.filter((hunt) => hunt.locked),
+  ]);
+}
+
+/**
+ * The title of whatever task a lock names, hunt or not.
+ *
+ * `huntPrerequisite` only matches a `required_task` reason whose required task
+ * is itself a HUNT. A hunt waiting on a knowledge task — which is most of them
+ * in a day-by-day course — matches nothing, and the row would say "Gesperrt"
+ * without saying by what.
+ */
+function requiredTaskTitleOf(reasons: unknown): string {
+  return (
+    toLockReasons(reasons).find(
+      (reason) => reason.code === "required_task" && reason.requiredTaskTitle,
+    )?.requiredTaskTitle ?? ""
+  );
 }
 
 interface Activity {
+  id: string;
   title: string;
+  task_kind: string;
+  state: string;
+  locked: boolean;
   lock_reasons: unknown;
 }
 
@@ -251,16 +329,33 @@ function activitiesOf(course: unknown): Activity[] {
   const stages = (course as { stages?: unknown }).stages;
   if (!Array.isArray(stages)) return [];
 
+  const text = (value: unknown): string => (typeof value === "string" ? value : "");
+
   const out: Activity[] = [];
   for (const stage of stages) {
     const activities = (stage as { activities?: unknown })?.activities;
     if (!Array.isArray(activities)) continue;
     for (const activity of activities) {
       if (!activity || typeof activity !== "object") continue;
-      const title = (activity as { title?: unknown }).title;
+      const row = activity as Record<string, unknown>;
       out.push({
-        title: typeof title === "string" ? title : "",
-        lock_reasons: (activity as { lock_reasons?: unknown }).lock_reasons,
+        id: text(row.id),
+        title: text(row.title),
+        task_kind: text(row.task_kind),
+        state: text(row.state),
+        /**
+         * ⚠️ Derived, because the RPC has no `locked` key — measured against
+         * the live payload, which carries `lock_reasons` and nothing else on
+         * the subject. `shared/data/learning.ts` derives it the same way
+         * (`lock_reasons.length > 0`) and the two must not drift: this is the
+         * condition that decides whether a link is offered at all.
+         *
+         * A missing or non-array `lock_reasons` counts as LOCKED. Listing a
+         * hunt that turns out to be shut is the exact failure this function
+         * exists to prevent, so the unknown case fails closed.
+         */
+        locked: !Array.isArray(row.lock_reasons) || row.lock_reasons.length > 0,
+        lock_reasons: row.lock_reasons,
       });
     }
   }

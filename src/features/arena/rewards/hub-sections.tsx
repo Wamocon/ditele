@@ -1,7 +1,7 @@
 import type { Route } from "next";
 import Link from "next/link";
-import { Award, Bug, Sparkles } from "lucide-react";
-import { Badge, Card, EmptyState } from "@/shared/ui";
+import { Award, Bug, Lock, Sparkles } from "lucide-react";
+import { Badge, Card, EmptyState, cn } from "@/shared/ui";
 import { formatDate } from "@/shared/format";
 import type { BadgeAward, XpEntry } from "./model";
 import type { OpenHunt } from "./data";
@@ -73,12 +73,16 @@ export function BadgeSection({
 export interface HuntSectionStrings {
   heading: string;
   open: string;
+  /** `null` when nothing is locked, so the badge is omitted rather than "0". */
+  locked: string | null;
   pending: string;
   pendingHint: string;
   emptyTitle: string;
   emptyDescription: string;
   emptyAction: string;
   unlocksLabel: string;
+  lockedHint: string;
+  lockedAfter: string;
 }
 
 /**
@@ -105,7 +109,13 @@ export function HuntSection({
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-[17px] font-semibold leading-6">{strings.heading}</h2>
-        {hunts.length > 0 ? <Badge tone="brand">{strings.open}</Badge> : null}
+        {/* Counts the PLAYABLE hunts. It used to count the whole list, which is
+            how the hub came to announce "36 offen" when none of them could be
+            opened. */}
+        {hunts.some((hunt) => !hunt.locked) ? (
+          <Badge tone="brand">{strings.open}</Badge>
+        ) : null}
+        {strings.locked ? <Badge tone="neutral">{strings.locked}</Badge> : null}
         {pendingCount > 0 ? <Badge tone="warning">{strings.pending}</Badge> : null}
       </div>
 
@@ -131,25 +141,64 @@ export function HuntSection({
         />
       ) : (
         <ul className="flex flex-col gap-3">
-          {hunts.map((hunt) => (
-            <li key={hunt.taskId}>
-              {/* min-h-11 is the 44px touch target WS-7 fixed once already. */}
-              <Link
-                href={hunt.href as Route}
-                className="flex min-h-11 flex-col gap-1 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 transition-colors hover:bg-(--color-surface-2) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-brand)"
-              >
-                <span className="flex items-center gap-2 text-[15px] font-semibold leading-6">
+          {hunts.map((hunt) => {
+            const row = "flex min-h-11 flex-col gap-1 rounded-(--radius-lg) border border-(--color-border) p-4";
+
+            const title = (
+              <span className="flex items-center gap-2 text-[15px] font-semibold leading-6">
+                {hunt.locked ? (
+                  <Lock className="size-4 shrink-0 text-(--color-fg-subtle)" aria-hidden />
+                ) : (
                   <Bug className="size-4 shrink-0 text-(--color-brand)" aria-hidden />
-                  {hunt.title}
-                </span>
-                {hunt.unlocksTitle ? (
-                  <span className="text-[13px] leading-5 text-(--color-fg-muted)">
-                    {strings.unlocksLabel} {hunt.unlocksTitle}
-                  </span>
-                ) : null}
-              </Link>
-            </li>
-          ))}
+                )}
+                {hunt.title}
+              </span>
+            );
+
+            /**
+             * ⚠️ A LOCKED hunt is deliberately NOT a link.
+             *
+             * It used to be one, and `get_my_learning_task` returns null for a
+             * locked task by design — so every locked row on this page opened
+             * "Etwas ist schiefgelaufen · Nicht gefunden". It is still listed,
+             * because seeing the road ahead is the point of the hub; it just
+             * does not pretend to be a door.
+             */
+            if (hunt.locked) {
+              return (
+                <li key={hunt.taskId}>
+                  <div className={cn(row, "bg-(--color-surface) text-(--color-fg-muted)")}>
+                    {title}
+                    <span className="text-[13px] leading-5 text-(--color-fg-subtle)">
+                      {hunt.lockedAfterTitle
+                        ? `${strings.lockedHint} · ${strings.lockedAfter} ${hunt.lockedAfterTitle}`
+                        : strings.lockedHint}
+                    </span>
+                  </div>
+                </li>
+              );
+            }
+
+            return (
+              <li key={hunt.taskId}>
+                {/* min-h-11 is the 44px touch target WS-7 fixed once already. */}
+                <Link
+                  href={hunt.href as Route}
+                  className={cn(
+                    row,
+                    "bg-(--color-surface) transition-colors hover:bg-(--color-surface-2) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-brand)"
+                  )}
+                >
+                  {title}
+                  {hunt.unlocksTitle ? (
+                    <span className="text-[13px] leading-5 text-(--color-fg-muted)">
+                      {strings.unlocksLabel} {hunt.unlocksTitle}
+                    </span>
+                  ) : null}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

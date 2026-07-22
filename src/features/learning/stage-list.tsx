@@ -14,10 +14,11 @@ import {
 import { Badge, StatusBadge, cn } from "@/shared/ui";
 import {
   arenaHubHref,
+  arenaHuntHref,
   gateQuestionLock,
   huntPrerequisite,
   huntScenarioLock,
-  huntTaskHref,
+  learningTaskHref,
   type LockReason,
 } from "@/features/arena/model";
 import type { LearningActivity, LearningStage } from "./model";
@@ -201,7 +202,7 @@ export function TaskListItem({
                * an `<a>`, and nesting an anchor inside an anchor is invalid.
                */
               <Link
-                href={huntTaskHref(locale, hunt.requiredTaskId ?? "") as Route}
+                href={arenaHuntHref(locale, hunt.requiredTaskId ?? "") as Route}
                 className={cn(
                   "mt-1 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-(--radius-sm)",
                   "px-2 text-[13px] font-semibold leading-5 text-(--color-brand)",
@@ -247,7 +248,12 @@ export function TaskListItem({
              */}
             {gateLock?.previousTaskId && (
               <Link
-                href={huntTaskHref(locale, gateLock.previousTaskId) as Route}
+                /* A COURSE task, not a hunt — the question is asked on the
+                   previous task's own page. It used `huntTaskHref` only
+                   because both helpers happened to build the same URL; now
+                   that a hunt has an Arena address, naming the right one
+                   matters. */
+                href={learningTaskHref(locale, gateLock.previousTaskId) as Route}
                 className={cn(
                   "mt-1 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-(--radius-sm)",
                   "px-2 text-[13px] font-semibold leading-5 text-(--color-brand)",
@@ -302,10 +308,15 @@ export function TaskListItem({
   // §5.5: "an Arena row sends the learner to Arena, a course row opens the task."
   // The gate question stays on the course task — this only changes where the row
   // opens, not where the question lives.
+  //
+  // Straight to the hunt rather than to the Arena HUB. Dropping the learner on
+  // the hub meant they had to find, in a list of every open hunt, the one they
+  // had just clicked by name — and with 37 hunts in the Praxiskurs that is a
+  // search, not a navigation.
   const href = (
     activity.taskKind === "hunt"
-      ? arenaHubHref(locale)
-      : `/${locale}/learn/tasks/${activity.id}`
+      ? arenaHuntHref(locale, activity.id)
+      : learningTaskHref(locale, activity.id)
   ) as Route;
 
   return (

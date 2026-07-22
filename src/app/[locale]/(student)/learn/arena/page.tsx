@@ -73,6 +73,7 @@ export default async function ArenaPage({
   // whose badge query failed should still see their level.
   const badgeList = badges.ok ? badges.data : [];
   const huntList = hunts.ok ? hunts.data : [];
+  const lockedHuntCount = huntList.filter((hunt) => hunt.locked).length;
   const pendingCount = pending.ok ? pending.data : 0;
   const streak = summary.ok ? summary.data.streak : null;
   const celebrations = summary.ok ? summary.data.celebrations : [];
@@ -158,13 +159,23 @@ export default async function ArenaPage({
           coursesHref={`/${locale}/learn/courses`}
           strings={{
             heading: t.huntsHeading,
-            open: format(t.huntsOpen, { count: huntList.length }),
+            // Open vs locked counted separately: `huntList` now carries both,
+            // and counting the whole list is what made the hub claim "36 offen"
+            // with nothing actually open.
+            open: format(t.huntsOpen, {
+              count: huntList.filter((hunt) => !hunt.locked).length,
+            }),
+            locked: lockedHuntCount > 0
+              ? format(t.huntsLocked, { count: lockedHuntCount })
+              : null,
             pending: format(t.huntsPending, { count: pendingCount }),
             pendingHint: t.huntsPendingHint,
             emptyTitle: t.huntsEmptyTitle,
             emptyDescription: t.huntsEmptyDescription,
             emptyAction: t.huntsOpenAction,
             unlocksLabel: t.huntsUnlocks,
+            lockedHint: t.huntsLockedHint,
+            lockedAfter: t.huntsLockedAfter,
           }}
         />
 

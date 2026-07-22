@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  arenaHuntHref,
   gateQuestionLock,
   huntPrerequisite,
   huntScenarioLock,
   huntTaskHref,
+  learningTaskHref,
   toLockReason,
   toLockReasons,
 } from "./model";
@@ -175,8 +177,25 @@ describe("huntPrerequisite", () => {
   });
 });
 
-describe("huntTaskHref", () => {
-  it("points at the task route, because a hunt is a task", () => {
-    expect(huntTaskHref("de", "abc")).toBe("/de/learn/tasks/abc");
+describe("hunt and task routes", () => {
+  it("plays a hunt inside the Arena, not on the task page", () => {
+    expect(arenaHuntHref("de", "abc")).toBe("/de/learn/arena/abc");
+  });
+
+  it("still opens a course task on the task page", () => {
+    expect(learningTaskHref("de", "abc")).toBe("/de/learn/tasks/abc");
+  });
+
+  /**
+   * The two used to be the same URL, which is why one helper served both and
+   * the gate-question link — pointing at a KNOWLEDGE task — was built with
+   * `huntTaskHref` without anyone noticing. They must stay apart.
+   */
+  it("keeps the two apart", () => {
+    expect(arenaHuntHref("de", "abc")).not.toBe(learningTaskHref("de", "abc"));
+  });
+
+  it("keeps the deprecated alias pointing at the Arena", () => {
+    expect(huntTaskHref("de", "abc")).toBe(arenaHuntHref("de", "abc"));
   });
 });
