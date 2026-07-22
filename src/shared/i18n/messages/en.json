@@ -1080,7 +1080,9 @@
       "activityEmpty": "No events recorded yet.",
       "activityBlocked": "The event log is not readable in this session.",
       "contentStatus": "Content status",
-      "contentStatusEmpty": "There are no content versions yet."
+      "contentStatusEmpty": "There are no content versions yet.",
+      "contentStatusHint": "{versions} content versions across {courses} courses. A course carries one version per revision, which is why this total is higher than the number of courses.",
+      "contentStatusTotal": "Versions in total"
     },
     "courses": {
       "title": "Course management",
@@ -1361,11 +1363,9 @@
       "formCode": "Identifier",
       "formCodeHint": "Lower case, digits and hyphens, e.g. checkout-v1. Tasks point at a scenario through this identifier.",
       "formDescription": "Description",
-      "formEndMedia": "Image or video at the end",
       "formHtml": "HTML of the screen",
       "formHtmlHint": "HTML, CSS and JavaScript. The screen runs in a sandboxed frame with no access to the learner's session.",
       "formSave": "Save",
-      "formStartMedia": "Image or video at the start",
       "formState": "Status",
       "formTitle": "Title",
       "formTitleHint": "Course material — written in German.",
@@ -1381,7 +1381,11 @@
       "saved": "The scenario was saved.",
       "subtitle": "Create bug hunts, write the screen, and record the defects planted in it.",
       "title": "Arena scenarios",
-      "titleRequired": "Please give a title."
+      "titleRequired": "Please give a title.",
+      "formBadge": "Badge (optional)",
+      "formBadgeHint": "Awarded once when a submission for this hunt is accepted. No badge is the normal case — not every hunt should carry one.",
+      "formBadgeNone": "No badge",
+      "badgeInvalid": "The selected badge is not valid."
     }
   },
   "status": {

@@ -96,14 +96,16 @@ export async function saveScenarioAction(
   const html = String(formData.get("html") ?? "").trim();
   const state = String(formData.get("state") ?? "draft");
 
-  // Spread-in rather than pass-undefined. `exactOptionalPropertyTypes` is on,
-  // so an explicit `undefined` is not the same as an absent key — and PostgREST
-  // treats them differently too: a null argument overwrites the column, while
-  // an absent one lets the function's own default stand.
-  const optional = (name: string, key: string): Record<string, string> => {
-    const value = String(formData.get(name) ?? "").trim();
-    return value === "" ? {} : { [key]: value };
-  };
+  // The badge is optional, and "" from the picker's empty option means "no
+  // badge" — which must be sent as an explicit null, not omitted. Omitting it
+  // would let the function's own default stand and an author could attach a
+  // badge but never take one off. The RPC assigns it unconditionally for the
+  // same reason.
+  const rewardBadgeRaw = String(formData.get("rewardBadgeId") ?? "").trim();
+  const rewardBadgeId = rewardBadgeRaw === "" ? null : rewardBadgeRaw;
+  if (rewardBadgeId !== null && !z.string().uuid().safeParse(rewardBadgeId).success) {
+    return { status: "error", message: s.badgeInvalid };
+  }
 
   try {
     const supabase = await createServerClient();
@@ -111,9 +113,12 @@ export async function saveScenarioAction(
       p_code: code.data,
       p_title: title,
       p_description: String(formData.get("description") ?? "").trim(),
+      // Spread-in rather than pass-undefined. `exactOptionalPropertyTypes` is
+      // on, so an explicit `undefined` is not the same as an absent key — and
+      // PostgREST treats them differently too: a null argument overwrites the
+      // column, while an absent one lets the function's own default stand.
       ...(html === "" ? {} : { p_html: html }),
-      ...optional("startMediaUrl", "p_start_media_url"),
-      ...optional("endMediaUrl", "p_end_media_url"),
+      p_reward_badge_id: rewardBadgeId,
       p_state: state as "draft" | "active" | "inactive" | "archived",
     });
     if (error) return { status: "error", message: s.saveFailed };

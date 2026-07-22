@@ -594,6 +594,18 @@ export interface AdminDashboard {
   openRequests: number;
   openIssues: number;
   versionsByState: { state: ContentVersionState; count: number }[];
+  /**
+   * The sum of `versionsByState`, and the number of distinct courses those
+   * versions belong to.
+   *
+   * Both are reported because the panel sits beside a "Kurse" tile and the two
+   * numbers do NOT match — a course carries one content version per revision,
+   * so 12 courses were showing as 8+1+4+1 = 14 versions. The figures were right
+   * and read as a bug, because nothing on the screen said one panel counted
+   * courses and the other counted versions.
+   */
+  versionTotal: number;
+  coursesWithVersions: number;
   activity: { id: string; eventType: string; occurredAt: string; actorRole: string }[];
   activityBlocked: boolean;
 }
@@ -659,6 +671,8 @@ export async function getAdminDashboard(): Promise<Result<AdminDashboard>> {
     versionsByState: (["draft", "in_review", "published", "archived"] as ContentVersionState[]).map(
       (state) => ({ state, count: byState.get(state) ?? 0 })
     ),
+    versionTotal: versions.length,
+    coursesWithVersions: new Set(versions.map((v) => asString(v.course_id))).size,
     activity: ((auditRows ?? []) as Row[]).map((row) => ({
       id: asString(row.id),
       eventType: asString(row.event_type),

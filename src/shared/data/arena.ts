@@ -42,8 +42,7 @@ const HuntScenarioRow = z.object({
   description: z.string(),
   configuration: z.unknown(),
   html: z.string().nullish().transform((v) => v ?? null),
-  start_media_url: z.string().nullish().transform((v) => v ?? null),
-  end_media_url: z.string().nullish().transform((v) => v ?? null),
+  reward_badge_id: z.string().nullish().transform((v) => v ?? null),
   expected_findings: z.number(),
   state: z.string(),
 });
@@ -84,8 +83,7 @@ function toScenario(row: z.infer<typeof HuntScenarioRow>): HuntScenario {
         ? (row.configuration as Record<string, unknown>)
         : {},
     html: row.html,
-    startMediaUrl: row.start_media_url,
-    endMediaUrl: row.end_media_url,
+    rewardBadgeId: row.reward_badge_id,
     expectedFindings: row.expected_findings,
     state: row.state,
   };
@@ -123,7 +121,7 @@ function toFinding(row: z.infer<typeof HuntFindingRow>): HuntFinding {
 
 const SCENARIO_COLUMNS =
   "id, code, scenario_version, title, description, configuration, html, " +
-  "start_media_url, end_media_url, expected_findings, state";
+  "reward_badge_id, expected_findings, state";
 const DEFECT_COLUMNS =
   "id, scenario_id, code, position, title, location_hint, expected_behaviour, " +
   "reproduction, severity";
@@ -295,6 +293,51 @@ export async function countDefectsByScenario(): Promise<Result<Map<string, numbe
     if (typeof id === "string") counts.set(id, (counts.get(id) ?? 0) + 1);
   }
   return ok(counts);
+}
+
+/* ── Badge catalogue, for the scenario editor's picker ────────────────────── */
+
+export interface AwardableBadge {
+  id: string;
+  code: string;
+  label: string;
+}
+
+/**
+ * The badges a scenario may be pinned to.
+ *
+ * Active only: an archived badge is one the product has retired, and offering
+ * it in the picker would let an author promise something that is never awarded
+ * — `award_scenario_badge` skips a badge that is not active.
+ *
+ * `badges_member_read` scopes this to global badges plus the caller's own
+ * organisation, so no extra filter is needed here.
+ */
+export async function listAwardableBadges(locale: string): Promise<Result<AwardableBadge[]>> {
+  const supabase = await createServerClient();
+  const result = await fromSupabase<unknown[]>(async () => {
+    const { data, error } = await supabase
+      .from("badges")
+      .select("id, code, labels")
+      .eq("state", "active")
+      .order("code");
+    return { data: data ?? null, error };
+  });
+  if (!result.ok) return result;
+
+  const rows = z
+    .array(z.object({ id: z.string(), code: z.string(), labels: z.unknown() }))
+    .safeParse(result.data);
+  if (!rows.success) return ok([]);
+
+  return ok(
+    rows.data.map((row) => {
+      const labels = (row.labels ?? {}) as Record<string, string>;
+      // German is the source of truth for the catalogue; fall back to the code
+      // so an untranslated badge is still pickable rather than blank.
+      return { id: row.id, code: row.code, label: labels[locale] ?? labels.de ?? row.code };
+    })
+  );
 }
 
 /* ── Re-exports, so callers import from one place ─────────────────────────── */

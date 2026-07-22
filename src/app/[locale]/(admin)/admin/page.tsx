@@ -5,7 +5,7 @@ import { PageHeader } from "@/shared/layout";
 import { Button, Card, CardTitle, ErrorState, StatusBadge, cn } from "@/shared/ui";
 import { requireRole } from "@/shared/auth/guard";
 import { getAdminDashboard } from "@/shared/data/content";
-import { adminStrings, formatDate } from "@/features/content/i18n";
+import { adminStrings, format as interpolate, formatDate } from "@/features/content/i18n";
 
 /**
  * KPI tiles + content status + recent activity.
@@ -78,7 +78,23 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card className="flex flex-col gap-3">
-          <CardTitle>{s.contentStatus}</CardTitle>
+          <div>
+            <CardTitle>{s.contentStatus}</CardTitle>
+            {/*
+              These four numbers count content VERSIONS, and the "Kurse" tile
+              above counts COURSES. A course carries one version per revision,
+              so the two do not reconcile — 12 courses showed here as
+              8 + 1 + 4 + 1 = 14, and every reader who added them up concluded
+              the dashboard was broken. It was not; it simply never said what it
+              was counting. Now it does, in the panel's own subtitle.
+            */}
+            <p className="mt-1 text-[13px] leading-5 text-(--color-fg-muted)">
+              {interpolate(s.contentStatusHint, {
+                versions: data.versionTotal,
+                courses: data.coursesWithVersions,
+              })}
+            </p>
+          </div>
           {data.versionsByState.every((entry) => entry.count === 0) ? (
             <p className="text-[13px] text-(--color-fg-muted)">{s.contentStatusEmpty}</p>
           ) : (
@@ -89,6 +105,10 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                   <span className="tabular text-[18px] font-semibold">{entry.count}</span>
                 </li>
               ))}
+              <li className="mt-1 flex items-center justify-between gap-3 border-t border-(--color-border) pt-2">
+                <span className="text-[13px] font-semibold">{s.contentStatusTotal}</span>
+                <span className="tabular text-[18px] font-semibold">{data.versionTotal}</span>
+              </li>
             </ul>
           )}
 

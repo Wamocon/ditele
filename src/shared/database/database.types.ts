@@ -2442,6 +2442,7 @@ export type Database = {
           html: string | null
           id: string
           organization_id: string | null
+          reward_badge_id: string | null
           row_version: number
           scenario_version: number
           start_media_url: string | null
@@ -2459,6 +2460,7 @@ export type Database = {
           html?: string | null
           id?: string
           organization_id?: string | null
+          reward_badge_id?: string | null
           row_version?: number
           scenario_version?: number
           start_media_url?: string | null
@@ -2476,6 +2478,7 @@ export type Database = {
           html?: string | null
           id?: string
           organization_id?: string | null
+          reward_badge_id?: string | null
           row_version?: number
           scenario_version?: number
           start_media_url?: string | null
@@ -2484,6 +2487,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "hunt_scenarios_reward_badge_id_fkey"
+            columns: ["reward_badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "hunt_scenarios_organization_id_fkey"
             columns: ["organization_id"]
@@ -7609,11 +7619,10 @@ export type Database = {
           p_code: string
           p_correlation_id?: string
           p_description: string
-          p_end_media_url?: string
           p_expected_findings?: number
           p_html?: string
           p_organization_id?: string
-          p_start_media_url?: string
+          p_reward_badge_id?: string | null
           p_state?: Database["public"]["Enums"]["record_state"]
           p_title: string
         }
@@ -7627,6 +7636,7 @@ export type Database = {
           html: string | null
           id: string
           organization_id: string | null
+          reward_badge_id: string | null
           row_version: number
           scenario_version: number
           start_media_url: string | null

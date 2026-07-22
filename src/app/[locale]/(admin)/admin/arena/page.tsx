@@ -7,6 +7,7 @@ import { Badge, Button, Card, EmptyState, ErrorState, StatusBadge, statusLabel }
 import { requireRole } from "@/shared/auth/guard";
 import {
   countDefectsByScenario,
+  listAwardableBadges,
   listHuntScenarioDefects,
   listHuntScenarios,
 } from "@/shared/data/arena";
@@ -37,7 +38,14 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const strings = adminStrings(locale);
   const s = strings.arena;
 
-  const scenarios = await listHuntScenarios();
+  const [scenarios, badgeResult] = await Promise.all([
+    listHuntScenarios(),
+    listAwardableBadges(locale),
+  ]);
+  // A failed badge read leaves the picker with only its "no badge" option
+  // rather than taking the whole authoring screen down — every other field on
+  // the form still works, and the badge is the optional one.
+  const badges = badgeResult.ok ? badgeResult.data : [];
 
   const editorLabels: ScenarioEditorLabels = {
     new: s.new,
@@ -49,8 +57,9 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     formDescription: s.formDescription,
     formHtml: s.formHtml,
     formHtmlHint: s.formHtmlHint,
-    formStartMedia: s.formStartMedia,
-    formEndMedia: s.formEndMedia,
+    formBadge: s.formBadge,
+    formBadgeHint: s.formBadgeHint,
+    formBadgeNone: s.formBadgeNone,
     formState: s.formState,
     formSave: s.formSave,
     formCancel: s.formCancel,
@@ -82,6 +91,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           locale={locale}
           scenario={null}
           defects={[]}
+          badges={badges}
           labels={editorLabels}
           stateLabels={stateLabels}
           trigger={s.new}
@@ -155,6 +165,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                       locale={locale}
                       scenario={scenario}
                       defects={defectsById.get(scenario.id) ?? []}
+                      badges={badges}
                       labels={editorLabels}
                       stateLabels={stateLabels}
                       trigger={s.edit}

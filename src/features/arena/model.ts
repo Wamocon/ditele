@@ -235,9 +235,18 @@ export interface HuntScenario {
    * (`hunt_scenarios_one_render_mode`).
    */
   html: string | null;
-  /** §1.7: an image or video for the start and the end of the scenario. */
-  startMediaUrl: string | null;
-  endMediaUrl: string | null;
+  /**
+   * Optional badge, awarded once when a submission for this hunt is accepted.
+   *
+   * `null` is the normal case and the default. Every other badge in the product
+   * is a threshold ("five confirmed findings"); this is the one an author can
+   * pin to a specific scenario. Not every hunt should carry one — a badge per
+   * task is how a wall of badges stops meaning anything.
+   *
+   * Replaces `startMediaUrl` / `endMediaUrl`, which the authoring form wrote
+   * and no screen anywhere ever rendered.
+   */
+  rewardBadgeId: string | null;
   expectedFindings: number;
   state: string;
 }

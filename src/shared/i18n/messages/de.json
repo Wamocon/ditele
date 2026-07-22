@@ -1358,7 +1358,9 @@
       "activityEmpty": "Noch keine Ereignisse aufgezeichnet.",
       "activityBlocked": "Das Ereignisprotokoll ist für diese Sitzung nicht lesbar.",
       "contentStatus": "Inhaltsstatus",
-      "contentStatusEmpty": "Es gibt noch keine Inhaltsversionen."
+      "contentStatusEmpty": "Es gibt noch keine Inhaltsversionen.",
+      "contentStatusHint": "{versions} Inhaltsversionen in {courses} Kursen. Ein Kurs hat je Überarbeitung eine eigene Version, deshalb ist diese Summe höher als die Zahl der Kurse.",
+      "contentStatusTotal": "Versionen insgesamt"
     },
     "courses": {
       "title": "Kursverwaltung",
@@ -1654,11 +1656,9 @@
       "formCode": "Kennung",
       "formCodeHint": "Kleinbuchstaben, Ziffern und Bindestriche, z. B. kasse-v1. Aufgaben verweisen über diese Kennung auf das Szenario.",
       "formDescription": "Beschreibung",
-      "formEndMedia": "Bild oder Video am Ende",
       "formHtml": "HTML des Bildschirms",
       "formHtmlHint": "HTML, CSS und JavaScript. Der Bildschirm läuft in einem abgeschotteten Rahmen ohne Zugriff auf die Sitzung der lernenden Person.",
       "formSave": "Speichern",
-      "formStartMedia": "Bild oder Video am Anfang",
       "formState": "Status",
       "formTitle": "Titel",
       "formTitleHint": "Kursmaterial — auf Deutsch.",
@@ -1674,7 +1674,11 @@
       "saved": "Das Szenario wurde gespeichert.",
       "subtitle": "Fehlerjagden anlegen, den Bildschirm schreiben und die eingebauten Fehler festlegen.",
       "title": "Arena-Szenarien",
-      "titleRequired": "Bitte einen Titel angeben."
+      "titleRequired": "Bitte einen Titel angeben.",
+      "formBadge": "Abzeichen (optional)",
+      "formBadgeHint": "Wird einmalig vergeben, wenn eine Abgabe zu dieser Jagd angenommen wird. Ohne Abzeichen ist der Normalfall — nicht jede Jagd sollte eines vergeben.",
+      "formBadgeNone": "Kein Abzeichen",
+      "badgeInvalid": "Das gewählte Abzeichen ist ungültig."
     }
   },
   "status": {

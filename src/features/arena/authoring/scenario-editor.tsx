@@ -6,6 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button, Field, Input, Select, Textarea } from "@/shared/ui";
 import { idleState } from "@/features/admin/action-state";
 import type { HuntScenario, HuntScenarioDefect } from "@/features/arena/model";
+import type { AwardableBadge } from "@/shared/data/arena";
 import { saveScenarioAction } from "@/app/[locale]/(admin)/admin/arena/actions";
 
 /**
@@ -34,8 +35,9 @@ export interface ScenarioEditorLabels {
   formDescription: string;
   formHtml: string;
   formHtmlHint: string;
-  formStartMedia: string;
-  formEndMedia: string;
+  formBadge: string;
+  formBadgeHint: string;
+  formBadgeNone: string;
   formState: string;
   formSave: string;
   formCancel: string;
@@ -79,6 +81,7 @@ export function ScenarioEditor({
   locale,
   scenario,
   defects,
+  badges,
   labels,
   stateLabels,
   trigger,
@@ -87,6 +90,8 @@ export function ScenarioEditor({
   /** Null when creating. */
   scenario: HuntScenario | null;
   defects: HuntScenarioDefect[];
+  /** Active badges only — an archived one is never awarded, so never offered. */
+  badges: AwardableBadge[];
   labels: ScenarioEditorLabels;
   /** DB state → language, from the one `statusLabel` mapping. */
   stateLabels: { value: string; label: string }[];
@@ -209,14 +214,20 @@ export function ScenarioEditor({
             <Textarea name="description" rows={2} defaultValue={scenario?.description ?? ""} />
           </Field>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Field label={labels.formStartMedia}>
-              <Input name="startMediaUrl" defaultValue={scenario?.startMediaUrl ?? ""} />
-            </Field>
-            <Field label={labels.formEndMedia}>
-              <Input name="endMediaUrl" defaultValue={scenario?.endMediaUrl ?? ""} />
-            </Field>
-          </div>
+          {/* Optional, and it is the empty option that is selected by default.
+              Most hunts should carry no badge — one per task is how a wall of
+              badges stops meaning anything. Replaces the two media URL boxes,
+              which this form wrote and no screen ever rendered. */}
+          <Field label={labels.formBadge} hint={labels.formBadgeHint}>
+            <Select name="rewardBadgeId" defaultValue={scenario?.rewardBadgeId ?? ""}>
+              <option value="">{labels.formBadgeNone}</option>
+              {badges.map((badge) => (
+                <option key={badge.id} value={badge.id}>
+                  {badge.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
 
           <Field label={labels.formHtml} hint={labels.formHtmlHint}>
             <Textarea
