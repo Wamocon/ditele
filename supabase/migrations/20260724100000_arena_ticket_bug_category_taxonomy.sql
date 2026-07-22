@@ -44,6 +44,13 @@ begin;
 -- predicate is required for Postgres to infer a partial index.
 insert into public.bug_categories (organization_id, code, labels, state)
 values
+  -- `functional` was originally seeded (supabase/seed.sql), not migrated, so a
+  -- database built from migrations alone never had it and the verification at
+  -- the foot of this file failed. Listed here it is created on a fresh database
+  -- and skipped by the conflict clause everywhere it already exists.
+  (null, 'functional',
+   '{"de": "Funktional", "en": "Functional", "ru": "Функциональный"}'::jsonb,
+   'active'),
   (null, 'ui',
    '{"de": "Oberfläche", "en": "User interface", "ru": "Интерфейс"}'::jsonb,
    'active'),

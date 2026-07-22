@@ -241,7 +241,14 @@ begin
   raise notice 'WS-13 20260727110000 verified: % stage(s), % task(s) intact',
     stage_count, task_count;
 
-  if task_count < 3 then
+  -- The content version checked here is seeded (supabase/seed.sql), not
+  -- migrated. On a database built from migrations alone it is absent, and an
+  -- absent row is not a lost rebuild — there was nothing to rebuild. Verify
+  -- only when the seeded version is actually present.
+  if exists (
+    select 1 from public.content_versions version_record
+    where version_record.id = '01980a22-0000-7000-8000-000000000001'
+  ) and task_count < 3 then
     raise exception 'the snapshot now holds only % tasks — the rebuild lost content', task_count;
   end if;
 end

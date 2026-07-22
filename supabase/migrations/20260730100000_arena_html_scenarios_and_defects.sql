@@ -553,8 +553,12 @@ begin
 
   -- The backfill is the point of this migration's grading half; an empty table
   -- would mean the trainer panel has nothing to match against.
+  -- ...but only when there were scenarios to backfill FROM. The source rows are
+  -- seeded (supabase/seed_arena_scenarios.sql), not migrated, so on a database
+  -- built from migrations alone both sides are legitimately empty — that is an
+  -- unseeded database, not a backfill that matched nothing.
   select count(*) into observed from public.hunt_scenario_defects;
-  if observed < 1 then
+  if observed < 1 and exists (select 1 from public.hunt_scenarios) then
     raise exception 'hunt_scenario_defects is empty; the backfill matched nothing'
       using errcode = '55000';
   end if;
