@@ -57,11 +57,13 @@ export default async function Page({
         <div className="z-10 flex flex-col gap-3 rounded-(--radius-lg) border border-(--color-border) bg-(--color-bg) p-4 lg:sticky lg:top-[calc(var(--header-height)+8px)] lg:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[13px] font-semibold leading-5 tabular-nums">{progressLabel}</p>
+            {/* The cohort's name and state used to sit here as "Gruppe:
+                Standard" with its own badge. There is no group in this
+                product — a learner is enrolled in a COURSE — and the row was
+                showing an internal scheduling record that every learner shares
+                and none of them chose. The enrolment badge, which is about
+                this learner, is what remains. */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
-                {s.course.cohortLabel}: {course.cohortName}
-              </span>
-              <StatusBadge state={course.cohortState} locale={locale} />
               <StatusBadge state={course.enrollmentState} locale={locale} />
             </div>
           </div>

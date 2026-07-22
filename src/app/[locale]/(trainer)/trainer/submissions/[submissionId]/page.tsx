@@ -95,7 +95,7 @@ export default async function Page({
     <>
       <PageHeader
         title={review.taskTitle}
-        description={`${review.learnerName} · ${review.cohortName}`}
+        description={`${review.learnerName} · ${review.courseTitle}`}
         locale={locale}
         breadcrumbs={[
           { label: t("trainer.queue.title"), href: queueHref },
@@ -373,6 +373,6 @@ function lockedReason(review: ReviewDetail, t: Translate): string {
   if (review.state !== "submitted" && review.state !== "resubmitted") {
     return t("trainer.review.lockedDecided");
   }
-  if (review.cohortState !== "active") return t("trainer.review.lockedCohort");
+  if (review.courseState !== "active") return t("trainer.review.lockedCourse");
   return t("trainer.review.lockedRubric");
 }

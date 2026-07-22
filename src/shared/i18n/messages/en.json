@@ -318,7 +318,7 @@
       "lockReasonDefault": "This task has not been unlocked yet.",
       "lockReasonSchedule": "This task unlocks at a later date.",
       "lockReasonPrerequisite": "Complete the earlier tasks first.",
-      "lockReasonCohort": "Your group has not started yet.",
+      "lockReasonCohort": "This course has not been opened for you yet.",
       "emptyTitle": "This course has no content yet",
       "emptyDescription": "Content appears here as soon as your trainer publishes it.",
       "emptyStage": "There are no tasks in this stage yet.",
@@ -837,10 +837,10 @@
       "transferred": "Submission handed over.",
       "lockedTitle": "No decision possible",
       "lockedDecided": "This submission has already been decided.",
-      "lockedCohort": "The cohort is not active, so decisions are locked.",
       "lockedRubric": "No active rubric is stored for this task. Without a rubric the database rejects every decision.",
       "notFoundTitle": "Submission unavailable",
-      "notFoundText": "This submission does not exist, or it belongs to a cohort you are not responsible for."
+      "notFoundText": "This submission does not exist, or belongs to a course you do not review.",
+      "lockedCourse": "The course is not active, so decisions are locked."
     },
     "questions": {
       "title": "Questions",

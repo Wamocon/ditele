@@ -445,10 +445,20 @@ export interface ReviewDetail {
 
   learnerId: string;
   learnerName: string;
+  /**
+   * Plumbing only — `listCohortTrainers` and `transfer_submission` still take
+   * it. It is never rendered and never named: see `courseState` below.
+   */
   cohortId: string;
-  cohortName: string;
-  cohortState: string;
+  courseId: string;
   courseTitle: string;
+  /**
+   * The COURSE is the unit a trainer works in — there is no "group" in this
+   * product, and the decision gate used to read the cohort's state, which a
+   * course-assigned trainer could not even see. `cohorts` remains as the
+   * database's internal scheduling row; nothing on this screen names it.
+   */
+  courseState: string;
 
   taskId: string;
   taskTitle: string;
@@ -508,20 +518,18 @@ export async function getReviewDetail(
       assessment?: { question_translations?: LocalizedText };
     };
 
-    const [profiles, cohorts, instructions, evidence, hints, decisions, attempts, cohortStates] =
+    const [profiles, instructions, evidence, hints, decisions, attempts, course] =
       await Promise.all([
         readProfiles(supabase, [submission.learner_id]),
-        readCohorts(supabase),
         readTaskInstructions(supabase, submission.task_id, locale),
         readEvidence(supabase, version?.evidence_refs ?? []),
         readHintsUsed(supabase, submission.attempt_id, locale),
         readPastDecisions(supabase, submission.id),
         readAttemptNumbers(supabase, [submission.attempt_id]),
-        readCohortStates(supabase),
+        readCourse(supabase, submission.course_id, locale),
       ]);
 
     const selectedIds = new Set(version?.selected_option_ids ?? []);
-    const cohortState = cohortStates.get(submission.cohort_id) ?? "";
 
     return ok({
       id: submission.id,
@@ -536,14 +544,9 @@ export async function getReviewDetail(
       learnerId: submission.learner_id,
       learnerName: profiles.get(submission.learner_id) ?? "—",
       cohortId: submission.cohort_id,
-      cohortName: cohorts.get(submission.cohort_id) ?? "—",
-      cohortState,
-      // What a reviewer can actually act on. cohortName is kept only because
-      // cohortState still drives the decision lock; nothing renders it.
-      courseTitle:
-        (await readCourseTitles(supabase, [submission.course_id], locale)).get(
-          submission.course_id
-        ) ?? "—",
+      courseId: submission.course_id,
+      courseTitle: course.title,
+      courseState: course.state,
 
       taskId: submission.task_id,
       taskTitle: context.task_title || instructions.title || "—",
@@ -577,7 +580,10 @@ export async function getReviewDetail(
       pastDecisions: decisions,
       decidable:
         (submission.state === "submitted" || submission.state === "resubmitted") &&
-        cohortState === "active" &&
+        // The COURSE, not the cohort. The cohort's state was unreadable to a
+        // course-assigned trainer, so this was always false for them and the
+        // screen blamed a "Gruppe" the product does not have.
+        course.state === "active" &&
         (context.rubric?.criteria.length ?? 0) > 0,
     });
   } catch (cause) {
@@ -660,9 +666,28 @@ async function readPastDecisions(supabase: Supabase, submissionId: string): Prom
   }));
 }
 
-async function readCohortStates(supabase: Supabase): Promise<Map<string, string>> {
-  const { data } = await supabase.from("cohorts").select("id,state");
-  return new Map((data ?? []).map((row) => [row.id, row.state as string]));
+/**
+ * The course behind a submission: its title and whether it is active.
+ *
+ * Replaces the pair of `cohorts` reads this file used to make. Both returned
+ * nothing for a course-assigned trainer — `cohorts` is gated by
+ * `can_access_cohort`, which knew only about cohort membership until
+ * `20260805300000` — so the screen showed "Kurs: —" and locked the decision
+ * behind a group that was, in fact, active.
+ */
+async function readCourse(
+  supabase: Supabase,
+  courseId: string,
+  locale: string
+): Promise<{ title: string; state: string }> {
+  const [{ data: course }, titles] = await Promise.all([
+    supabase.from("courses").select("state").eq("id", courseId).maybeSingle(),
+    readCourseTitles(supabase, [courseId], locale),
+  ]);
+  return {
+    title: titles.get(courseId) ?? "—",
+    state: (course?.state as string) ?? "",
+  };
 }
 
 /* ── Decisions ──────────────────────────────────────────────────────────── */

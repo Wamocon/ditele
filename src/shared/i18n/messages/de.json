@@ -508,7 +508,7 @@
       "lockReasonDefault": "Diese Aufgabe ist noch nicht freigeschaltet.",
       "lockReasonSchedule": "Diese Aufgabe wird zu einem späteren Zeitpunkt freigeschaltet.",
       "lockReasonPrerequisite": "Schließe zuerst die vorherigen Aufgaben ab.",
-      "lockReasonCohort": "Deine Gruppe hat noch nicht begonnen.",
+      "lockReasonCohort": "Dieser Kurs ist für dich noch nicht freigeschaltet.",
       "lockPlayHunt": "Jagd spielen, um freizuschalten",
       "lockPlayHuntNamed": "»{title}« spielen, um freizuschalten",
       "emptyTitle": "Dieser Kurs hat noch keine Inhalte",
@@ -1133,10 +1133,10 @@
       "transferred": "Abgabe weitergegeben.",
       "lockedTitle": "Keine Entscheidung möglich",
       "lockedDecided": "Diese Abgabe wurde bereits entschieden.",
-      "lockedCohort": "Die Gruppe ist nicht aktiv, daher sind Entscheidungen gesperrt.",
       "lockedRubric": "Für diese Aufgabe ist kein aktiver Bewertungsbogen hinterlegt. Ohne Bewertungsbogen lehnt die Datenbank jede Entscheidung ab.",
       "notFoundTitle": "Abgabe nicht verfügbar",
-      "notFoundText": "Diese Abgabe existiert nicht oder gehört zu einer Gruppe, für die Sie nicht zuständig sind."
+      "notFoundText": "Diese Abgabe existiert nicht oder gehört zu einem Kurs, für den Sie nicht zuständig sind.",
+      "lockedCourse": "Der Kurs ist nicht aktiv, daher sind Entscheidungen gesperrt."
     },
     "questions": {
       "title": "Fragen",
