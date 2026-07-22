@@ -14,6 +14,8 @@ import {
 import { listAdminUsers, listRoles, type AdminUser } from "@/shared/data/admin";
 import { formatDateTime } from "@/features/admin/format";
 import { fill, getAdminDict, roleLabel, type AdminDict } from "@/features/admin/i18n";
+import { toUiRole } from "@/shared/auth/role";
+import type { AppRole } from "@/shared/auth/types";
 import { FilterField, FilterForm, Pagination } from "@/features/admin/ui";
 
 const PAGE_SIZE = 25;
@@ -178,7 +180,7 @@ function userColumns(locale: string, t: AdminDict): Column<AdminUser>[] {
       key: "role",
       header: t.users.colRole,
       cell: (row) => (
-        <Badge tone={roleTone(row.roleCode)}>{roleLabel(t, row.roleCode)}</Badge>
+        <Badge tone={roleTone(row.roleCode)}>{roleLabel(t, uiRoleCode(row.roleCode))}</Badge>
       ),
     },
     {
@@ -204,8 +206,33 @@ function userColumns(locale: string, t: AdminDict): Column<AdminUser>[] {
   ];
 }
 
+/**
+ * ⭐ Collapse a database role onto the one the interface speaks.
+ *
+ * The list used to print the raw code, so Olivia read as "ORGANISATION
+ * ADMINISTRATION" while every guard, every redirect and her own dashboard
+ * treated her as an administrator. `shared/auth/role.ts` has always mapped the
+ * eight database roles onto three; this screen was showing the other seven.
+ *
+ * Returned as a DATABASE code rather than a `UiRole` so `roleLabel` keeps
+ * working unchanged — `roleLabels` is keyed by code, and `student` is not one
+ * of them.
+ */
+function uiRoleCode(code: string | null): string | null {
+  if (!code) return code;
+  switch (toUiRole([code as AppRole])) {
+    case "admin":
+      return "admin";
+    case "trainer":
+      return "trainer";
+    default:
+      return "learner";
+  }
+}
+
 function roleTone(code: string | null): "brand" | "info" | "neutral" {
-  if (code === "admin" || code === "organization_admin" || code === "content_admin") return "brand";
-  if (code === "trainer") return "info";
+  const mapped = uiRoleCode(code);
+  if (mapped === "admin") return "brand";
+  if (mapped === "trainer") return "info";
   return "neutral";
 }
