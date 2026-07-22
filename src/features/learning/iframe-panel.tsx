@@ -229,6 +229,18 @@ export function IframePanel({ src, strings }: IframePanelProps) {
         </div>
       </div>
 
+      {/* Known issue: the embedded frame stays blank for some learners. Until
+          it is fixed the panel says so and points at the control that works,
+          rather than leaving them looking at an empty grey box wondering
+          whether the task is broken or they are. Delete this block and its
+          three strings when the embed is fixed. */}
+      <p
+        role="status"
+        className="border-b border-(--color-border) bg-(--color-warning-soft) px-3 py-2 text-[13px] leading-5 text-(--color-fg)"
+      >
+        {strings.targetKnownIssue}
+      </p>
+
       <div
         ref={frameRef}
         className={cn("relative bg-(--color-bg)", isFullscreen && "flex-1")}

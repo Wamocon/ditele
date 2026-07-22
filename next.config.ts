@@ -1,12 +1,48 @@
 import type { NextConfig } from "next";
 
 /**
- * Origin of the external practice target embedded by IframePanel.
- * Read from env so go-live is one env edit, never a grep across the codebase.
- * The seeded task points at https://example.invalid/testing-target.
+ * Origins the practice panel (`IframePanel`) is allowed to embed.
+ *
+ * ⚠️ **This defaulted to `https://example.invalid` and went to production that
+ * way.** Every Arena task in the Praxiskurs points at
+ * `https://shop.ditele-learn.ai/?taskid=…`, which was therefore NOT in
+ * `frame-src`, so Chrome refused the frame and the learner got an empty grey
+ * box. It survived a certificate renewal, an incognito window and a cache
+ * clear, because none of those were the cause.
+ *
+ * The failure mode is the problem, not the value. A blocked frame produces no
+ * server error, no failed request in the network tab worth noticing, and no
+ * message on screen — only a blank panel that looks exactly like a slow or
+ * broken remote site. "Go-live is one env edit" was true and was still missed,
+ * so the default no longer depends on anyone remembering it.
+ *
+ * `example.invalid` stays in the list: the seeded fixture course points at it,
+ * and dropping it would break the local seed to fix production.
+ *
+ * Override with `NEXT_PUBLIC_PRACTICE_TARGET_ORIGINS` — space- or
+ * comma-separated, e.g. "https://shop.example.com https://staging.example.com".
+ * Adding a practice target on a NEW origin means adding it here, or its panel
+ * will be blank in the same silent way.
  */
-const practiceTargetOrigin =
-  process.env.NEXT_PUBLIC_PRACTICE_TARGET_ORIGIN ?? "https://example.invalid";
+const DEFAULT_PRACTICE_TARGET_ORIGINS = [
+  "https://shop.ditele-learn.ai",
+  "https://example.invalid",
+];
+
+const practiceTargetOrigins = (
+  process.env.NEXT_PUBLIC_PRACTICE_TARGET_ORIGINS ??
+  process.env.NEXT_PUBLIC_PRACTICE_TARGET_ORIGIN ??
+  ""
+)
+  .split(/[\s,]+/)
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const frameSources = (
+  practiceTargetOrigins.length > 0
+    ? practiceTargetOrigins
+    : DEFAULT_PRACTICE_TARGET_ORIGINS
+).join(" ");
 
 const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -46,7 +82,7 @@ const securityHeaders = [
   //                     must not disagree. That disagreement is what I-049 was.
   {
     key: "Content-Security-Policy",
-    value: `frame-src 'self' ${practiceTargetOrigin}; frame-ancestors 'self';`,
+    value: `frame-src 'self' ${frameSources}; frame-ancestors 'self';`,
   },
 ];
 

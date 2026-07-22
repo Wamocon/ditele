@@ -576,6 +576,19 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
                 </span>
               )}
             </div>
+            {/* Known issue: the embedded test environment stays blank for some
+                learners. Said here, next to the task type, as well as on the
+                panel itself — a learner who scrolls straight past the grey box
+                would otherwise reach the report form with nothing to report on
+                and no idea why. Remove both when the embed is fixed. */}
+            {isPractice && (
+              <p
+                role="status"
+                className="max-w-[68ch] rounded-(--radius-md) bg-(--color-warning-soft) px-3 py-2 text-[13px] leading-5"
+              >
+                {s.targetKnownIssue}
+              </p>
+            )}
             <div className="max-w-[68ch] whitespace-pre-line text-[15px] leading-6">
               {task.instructions}
             </div>
