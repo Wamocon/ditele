@@ -11,39 +11,6 @@ export type Database = {
     Tables: {
       [_ in never]: never
     }
-      xp_rules: {
-        Row: {
-          code: string
-          created_at: string
-          is_awarded: boolean
-          points: number
-          rule_version: number
-          source_kind: string
-          state: Database["public"]["Enums"]["record_state"]
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          is_awarded?: boolean
-          points: number
-          rule_version?: number
-          source_kind: string
-          state?: Database["public"]["Enums"]["record_state"]
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          is_awarded?: boolean
-          points?: number
-          rule_version?: number
-          source_kind?: string
-          state?: Database["public"]["Enums"]["record_state"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
     Views: {
       [_ in never]: never
     }
@@ -1367,9 +1334,11 @@ export type Database = {
       }
       course_localizations: {
         Row: {
+          completion_video_url: string | null
           course_id: string
           created_at: string
           description_html: string
+          exam_video_url: string | null
           id: string
           learning_outcomes: Json
           locale: string
@@ -1378,13 +1347,13 @@ export type Database = {
           summary: string
           title: string
           updated_at: string
-          completion_video_url: string | null
-          exam_video_url: string | null
         }
         Insert: {
+          completion_video_url?: string | null
           course_id: string
           created_at?: string
           description_html: string
+          exam_video_url?: string | null
           id?: string
           learning_outcomes?: Json
           locale: string
@@ -1393,13 +1362,13 @@ export type Database = {
           summary: string
           title: string
           updated_at?: string
-          completion_video_url?: string | null
-          exam_video_url?: string | null
         }
         Update: {
+          completion_video_url?: string | null
           course_id?: string
           created_at?: string
           description_html?: string
+          exam_video_url?: string | null
           id?: string
           learning_outcomes?: Json
           locale?: string
@@ -1408,8 +1377,6 @@ export type Database = {
           summary?: string
           title?: string
           updated_at?: string
-          completion_video_url?: string | null
-          exam_video_url?: string | null
         }
         Relationships: [
           {
@@ -1421,14 +1388,6 @@ export type Database = {
           },
         ]
       }
-      // ──────────────────────────────────────────────────────────────────
-      // Added BY HAND by WS-13 (ISSUES.md I-052 / I-057). `npm run db:types`
-      // shells out to `supabase gen types`, which starts a Docker container to
-      // run pg_meta — and it does so even when given `--db-url`, so pointing it
-      // at the remote database does not avoid the dependency. This machine has
-      // no Docker daemon. Introspected from the live database with psql, so a
-      // real regeneration produces the same thing and overwrites this cleanly.
-      // ──────────────────────────────────────────────────────────────────
       course_trainers: {
         Row: {
           assigned_at: string
@@ -1471,176 +1430,6 @@ export type Database = {
           },
         ]
       }
-      learner_trainers: {
-        Row: {
-          assigned_at: string
-          assigned_by: string | null
-          learner_id: string
-          organization_id: string
-          removed_at: string | null
-          trainer_id: string
-        }
-        Insert: {
-          assigned_at?: string
-          assigned_by?: string | null
-          learner_id: string
-          organization_id: string
-          removed_at?: string | null
-          trainer_id: string
-        }
-        Update: {
-          assigned_at?: string
-          assigned_by?: string | null
-          learner_id?: string
-          organization_id?: string
-          removed_at?: string | null
-          trainer_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "learner_trainers_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      hunt_scenario_defects: {
-        Row: {
-          code: string
-          created_at: string
-          expected_behaviour: string
-          id: string
-          location_hint: string
-          position: number
-          reproduction: string
-          scenario_id: string
-          severity: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          expected_behaviour?: string
-          id?: string
-          location_hint?: string
-          position?: number
-          reproduction?: string
-          scenario_id: string
-          severity?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          expected_behaviour?: string
-          id?: string
-          location_hint?: string
-          position?: number
-          reproduction?: string
-          scenario_id?: string
-          severity?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "hunt_scenario_defects_scenario_id_fkey"
-            columns: ["scenario_id"]
-            isOneToOne: false
-            referencedRelation: "hunt_scenarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      task_gate_questions: {
-        Row: {
-          created_at: string
-          id: string
-          question_translations: Json
-          task_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          question_translations: Json
-          task_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          question_translations?: Json
-          task_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "task_gate_questions_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: true
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      task_gate_responses: {
-        Row: {
-          answer_text: string | null
-          answered_at: string | null
-          created_at: string
-          enrollment_id: string
-          gate_question_id: string
-          id: string
-          learner_id: string
-          organization_id: string
-          row_version: number
-          state: string
-          task_id: string
-          updated_at: string
-        }
-        Insert: {
-          answer_text?: string | null
-          answered_at?: string | null
-          created_at?: string
-          enrollment_id: string
-          gate_question_id: string
-          id?: string
-          learner_id: string
-          organization_id: string
-          row_version?: number
-          state: string
-          task_id: string
-          updated_at?: string
-        }
-        Update: {
-          answer_text?: string | null
-          answered_at?: string | null
-          created_at?: string
-          enrollment_id?: string
-          gate_question_id?: string
-          id?: string
-          learner_id?: string
-          organization_id?: string
-          row_version?: number
-          state?: string
-          task_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "task_gate_responses_gate_question_id_fkey"
-            columns: ["gate_question_id"]
-            isOneToOne: false
-            referencedRelation: "task_gate_questions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       courses: {
         Row: {
           archived_at: string | null
@@ -1649,6 +1438,7 @@ export type Database = {
           default_locale: string
           estimated_minutes: number | null
           external_id: string | null
+          hero_image_url: string | null
           id: string
           organization_id: string | null
           row_version: number
@@ -1656,7 +1446,6 @@ export type Database = {
           source_system: string | null
           state: Database["public"]["Enums"]["record_state"]
           updated_at: string
-          hero_image_url: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -1665,6 +1454,7 @@ export type Database = {
           default_locale?: string
           estimated_minutes?: number | null
           external_id?: string | null
+          hero_image_url?: string | null
           id?: string
           organization_id?: string | null
           row_version?: number
@@ -1672,7 +1462,6 @@ export type Database = {
           source_system?: string | null
           state?: Database["public"]["Enums"]["record_state"]
           updated_at?: string
-          hero_image_url?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -1681,6 +1470,7 @@ export type Database = {
           default_locale?: string
           estimated_minutes?: number | null
           external_id?: string | null
+          hero_image_url?: string | null
           id?: string
           organization_id?: string | null
           row_version?: number
@@ -1688,7 +1478,6 @@ export type Database = {
           source_system?: string | null
           state?: Database["public"]["Enums"]["record_state"]
           updated_at?: string
-          hero_image_url?: string | null
         }
         Relationships: [
           {
@@ -2176,6 +1965,241 @@ export type Database = {
           },
         ]
       }
+      evidence_upload_command_receipts: {
+        Row: {
+          actor_id: string
+          attempt_id: string
+          completed_at: string
+          correlation_id: string
+          created_at: string
+          evidence_id: string | null
+          expected_draft_version: number | null
+          id: string
+          idempotency_key: string
+          operation: string
+          payload_hash: string
+          result_draft_version: number | null
+          upload_id: string
+        }
+        Insert: {
+          actor_id: string
+          attempt_id: string
+          completed_at?: string
+          correlation_id: string
+          created_at?: string
+          evidence_id?: string | null
+          expected_draft_version?: number | null
+          id?: string
+          idempotency_key: string
+          operation: string
+          payload_hash: string
+          result_draft_version?: number | null
+          upload_id: string
+        }
+        Update: {
+          actor_id?: string
+          attempt_id?: string
+          completed_at?: string
+          correlation_id?: string
+          created_at?: string
+          evidence_id?: string | null
+          expected_draft_version?: number | null
+          id?: string
+          idempotency_key?: string
+          operation?: string
+          payload_hash?: string
+          result_draft_version?: number | null
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_upload_command_receipts_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_upload_receipts_upload_context_fk"
+            columns: ["upload_id", "actor_id", "attempt_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_uploads"
+            referencedColumns: ["id", "owner_id", "attempt_id"]
+          },
+        ]
+      }
+      evidence_uploads: {
+        Row: {
+          attempt_id: string
+          bucket_id: string
+          cleanup_attempt_count: number
+          cleanup_available_at: string | null
+          cleanup_claim_token: string | null
+          cleanup_claimed_at: string | null
+          cleanup_claimed_by: string | null
+          cleanup_last_error_code: string | null
+          cleanup_lease_expires_at: string | null
+          client_sha256: string
+          cohort_id: string
+          content_version_id: string
+          correlation_id: string
+          course_id: string
+          created_at: string
+          declared_byte_size: number
+          declared_mime_type: string
+          enrollment_id: string
+          evidence_id: string | null
+          expired_at: string | null
+          expires_at: string
+          finalized_at: string | null
+          id: string
+          idempotency_key: string
+          media_asset_id: string | null
+          object_key: string
+          organization_id: string
+          original_file_name: string
+          owner_id: string
+          rejected_at: string | null
+          rejection_code: string | null
+          removed_at: string | null
+          row_version: number
+          state: Database["public"]["Enums"]["evidence_upload_state"]
+          storage_deleted_at: string | null
+          task_id: string
+          title: string
+          updated_at: string
+          verified_byte_size: number | null
+          verified_mime_type: string | null
+          verified_sha256: string | null
+        }
+        Insert: {
+          attempt_id: string
+          bucket_id?: string
+          cleanup_attempt_count?: number
+          cleanup_available_at?: string | null
+          cleanup_claim_token?: string | null
+          cleanup_claimed_at?: string | null
+          cleanup_claimed_by?: string | null
+          cleanup_last_error_code?: string | null
+          cleanup_lease_expires_at?: string | null
+          client_sha256: string
+          cohort_id: string
+          content_version_id: string
+          correlation_id: string
+          course_id: string
+          created_at?: string
+          declared_byte_size: number
+          declared_mime_type: string
+          enrollment_id: string
+          evidence_id?: string | null
+          expired_at?: string | null
+          expires_at: string
+          finalized_at?: string | null
+          id?: string
+          idempotency_key: string
+          media_asset_id?: string | null
+          object_key: string
+          organization_id: string
+          original_file_name: string
+          owner_id: string
+          rejected_at?: string | null
+          rejection_code?: string | null
+          removed_at?: string | null
+          row_version?: number
+          state?: Database["public"]["Enums"]["evidence_upload_state"]
+          storage_deleted_at?: string | null
+          task_id: string
+          title: string
+          updated_at?: string
+          verified_byte_size?: number | null
+          verified_mime_type?: string | null
+          verified_sha256?: string | null
+        }
+        Update: {
+          attempt_id?: string
+          bucket_id?: string
+          cleanup_attempt_count?: number
+          cleanup_available_at?: string | null
+          cleanup_claim_token?: string | null
+          cleanup_claimed_at?: string | null
+          cleanup_claimed_by?: string | null
+          cleanup_last_error_code?: string | null
+          cleanup_lease_expires_at?: string | null
+          client_sha256?: string
+          cohort_id?: string
+          content_version_id?: string
+          correlation_id?: string
+          course_id?: string
+          created_at?: string
+          declared_byte_size?: number
+          declared_mime_type?: string
+          enrollment_id?: string
+          evidence_id?: string | null
+          expired_at?: string | null
+          expires_at?: string
+          finalized_at?: string | null
+          id?: string
+          idempotency_key?: string
+          media_asset_id?: string | null
+          object_key?: string
+          organization_id?: string
+          original_file_name?: string
+          owner_id?: string
+          rejected_at?: string | null
+          rejection_code?: string | null
+          removed_at?: string | null
+          row_version?: number
+          state?: Database["public"]["Enums"]["evidence_upload_state"]
+          storage_deleted_at?: string | null
+          task_id?: string
+          title?: string
+          updated_at?: string
+          verified_byte_size?: number | null
+          verified_mime_type?: string | null
+          verified_sha256?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_uploads_attempt_context_fk"
+            columns: [
+              "attempt_id",
+              "organization_id",
+              "enrollment_id",
+              "owner_id",
+              "cohort_id",
+              "course_id",
+              "content_version_id",
+              "task_id",
+            ]
+            isOneToOne: false
+            referencedRelation: "attempts"
+            referencedColumns: [
+              "id",
+              "organization_id",
+              "enrollment_id",
+              "learner_id",
+              "cohort_id",
+              "course_id",
+              "content_version_id",
+              "task_id",
+            ]
+          },
+          {
+            foreignKeyName: "evidence_uploads_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: true
+            referencedRelation: "evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_uploads_media_asset_id_fkey"
+            columns: ["media_asset_id"]
+            isOneToOne: true
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_id_mappings: {
         Row: {
           canonical_id: string
@@ -2209,16 +2233,6 @@ export type Database = {
         }
         Relationships: []
       }
-      // ─────────────────────────────────────────────────────────────────────
-      // hunt_findings / hunt_scenarios were added BY HAND by WS-8, not by
-      // `npm run db:types`. That script shells out to `supabase gen types`,
-      // which starts a local Docker container, and this machine has no Docker
-      // daemon — it fails with "check if the path is correct and if the daemon
-      // is running". These two blocks are exactly what a regeneration on a
-      // machine that does have Docker will produce from migration
-      // 20260722200000_arena_hunt_tables.sql, so the next real regeneration
-      // simply overwrites them with the same content. Nothing to unwind.
-      // ─────────────────────────────────────────────────────────────────────
       hunt_findings: {
         Row: {
           attempt_id: string
@@ -2280,6 +2294,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "hunt_findings_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hunt_findings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "hunt_findings_scenario_id_fkey"
             columns: ["scenario_id"]
             isOneToOne: false
@@ -2295,57 +2323,107 @@ export type Database = {
           },
         ]
       }
+      hunt_scenario_defects: {
+        Row: {
+          code: string
+          created_at: string
+          expected_behaviour: string
+          id: string
+          location_hint: string
+          position: number
+          reproduction: string
+          scenario_id: string
+          severity: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expected_behaviour?: string
+          id?: string
+          location_hint?: string
+          position?: number
+          reproduction?: string
+          scenario_id: string
+          severity?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expected_behaviour?: string
+          id?: string
+          location_hint?: string
+          position?: number
+          reproduction?: string
+          scenario_id?: string
+          severity?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hunt_scenario_defects_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "hunt_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hunt_scenarios: {
         Row: {
           code: string
           configuration: Json
           created_at: string
           description: string
+          end_media_url: string | null
           expected_findings: number
+          html: string | null
           id: string
           organization_id: string | null
           row_version: number
           scenario_version: number
+          start_media_url: string | null
           state: Database["public"]["Enums"]["record_state"]
           title: string
           updated_at: string
-          end_media_url: string | null
-          html: string | null
-          start_media_url: string | null
         }
         Insert: {
           code: string
           configuration?: Json
           created_at?: string
           description?: string
+          end_media_url?: string | null
           expected_findings?: number
+          html?: string | null
           id?: string
           organization_id?: string | null
           row_version?: number
           scenario_version?: number
+          start_media_url?: string | null
           state?: Database["public"]["Enums"]["record_state"]
           title: string
           updated_at?: string
-          end_media_url?: string | null
-          html?: string | null
-          start_media_url?: string | null
         }
         Update: {
           code?: string
           configuration?: Json
           created_at?: string
           description?: string
+          end_media_url?: string | null
           expected_findings?: number
+          html?: string | null
           id?: string
           organization_id?: string | null
           row_version?: number
           scenario_version?: number
+          start_media_url?: string | null
           state?: Database["public"]["Enums"]["record_state"]
           title?: string
           updated_at?: string
-          end_media_url?: string | null
-          html?: string | null
-          start_media_url?: string | null
         }
         Relationships: [
           {
@@ -2838,6 +2916,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "learner_streaks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learner_trainers: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          learner_id: string
+          organization_id: string
+          removed_at: string | null
+          trainer_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          learner_id: string
+          organization_id: string
+          removed_at?: string | null
+          trainer_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          learner_id?: string
+          organization_id?: string
+          removed_at?: string | null
+          trainer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_trainers_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -4177,70 +4290,6 @@ export type Database = {
           },
         ]
       }
-      ratings: {
-        Row: {
-          comment: string | null
-          course_id: string | null
-          created_at: string
-          id: string
-          learner_id: string
-          moderation_state: string
-          organization_id: string
-          row_version: number
-          score: number
-          task_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          comment?: string | null
-          course_id?: string | null
-          created_at?: string
-          id?: string
-          learner_id: string
-          moderation_state?: string
-          organization_id: string
-          row_version?: number
-          score: number
-          task_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          comment?: string | null
-          course_id?: string | null
-          created_at?: string
-          id?: string
-          learner_id?: string
-          moderation_state?: string
-          organization_id?: string
-          row_version?: number
-          score?: number
-          task_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ratings_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ratings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ratings_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       retention_policies: {
         Row: {
           approved_by: string | null
@@ -5193,6 +5242,112 @@ export type Database = {
           },
         ]
       }
+      task_gate_questions: {
+        Row: {
+          created_at: string
+          id: string
+          question_translations: Json
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_translations: Json
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_translations?: Json
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_gate_questions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_gate_responses: {
+        Row: {
+          answer_text: string | null
+          answered_at: string | null
+          created_at: string
+          enrollment_id: string
+          gate_question_id: string
+          id: string
+          learner_id: string
+          organization_id: string
+          row_version: number
+          state: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer_text?: string | null
+          answered_at?: string | null
+          created_at?: string
+          enrollment_id: string
+          gate_question_id: string
+          id?: string
+          learner_id: string
+          organization_id: string
+          row_version?: number
+          state: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer_text?: string | null
+          answered_at?: string | null
+          created_at?: string
+          enrollment_id?: string
+          gate_question_id?: string
+          id?: string
+          learner_id?: string
+          organization_id?: string
+          row_version?: number
+          state?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_gate_responses_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_gate_responses_gate_question_id_fkey"
+            columns: ["gate_question_id"]
+            isOneToOne: false
+            referencedRelation: "task_gate_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_gate_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_gate_responses_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_hints: {
         Row: {
           content_translations: Json
@@ -5446,9 +5601,11 @@ export type Database = {
           created_at: string
           due_at: string | null
           id: string
+          offset_days: number | null
           row_version: number
           task_id: string
           updated_at: string
+          window_days: number | null
         }
         Insert: {
           available_from?: string | null
@@ -5458,9 +5615,11 @@ export type Database = {
           created_at?: string
           due_at?: string | null
           id?: string
+          offset_days?: number | null
           row_version?: number
           task_id: string
           updated_at?: string
+          window_days?: number | null
         }
         Update: {
           available_from?: string | null
@@ -5470,9 +5629,11 @@ export type Database = {
           created_at?: string
           due_at?: string | null
           id?: string
+          offset_days?: number | null
           row_version?: number
           task_id?: string
           updated_at?: string
+          window_days?: number | null
         }
         Relationships: [
           {
@@ -5542,11 +5703,14 @@ export type Database = {
           content_version_id: string | null
           course_id: string
           created_at: string
+          document_url: string | null
           expected_minutes: number | null
           external_id: string | null
           hint_penalty_basis_points: number
           id: string
+          intro_video_url: string | null
           position: number
+          required_hunt_scenario_id: string | null
           row_version: number
           source_system: string | null
           stage_id: string
@@ -5554,18 +5718,21 @@ export type Database = {
           target_url: string | null
           task_kind: string
           updated_at: string
-          required_hunt_scenario_id: string | null
+          video_url: string | null
         }
         Insert: {
           bug_category_id?: string | null
           content_version_id?: string | null
           course_id: string
           created_at?: string
+          document_url?: string | null
           expected_minutes?: number | null
           external_id?: string | null
           hint_penalty_basis_points?: number
           id?: string
+          intro_video_url?: string | null
           position: number
+          required_hunt_scenario_id?: string | null
           row_version?: number
           source_system?: string | null
           stage_id: string
@@ -5573,18 +5740,21 @@ export type Database = {
           target_url?: string | null
           task_kind?: string
           updated_at?: string
-          required_hunt_scenario_id?: string | null
+          video_url?: string | null
         }
         Update: {
           bug_category_id?: string | null
           content_version_id?: string | null
           course_id?: string
           created_at?: string
+          document_url?: string | null
           expected_minutes?: number | null
           external_id?: string | null
           hint_penalty_basis_points?: number
           id?: string
+          intro_video_url?: string | null
           position?: number
+          required_hunt_scenario_id?: string | null
           row_version?: number
           source_system?: string | null
           stage_id?: string
@@ -5592,7 +5762,7 @@ export type Database = {
           target_url?: string | null
           task_kind?: string
           updated_at?: string
-          required_hunt_scenario_id?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -5614,6 +5784,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_required_hunt_scenario_fkey"
+            columns: ["required_hunt_scenario_id"]
+            isOneToOne: false
+            referencedRelation: "hunt_scenarios"
             referencedColumns: ["id"]
           },
           {
@@ -5801,7 +5978,7 @@ export type Database = {
           points: number
           rationale: string
           rule_version: number
-          skill_id: string
+          skill_id: string | null
           source_event_id: string
           source_kind: string
         }
@@ -5814,7 +5991,7 @@ export type Database = {
           points: number
           rationale: string
           rule_version: number
-          skill_id: string
+          skill_id?: string | null
           source_event_id: string
           source_kind: string
         }
@@ -5827,7 +6004,7 @@ export type Database = {
           points?: number
           rationale?: string
           rule_version?: number
-          skill_id?: string
+          skill_id?: string | null
           source_event_id?: string
           source_kind?: string
         }
@@ -5847,6 +6024,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      xp_rules: {
+        Row: {
+          code: string
+          created_at: string
+          is_awarded: boolean
+          points: number
+          rule_version: number
+          source_kind: string
+          state: Database["public"]["Enums"]["record_state"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          is_awarded?: boolean
+          points: number
+          rule_version?: number
+          source_kind: string
+          state?: Database["public"]["Enums"]["record_state"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          is_awarded?: boolean
+          points?: number
+          rule_version?: number
+          source_kind?: string
+          state?: Database["public"]["Enums"]["record_state"]
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -5881,6 +6091,33 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "questions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      answer_task_gate_question: {
+        Args: {
+          p_answer_text: string
+          p_correlation_id?: string
+          p_task_id: string
+        }
+        Returns: {
+          answer_text: string | null
+          answered_at: string | null
+          created_at: string
+          enrollment_id: string
+          gate_question_id: string
+          id: string
+          learner_id: string
+          organization_id: string
+          row_version: number
+          state: string
+          task_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "task_gate_responses"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -6024,161 +6261,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      remove_trainer_from_course: {
-        Args: {
-          p_correlation_id?: string
-          p_course_id: string
-          p_trainer_id: string
-        }
-        Returns: {
-          assigned_at: string
-          assigned_by: string | null
-          course_id: string
-          organization_id: string
-          removed_at: string | null
-          trainer_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "course_trainers"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      remove_trainer_from_learner: {
-        Args: {
-          p_correlation_id?: string
-          p_learner_id: string
-          p_trainer_id: string
-        }
-        Returns: {
-          assigned_at: string
-          assigned_by: string | null
-          learner_id: string
-          organization_id: string
-          removed_at: string | null
-          trainer_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "learner_trainers"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      enroll_learner_in_course: {
-        Args: {
-          p_correlation_id?: string
-          p_course_id: string
-          p_learner_id: string
-          p_reason?: string
-        }
-        Returns: {
-          cohort_id: string | null
-          completed_at: string | null
-          course_id: string
-          created_at: string
-          decided_at: string | null
-          decided_by: string | null
-          decision_reason: string | null
-          id: string
-          idempotency_key: string
-          learner_id: string
-          organization_id: string
-          request_note: string | null
-          row_version: number
-          state: Database["public"]["Enums"]["enrollment_state"]
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "enrollments"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      remove_learner_from_course: {
-        Args: {
-          p_correlation_id?: string
-          p_course_id: string
-          p_learner_id: string
-          p_reason?: string
-        }
-        Returns: {
-          cohort_id: string | null
-          completed_at: string | null
-          course_id: string
-          created_at: string
-          decided_at: string | null
-          decided_by: string | null
-          decision_reason: string | null
-          id: string
-          idempotency_key: string
-          learner_id: string
-          organization_id: string
-          request_note: string | null
-          row_version: number
-          state: Database["public"]["Enums"]["enrollment_state"]
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "enrollments"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      duplicate_course: {
-        Args: {
-          p_new_slug: string
-          p_source_course_id: string
-          p_title_suffix?: string
-        }
-        Returns: string
-      }
-      set_task_gate_question: {
-        Args: {
-          p_correlation_id?: string
-          p_question_translations: Json
-          p_task_id: string
-        }
-        Returns: Json
-      }
-      answer_task_gate_question: {
-        Args: {
-          p_answer_text: string
-          p_correlation_id?: string
-          p_task_id: string
-        }
-        Returns: Json
-      }
-      skip_task_gate_question: {
-        Args: { p_correlation_id?: string; p_task_id: string }
-        Returns: Json
-      }
-      upsert_hunt_scenario: {
-        Args: {
-          p_code: string
-          p_correlation_id?: string
-          p_description: string
-          p_end_media_url?: string
-          p_expected_findings?: number
-          p_html?: string
-          p_organization_id?: string
-          p_start_media_url?: string
-          p_state?: Database["public"]["Enums"]["record_state"]
-          p_title: string
-        }
-        Returns: Json
-      }
-      set_hunt_scenario_defects: {
-        Args: {
-          p_correlation_id?: string
-          p_defects: Json
-          p_scenario_id: string
-        }
-        Returns: number
-      }
       claim_question: {
         Args: {
           p_correlation_id: string
@@ -6210,6 +6292,31 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_task_evidence_upload_cleanup: {
+        Args: { p_claim_token: string; p_limit: number; p_worker_id: string }
+        Returns: {
+          bucket_id: string
+          cleanup_attempt: number
+          object_key: string
+          upload_id: string
+        }[]
+      }
+      complete_task_evidence_upload_cleanup: {
+        Args: {
+          p_claim_token: string
+          p_deleted: boolean
+          p_error_code?: string
+          p_retry_at?: string
+          p_upload_id: string
+          p_worker_id: string
+        }
+        Returns: {
+          cleanup_attempt: number
+          retry_at: string
+          storage_deleted_at: string
+          upload_id: string
+        }[]
+      }
       consume_authentication_rate_limit: {
         Args: {
           p_client_subject: string
@@ -6217,6 +6324,10 @@ export type Database = {
           p_operation: string
         }
         Returns: boolean
+      }
+      copy_task_into_course: {
+        Args: { p_source_task_id: string; p_target_stage_id: string }
+        Returns: string
       }
       create_external_task_evidence: {
         Args: {
@@ -6281,6 +6392,27 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_task_evidence_upload_intent: {
+        Args: {
+          p_attempt_id: string
+          p_client_sha256: string
+          p_correlation_id: string
+          p_declared_byte_size: number
+          p_declared_mime_type: string
+          p_idempotency_key: string
+          p_original_file_name: string
+          p_title: string
+        }
+        Returns: {
+          bucket_id: string
+          correlation_id: string
+          expires_at: string
+          object_key: string
+          replayed: boolean
+          upload_id: string
+          upload_state: Database["public"]["Enums"]["evidence_upload_state"]
+        }[]
       }
       decide_content_review: {
         Args: {
@@ -6348,6 +6480,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      decide_hunt_finding: {
+        Args: {
+          p_correlation_id: string
+          p_expected_version: number
+          p_finding_id: string
+          p_idempotency_key: string
+          p_planted_code: string
+          p_verdict: string
+        }
+        Returns: {
+          attempt_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          organization_id: string | null
+          planted_code: string | null
+          reported_details: Json
+          reported_summary: string
+          row_version: number
+          scenario_id: string | null
+          severity: string | null
+          submission_id: string | null
+          updated_at: string
+          verdict: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_findings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       decide_submission: {
         Args: {
           p_comment: string
@@ -6383,15 +6548,82 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      duplicate_course: {
+        Args: {
+          p_new_slug: string
+          p_source_course_id: string
+          p_title_suffix?: string
+        }
+        Returns: string
+      }
+      enroll_learner_in_course: {
+        Args: {
+          p_correlation_id?: string
+          p_course_id: string
+          p_learner_id: string
+          p_reason?: string
+        }
+        Returns: {
+          cohort_id: string | null
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          id: string
+          idempotency_key: string
+          learner_id: string
+          organization_id: string
+          request_note: string | null
+          row_version: number
+          state: Database["public"]["Enums"]["enrollment_state"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "enrollments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      finalize_task_evidence_upload_service: {
+        Args: {
+          p_actor_id: string
+          p_correlation_id: string
+          p_idempotency_key: string
+          p_upload_id: string
+          p_verified_byte_size: number
+          p_verified_mime_type: string
+          p_verified_sha256: string
+        }
+        Returns: {
+          byte_size: number
+          captured_at: string
+          correlation_id: string
+          evidence_id: string
+          media_asset_id: string
+          mime_type: string
+          original_file_name: string
+          replayed: boolean
+          sha256_hex: string
+          title: string
+          upload_id: string
+        }[]
+      }
       flag_learner_to_trainer: {
-        Args: { p_correlation_id?: string; p_enrollment_id: string; p_note: string }
+        Args: {
+          p_correlation_id: string
+          p_enrollment_id: string
+          p_note: string
+        }
         Returns: Json
       }
       get_content_archive_impact: {
         Args: { p_content_version_id: string }
         Returns: Json
       }
-      get_my_arena_summary: { Args: Record<string, never>; Returns: Json }
+      get_my_arena_summary: { Args: never; Returns: Json }
       get_my_learning_course: {
         Args: { p_course_id: string; p_locale?: string }
         Returns: Json
@@ -6431,7 +6663,18 @@ export type Database = {
         Args: { p_locale?: string; p_submission_id: string }
         Returns: Json
       }
-      list_progress_board: { Args: { p_locale?: string }; Returns: Json }
+      get_task_evidence_download_target: {
+        Args: { p_evidence_id: string }
+        Returns: {
+          bucket_id: string
+          byte_size: number
+          evidence_id: string
+          mime_type: string
+          object_key: string
+          original_file_name: string
+          sha256_hex: string
+        }[]
+      }
       list_active_cohort_trainers: {
         Args: { p_cohort_id: string }
         Returns: {
@@ -6512,6 +6755,20 @@ export type Database = {
           task_title: string
         }[]
       }
+      list_my_ready_task_evidence_uploads: {
+        Args: { p_attempt_id: string }
+        Returns: {
+          byte_size: number
+          captured_at: string
+          evidence_id: string
+          finalized_at: string
+          immutable_linked: boolean
+          mime_type: string
+          original_file_name: string
+          title: string
+          upload_id: string
+        }[]
+      }
       list_organization_member_profiles: {
         Args: { p_organization_id: string }
         Returns: {
@@ -6523,6 +6780,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      list_progress_board: { Args: { p_locale?: string }; Returns: Json }
       list_visible_skill_prerequisites: {
         Args: never
         Returns: {
@@ -6602,6 +6860,114 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "portfolio_publications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reject_task_evidence_upload_service: {
+        Args: {
+          p_actor_id: string
+          p_correlation_id: string
+          p_idempotency_key: string
+          p_rejection_code: string
+          p_upload_id: string
+        }
+        Returns: {
+          bucket_id: string
+          correlation_id: string
+          object_key: string
+          replayed: boolean
+          upload_id: string
+          upload_state: Database["public"]["Enums"]["evidence_upload_state"]
+        }[]
+      }
+      remove_learner_from_course: {
+        Args: {
+          p_correlation_id?: string
+          p_course_id: string
+          p_learner_id: string
+          p_reason?: string
+        }
+        Returns: {
+          cohort_id: string | null
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          id: string
+          idempotency_key: string
+          learner_id: string
+          organization_id: string
+          request_note: string | null
+          row_version: number
+          state: Database["public"]["Enums"]["enrollment_state"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "enrollments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      remove_task_uploaded_evidence: {
+        Args: {
+          p_attempt_id: string
+          p_correlation_id: string
+          p_evidence_id: string
+          p_expected_draft_version: number
+          p_idempotency_key: string
+        }
+        Returns: {
+          bucket_id: string
+          correlation_id: string
+          evidence_id: string
+          object_key: string
+          replayed: boolean
+          result_draft_version: number
+          upload_id: string
+        }[]
+      }
+      remove_trainer_from_course: {
+        Args: {
+          p_correlation_id?: string
+          p_course_id: string
+          p_trainer_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assigned_by: string | null
+          course_id: string
+          organization_id: string
+          removed_at: string | null
+          trainer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "course_trainers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      remove_trainer_from_learner: {
+        Args: {
+          p_correlation_id?: string
+          p_learner_id: string
+          p_trainer_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assigned_by: string | null
+          learner_id: string
+          organization_id: string
+          removed_at: string | null
+          trainer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "learner_trainers"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -6712,6 +7078,14 @@ export type Database = {
           updated_at: string
         }[]
       }
+      set_hunt_scenario_defects: {
+        Args: {
+          p_correlation_id?: string
+          p_defects: Json
+          p_scenario_id: string
+        }
+        Returns: number
+      }
       set_notification_family_preferences: {
         Args: {
           p_correlation_id: string
@@ -6725,6 +7099,49 @@ export type Database = {
           p_push_enabled: boolean
         }
         Returns: Json
+      }
+      set_task_gate_question: {
+        Args: {
+          p_correlation_id?: string
+          p_question_translations: Json
+          p_task_id: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          question_translations: Json
+          task_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "task_gate_questions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      skip_task_gate_question: {
+        Args: { p_correlation_id?: string; p_task_id: string }
+        Returns: {
+          answer_text: string | null
+          answered_at: string | null
+          created_at: string
+          enrollment_id: string
+          gate_question_id: string
+          id: string
+          learner_id: string
+          organization_id: string
+          row_version: number
+          state: string
+          task_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "task_gate_responses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       start_attempt:
         | {
@@ -6947,6 +7364,30 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_own_avatar: {
+        Args: { p_avatar_object_key: string }
+        Returns: {
+          avatar_object_key: string | null
+          created_at: string
+          deactivated_at: string | null
+          display_name: string
+          external_id: string | null
+          last_seen_at: string | null
+          locale: string
+          row_version: number
+          source_system: string | null
+          state: Database["public"]["Enums"]["record_state"]
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_own_profile: {
         Args: {
           p_correlation_id: string
@@ -6977,13 +7418,52 @@ export type Database = {
           created_at: string
           due_at: string | null
           id: string
+          offset_days: number | null
           row_version: number
           task_id: string
           updated_at: string
+          window_days: number | null
         }
         SetofOptions: {
           from: "*"
           to: "task_schedules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_hunt_scenario: {
+        Args: {
+          p_code: string
+          p_correlation_id?: string
+          p_description: string
+          p_end_media_url?: string
+          p_expected_findings?: number
+          p_html?: string
+          p_organization_id?: string
+          p_start_media_url?: string
+          p_state?: Database["public"]["Enums"]["record_state"]
+          p_title: string
+        }
+        Returns: {
+          code: string
+          configuration: Json
+          created_at: string
+          description: string
+          end_media_url: string | null
+          expected_findings: number
+          html: string | null
+          id: string
+          organization_id: string | null
+          row_version: number
+          scenario_version: number
+          start_media_url: string | null
+          state: Database["public"]["Enums"]["record_state"]
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_scenarios"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -7022,6 +7502,12 @@ export type Database = {
         | "assigned"
         | "cancelled"
         | "completed"
+      evidence_upload_state:
+        | "pending"
+        | "ready"
+        | "rejected"
+        | "removed"
+        | "expired"
       lab_session_state:
         | "requested"
         | "provisioning"
@@ -7226,6 +7712,13 @@ export const Constants = {
         "assigned",
         "cancelled",
         "completed",
+      ],
+      evidence_upload_state: [
+        "pending",
+        "ready",
+        "rejected",
+        "removed",
+        "expired",
       ],
       lab_session_state: [
         "requested",

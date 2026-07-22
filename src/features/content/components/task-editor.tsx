@@ -5,7 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button, Field, Input, Select, Textarea } from "@/shared/ui";
 import { saveTaskAction, type ActionState } from "../actions";
 import type { AdminStrings } from "../i18n";
-import { CONTENT_LOCALES, TASK_KINDS, type StudioTask } from "../model";
+import { CONTENT_LOCALES, type StudioTask } from "../model";
 
 /** Same mapping stage-card uses; kept local so this file has no new import. */
 function localeLabel(contentLocale: string, strings: AdminStrings): string {
@@ -91,8 +91,14 @@ export function TaskEditor({
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<ActionState>({ status: "idle" });
 
-  const [kind, setKind] = useState(task.kind);
+  // A task has no author-facing "type" any more — it is just a task. The kind
+  // column still exists (new tasks are created as `knowledge`; hunt tasks are
+  // authored in the Arena, not here), so we carry the task's existing kind
+  // through unchanged rather than exposing a selector.
+  const kind = task.kind;
   const [targetUrl, setTargetUrl] = useState(task.targetUrl ?? "");
+  const [startVideoUrl, setStartVideoUrl] = useState(task.startVideoUrl ?? "");
+  const [endVideoUrl, setEndVideoUrl] = useState(task.endVideoUrl ?? "");
   const [localizations, setLocalizations] = useState(initial.localizations);
   const [hints, setHints] = useState<HintDraft[]>(initial.hints);
   const [options, setOptions] = useState<OptionDraft[]>(initial.options);
@@ -104,12 +110,6 @@ export function TaskEditor({
     ...emptyTranslations(),
     ...(task.gateQuestion ?? {}),
   });
-
-  const kindLabel: Record<string, string> = {
-    knowledge: s.taskKindKnowledge,
-    practical: s.taskKindPractical,
-    placement: s.taskKindPlacement,
-  };
 
   const setLocalized = (contentLocale: string, patch: Partial<LocalizedDraft>) => {
     setLocalizations((current) => ({
@@ -127,6 +127,8 @@ export function TaskEditor({
         taskId: task.id,
         kind,
         targetUrl: targetUrl.trim() === "" ? null : targetUrl.trim(),
+        startVideoUrl: startVideoUrl.trim() === "" ? null : startVideoUrl.trim(),
+        endVideoUrl: endVideoUrl.trim() === "" ? null : endVideoUrl.trim(),
         requiredHuntScenarioId: requiredScenarioId === "" ? null : requiredScenarioId,
         // All three locales or nothing. A partly-filled question would be
         // refused by set_task_gate_question anyway — the same three-locale rule
@@ -170,16 +172,6 @@ export function TaskEditor({
       )}
 
       {/* ── basics ────────────────────────────────────────────────────── */}
-      <Field label={s.taskKind}>
-        <Select value={kind} onChange={(event) => setKind(event.target.value)} disabled={readOnly}>
-          {TASK_KINDS.map((value) => (
-            <option key={value} value={value}>
-              {kindLabel[value]}
-            </option>
-          ))}
-        </Select>
-      </Field>
-
       {kind === "practical" && (
         <Field label={s.taskTargetUrl} hint={s.taskTargetUrlHint}>
           <Input
@@ -192,6 +184,33 @@ export function TaskEditor({
           />
         </Field>
       )}
+
+      {/* ── motivational videos ───────────────────────────────────────────
+          Two separate links: the START video plays when the learner opens the
+          task, the END video when they finish it. Either may be left empty. */}
+      <fieldset className="grid gap-3 rounded-(--radius-md) border border-(--color-border) p-3 sm:grid-cols-2">
+        <legend className="px-1 text-[13px] font-semibold">{s.taskVideos}</legend>
+        <Field label={s.taskStartVideo} hint={s.taskStartVideoHint}>
+          <Input
+            type="url"
+            inputMode="url"
+            placeholder="https://"
+            value={startVideoUrl}
+            onChange={(event) => setStartVideoUrl(event.target.value)}
+            disabled={readOnly}
+          />
+        </Field>
+        <Field label={s.taskEndVideo} hint={s.taskEndVideoHint}>
+          <Input
+            type="url"
+            inputMode="url"
+            placeholder="https://"
+            value={endVideoUrl}
+            onChange={(event) => setEndVideoUrl(event.target.value)}
+            disabled={readOnly}
+          />
+        </Field>
+      </fieldset>
 
       {/**
         * ── The gate chain, §1.6 ──────────────────────────────────────────
@@ -363,35 +382,36 @@ export function TaskEditor({
           )}
         </div>
 
-        {options.length > 0 && (
-          <>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {CONTENT_LOCALES.map((contentLocale) => (
-                <Field key={contentLocale} label={`${s.taskAssessmentQuestion} ${contentLocale.toUpperCase()}`}>
-                  <Input
-                    value={question[contentLocale] ?? ""}
-                    disabled={readOnly}
-                    onChange={(event) =>
-                      setQuestion((current) => ({ ...current, [contentLocale]: event.target.value }))
-                    }
-                  />
-                </Field>
-              ))}
-            </div>
-            <Field label={s.taskAssessmentMode} className="sm:max-w-60">
-              <Select
-                value={selectionMode}
+        {/* The question and its mode are always visible: the admin writes the
+            question first, then adds as many answer options as they like and
+            ticks the correct one(s). "Single" keeps exactly one correct;
+            "Multiple" allows several. The assessment is saved only once at least
+            one option exists (a question with no answers is not a test). */}
+        <div className="grid gap-2 sm:grid-cols-3">
+          {CONTENT_LOCALES.map((contentLocale) => (
+            <Field key={contentLocale} label={`${s.taskAssessmentQuestion} ${contentLocale.toUpperCase()}`}>
+              <Input
+                value={question[contentLocale] ?? ""}
                 disabled={readOnly}
                 onChange={(event) =>
-                  setSelectionMode(event.target.value === "multiple" ? "multiple" : "single")
+                  setQuestion((current) => ({ ...current, [contentLocale]: event.target.value }))
                 }
-              >
-                <option value="single">{s.taskAssessmentSingle}</option>
-                <option value="multiple">{s.taskAssessmentMultiple}</option>
-              </Select>
+              />
             </Field>
-          </>
-        )}
+          ))}
+        </div>
+        <Field label={s.taskAssessmentMode} className="sm:max-w-60">
+          <Select
+            value={selectionMode}
+            disabled={readOnly}
+            onChange={(event) =>
+              setSelectionMode(event.target.value === "multiple" ? "multiple" : "single")
+            }
+          >
+            <option value="single">{s.taskAssessmentSingle}</option>
+            <option value="multiple">{s.taskAssessmentMultiple}</option>
+          </Select>
+        </Field>
 
         {options.length === 0 ? (
           <p className="text-[13px] text-(--color-fg-muted)">{s.taskOptionsEmpty}</p>

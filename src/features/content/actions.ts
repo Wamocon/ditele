@@ -358,6 +358,9 @@ export interface SaveTaskFields {
   /** Task time was removed from the studio; kept optional for legacy callers. */
   expectedMinutes?: number | null;
   targetUrl: string | null;
+  /** Start (before) / end (after) motivational video links. Blank = cleared. */
+  startVideoUrl?: string | null;
+  endVideoUrl?: string | null;
   /** The Arena gate — null clears it. */
   requiredHuntScenarioId: string | null;
   /**
@@ -389,6 +392,8 @@ export async function saveTaskAction(fields: SaveTaskFields): Promise<ActionStat
     kind: fields.kind,
     expectedMinutes: fields.expectedMinutes ?? null,
     targetUrl: fields.targetUrl,
+    startVideoUrl: fields.startVideoUrl ?? null,
+    endVideoUrl: fields.endVideoUrl ?? null,
     requiredHuntScenarioId: fields.requiredHuntScenarioId,
     localizations: fields.localizations,
   });

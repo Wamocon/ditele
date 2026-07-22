@@ -150,6 +150,10 @@ export interface StudioTask {
   kind: string;
   state: RecordState;
   targetUrl: string | null;
+  /** Motivational videos shown to the learner: `start` before the task opens,
+   *  `end` when it is finished. Stored in tasks.intro_video_url / .video_url. */
+  startVideoUrl: string | null;
+  endVideoUrl: string | null;
   expectedMinutes: number | null;
   localizations: TaskLocalization[];
   hints: TaskHint[];

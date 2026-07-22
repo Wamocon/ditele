@@ -260,7 +260,7 @@ export async function getStudioWorkspace(
       .order("position"),
     supabase
       .from("tasks")
-      .select("id, stage_id, position, task_kind, state, target_url, expected_minutes, required_hunt_scenario_id")
+      .select("id, stage_id, position, task_kind, state, target_url, intro_video_url, video_url, expected_minutes, required_hunt_scenario_id")
       .eq("content_version_id", versionId)
       .order("position"),
     supabase.from("skills").select("id, code, labels").eq("state", "active").order("code"),
@@ -373,6 +373,8 @@ export async function getStudioWorkspace(
       kind: asString(row.task_kind),
       state: asString(row.state) as RecordState,
       targetUrl: asNullableString(row.target_url),
+      startVideoUrl: asNullableString(row.intro_video_url),
+      endVideoUrl: asNullableString(row.video_url),
       expectedMinutes: asNullableNumber(row.expected_minutes),
       localizations: taskLocalizationRows
         .filter((entry) => entry.task_id === id)
@@ -735,6 +737,13 @@ export async function createCourse(
   });
   if (versionError) return err(mapPostgrestError(versionError));
 
+  // Every version carries exactly one stage. Stages are no longer author-facing
+  // — tasks are managed directly under the course — but a task still requires a
+  // stage_id and the whole snapshot/lock pipeline is built around stages, so one
+  // is created automatically and kept out of the studio UI.
+  const stage = await createStage({ versionId, courseId });
+  if (!stage.ok) return err(stage.error);
+
   return ok({ courseId, versionId });
 }
 
@@ -829,6 +838,11 @@ export async function createVersion(courseId: string): Promise<Result<{ versionI
     snapshot: {},
   });
   if (error) return err(mapPostgrestError(error));
+
+  // A new version starts with the same single hidden stage every course has.
+  const stage = await createStage({ versionId, courseId });
+  if (!stage.ok) return err(stage.error);
+
   return ok({ versionId });
 }
 
@@ -933,6 +947,11 @@ export interface TaskWriteInput {
   kind: string;
   expectedMinutes: number | null;
   targetUrl: string | null;
+  /** Start/end motivational videos. Optional so existing callers keep compiling;
+   *  absent means "leave unchanged" is NOT wanted here — updateTask always writes
+   *  them, so callers pass the current value (null clears). */
+  startVideoUrl?: string | null;
+  endVideoUrl?: string | null;
   /** The Arena gate (FEATURE_BUILD_PLAN §1.6). Optional so `createTask`'s
    *  callers keep compiling; absent and null both mean "no gate". */
   requiredHuntScenarioId?: string | null;
@@ -1009,6 +1028,9 @@ export async function updateTask(input: TaskWriteInput): Promise<Result<true>> {
       expected_minutes: input.expectedMinutes,
       // Only a practical task carries a target; clearing it keeps the snapshot honest.
       target_url: input.kind === "practical" ? input.targetUrl : null,
+      // Start (before) / end (after) motivational videos. Blank clears them.
+      intro_video_url: input.startVideoUrl ?? null,
+      video_url: input.endVideoUrl ?? null,
       // The Arena gate. A hunt task may not gate itself — the database refuses
       // it (`tasks_hunt_does_not_gate_itself`) and a task that did would be
       // unreachable forever — so it is cleared rather than sent for a hunt.

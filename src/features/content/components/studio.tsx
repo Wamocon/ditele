@@ -1,9 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Plus } from "lucide-react";
-import { Button, Card, EmptyState } from "@/shared/ui";
-import { addStageAction, type ActionState } from "../actions";
+import { Card, EmptyState } from "@/shared/ui";
 import type { AdminStrings } from "../i18n";
 import { isVersionEditable, type StudioWorkspace } from "../model";
 import { StageCard } from "./stage-card";
@@ -12,6 +9,13 @@ import { StageCard } from "./stage-card";
  * The studio root. Server Components fetch, this holds only the transient bits
  * (which task is expanded, which delete is being confirmed); every mutation goes
  * through a Server Action that revalidates the route.
+ *
+ * Stages are no longer author-facing: a course is a flat list of tasks. Every
+ * version carries exactly one hidden stage (created with it), and each StageCard
+ * renders `flat` — its stage chrome stripped away — so the studio shows the
+ * course's tasks directly, with "Add task" and "Add existing task". The stage
+ * still exists in the database, because tasks require a stage_id and the whole
+ * snapshot/lock pipeline is built around it; it is simply never shown.
  */
 export function Studio({
   locale,
@@ -23,11 +27,7 @@ export function Studio({
   strings: AdminStrings;
 }) {
   const s = strings.studio;
-  const [pending, startTransition] = useTransition();
-  const [state, setState] = useState<ActionState>({ status: "idle" });
-
   const readOnly = !isVersionEditable(workspace.versionState);
-  const stageOrder = workspace.stages.map((stage) => stage.id);
 
   return (
     <div className="flex flex-col gap-5">
@@ -41,38 +41,7 @@ export function Studio({
       )}
 
       <section className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-[22px] font-semibold leading-7">{s.stages}</h2>
-          {!readOnly && (
-            <Button
-              variant="outline"
-              loading={pending}
-              iconLeft={<Plus className="size-4" aria-hidden />}
-              onClick={() =>
-                startTransition(async () => {
-                  setState(
-                    await addStageAction({
-                      locale,
-                      courseId: workspace.courseId,
-                      versionId: workspace.versionId,
-                    })
-                  );
-                })
-              }
-            >
-              {s.stageAdd}
-            </Button>
-          )}
-        </div>
-
-        {state.status === "error" && (
-          <p
-            role="alert"
-            className="rounded-(--radius-md) bg-(--color-danger-soft) px-3 py-2 text-[13px] text-(--color-danger)"
-          >
-            {state.message}
-          </p>
-        )}
+        <h2 className="text-[22px] font-semibold leading-7">{s.tasks}</h2>
 
         {workspace.stages.length === 0 ? (
           <EmptyState title={s.stagesEmptyTitle} description={s.stagesEmptyDescription} />
@@ -85,10 +54,11 @@ export function Studio({
                 courseId={workspace.courseId}
                 versionId={workspace.versionId}
                 stage={stage}
-                stageOrder={stageOrder}
+                stageOrder={workspace.stages.map((item) => item.id)}
                 scenarios={workspace.scenarios ?? []}
                 strings={strings}
                 readOnly={readOnly}
+                flat
               />
             ))}
           </div>

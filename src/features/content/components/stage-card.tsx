@@ -43,6 +43,10 @@ export interface StageCardProps {
   scenarios?: { id: string; code: string; title: string }[];
   strings: AdminStrings;
   readOnly: boolean;
+  /** Hide all stage chrome (badge, title, reorder, edit, delete) and show only
+   *  the task list, so the course reads as a flat list of tasks (§ stages
+   *  hidden). The stage still exists; it is simply not presented. */
+  flat?: boolean;
 }
 
 export function StageCard({
@@ -54,6 +58,7 @@ export function StageCard({
   scenarios = [],
   strings,
   readOnly,
+  flat = false,
 }: StageCardProps) {
   const s = strings.studio;
   const [pending, startTransition] = useTransition();
@@ -88,6 +93,7 @@ export function StageCard({
 
   return (
     <Card className="flex flex-col gap-4">
+      {!flat && (
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -149,6 +155,7 @@ export function StageCard({
           </div>
         )}
       </div>
+      )}
 
       {state.status === "error" && (
         <p
