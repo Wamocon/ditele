@@ -355,7 +355,8 @@ export interface SaveTaskFields {
   versionId: string;
   taskId: string;
   kind: string;
-  expectedMinutes: number | null;
+  /** Task time was removed from the studio; kept optional for legacy callers. */
+  expectedMinutes?: number | null;
   targetUrl: string | null;
   /** The Arena gate — null clears it. */
   requiredHuntScenarioId: string | null;
@@ -368,7 +369,11 @@ export interface SaveTaskFields {
   gateQuestion: Record<string, string> | null;
   localizations: { locale: string; title: string; instructionsHtml: string }[];
   hints: { translations: Record<string, string> }[];
-  skills: { skillId: string; weightBasisPoints: number; evidenceRequired: boolean }[];
+  /**
+   * Skill mappings were removed from the studio. Omitted by the editor now, so
+   * the existing mappings (if any) are left untouched rather than cleared.
+   */
+  skills?: { skillId: string; weightBasisPoints: number; evidenceRequired: boolean }[];
   assessment: {
     question: Record<string, string>;
     selectionMode: "single" | "multiple";
@@ -382,7 +387,7 @@ export async function saveTaskAction(fields: SaveTaskFields): Promise<ActionStat
   const updated = await updateTask({
     taskId: fields.taskId,
     kind: fields.kind,
-    expectedMinutes: fields.expectedMinutes,
+    expectedMinutes: fields.expectedMinutes ?? null,
     targetUrl: fields.targetUrl,
     requiredHuntScenarioId: fields.requiredHuntScenarioId,
     localizations: fields.localizations,
@@ -395,8 +400,12 @@ export async function saveTaskAction(fields: SaveTaskFields): Promise<ActionStat
   const hints = await setTaskHints(fields.taskId, fields.hints);
   if (!hints.ok) return failed(hints.error);
 
-  const skills = await setTaskSkills(fields.taskId, fields.skills);
-  if (!skills.ok) return failed(skills.error);
+  // Skills are no longer authored in the studio. Only touch the mappings when a
+  // caller still sends them; the editor now omits the field entirely.
+  if (fields.skills) {
+    const skills = await setTaskSkills(fields.taskId, fields.skills);
+    if (!skills.ok) return failed(skills.error);
+  }
 
   const assessment = await setTaskAssessment(fields.taskId, fields.assessment);
   if (!assessment.ok) return failed(assessment.error);

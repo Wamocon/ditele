@@ -982,7 +982,8 @@ export async function createTask(input: {
     content_version_id: input.versionId,
     position,
     task_kind: "knowledge",
-    expected_minutes: 20,
+    // Task time was removed from the studio; new tasks carry no expected time.
+    expected_minutes: null,
     state: "draft",
   });
   if (error) return err(mapPostgrestError(error));

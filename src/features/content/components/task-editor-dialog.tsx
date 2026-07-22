@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 
 import { Button } from "@/shared/ui";
 import type { AdminStrings } from "../i18n";
-import type { SkillOption, StudioTask } from "../model";
+import type { StudioTask } from "../model";
 import { TaskEditor } from "./task-editor";
 
 /**
@@ -35,7 +35,6 @@ export function TaskEditorDialog({
   courseId,
   versionId,
   task,
-  skills,
   scenarios,
   strings,
   readOnly,
@@ -46,7 +45,6 @@ export function TaskEditorDialog({
   courseId: string;
   versionId: string;
   task: StudioTask;
-  skills: SkillOption[];
   scenarios: { id: string; code: string; title: string }[];
   strings: AdminStrings;
   readOnly: boolean;
@@ -95,7 +93,6 @@ export function TaskEditorDialog({
             courseId={courseId}
             versionId={versionId}
             task={task}
-            skills={skills}
             scenarios={scenarios}
             strings={strings}
             readOnly={readOnly}

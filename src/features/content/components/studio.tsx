@@ -5,8 +5,7 @@ import { Plus } from "lucide-react";
 import { Button, Card, EmptyState } from "@/shared/ui";
 import { addStageAction, type ActionState } from "../actions";
 import type { AdminStrings } from "../i18n";
-import { buildReadiness, isVersionEditable, type StudioWorkspace } from "../model";
-import { LifecycleBar } from "./lifecycle-bar";
+import { isVersionEditable, type StudioWorkspace } from "../model";
 import { StageCard } from "./stage-card";
 
 /**
@@ -28,10 +27,7 @@ export function Studio({
   const [state, setState] = useState<ActionState>({ status: "idle" });
 
   const readOnly = !isVersionEditable(workspace.versionState);
-  const checks = buildReadiness(workspace);
   const stageOrder = workspace.stages.map((stage) => stage.id);
-  const approved =
-    workspace.versionState === "in_review" && workspace.latestReview?.decision === "approved";
 
   return (
     <div className="flex flex-col gap-5">
@@ -43,16 +39,6 @@ export function Studio({
           </p>
         </Card>
       )}
-
-      <LifecycleBar
-        locale={locale}
-        courseId={workspace.courseId}
-        versionId={workspace.versionId}
-        versionState={workspace.versionState}
-        approved={Boolean(approved)}
-        checks={checks}
-        strings={strings}
-      />
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -100,7 +86,6 @@ export function Studio({
                 versionId={workspace.versionId}
                 stage={stage}
                 stageOrder={stageOrder}
-                skills={workspace.skills}
                 scenarios={workspace.scenarios ?? []}
                 strings={strings}
                 readOnly={readOnly}

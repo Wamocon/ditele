@@ -39,7 +39,6 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
   const [descriptionDe, setDescriptionDe] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  const [minutes, setMinutes] = useState("");
   const [defaultLocale, setDefaultLocale] = useState("de");
   // Course media — §1.1. The columns shipped in Phase 1a and had no input on
   // any screen until now, so a cover image or motivational video could only be
@@ -63,7 +62,7 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
         locale,
         slug: effectiveSlug,
         defaultLocale,
-        estimatedMinutes: minutes.trim() === "" ? null : Number(minutes),
+        estimatedMinutes: null,
         heroImageUrl,
         examVideoUrl,
         completionVideoUrl,
@@ -118,28 +117,17 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
           />
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={strings.shared.minutes} hint={s.minutesHint}>
-            <Input
-              type="number"
-              min={0}
-              inputMode="numeric"
-              value={minutes}
-              onChange={(event) => setMinutes(event.target.value)}
-            />
-          </Field>
-          <Field label={s.defaultLocale}>
-            <select
-              value={defaultLocale}
-              onChange={(event) => setDefaultLocale(event.target.value)}
-              className="h-11 w-full rounded-(--radius-md) border border-(--color-border-strong) bg-(--color-bg) px-3 pr-8 text-[15px] text-(--color-fg)"
-            >
-              <option value="de">{strings.shared.localeDe}</option>
-              <option value="en">{strings.shared.localeEn}</option>
-              <option value="ru">{strings.shared.localeRu}</option>
-            </select>
-          </Field>
-        </div>
+        <Field label={s.defaultLocale}>
+          <select
+            value={defaultLocale}
+            onChange={(event) => setDefaultLocale(event.target.value)}
+            className="h-11 w-full rounded-(--radius-md) border border-(--color-border-strong) bg-(--color-bg) px-3 pr-8 text-[15px] text-(--color-fg)"
+          >
+            <option value="de">{strings.shared.localeDe}</option>
+            <option value="en">{strings.shared.localeEn}</option>
+            <option value="ru">{strings.shared.localeRu}</option>
+          </select>
+        </Field>
       </Card>
 
       <Card className="flex flex-col gap-4">

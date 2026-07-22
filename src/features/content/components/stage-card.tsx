@@ -13,7 +13,7 @@ import {
   type ActionState,
 } from "../actions";
 import type { AdminStrings } from "../i18n";
-import { CONTENT_LOCALES, type SkillOption, type StudioStage } from "../model";
+import { CONTENT_LOCALES, type StudioStage } from "../model";
 import { TaskEditorDialog } from "./task-editor-dialog";
 
 function localeLabel(locale: string, strings: AdminStrings): string {
@@ -39,7 +39,6 @@ export interface StageCardProps {
   versionId: string;
   stage: StudioStage;
   stageOrder: string[];
-  skills: SkillOption[];
   /** Active Arena scenarios, for the task editor's gate picker. */
   scenarios?: { id: string; code: string; title: string }[];
   strings: AdminStrings;
@@ -52,7 +51,6 @@ export function StageCard({
   versionId,
   stage,
   stageOrder,
-  skills,
   scenarios = [],
   strings,
   readOnly,
@@ -412,7 +410,6 @@ export function StageCard({
                       courseId={courseId}
                       versionId={versionId}
                       task={task}
-                      skills={skills}
                       scenarios={scenarios}
                       strings={strings}
                       readOnly={readOnly}

@@ -2,12 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Button, Field, Input, Select, Textarea, cn } from "@/shared/ui";
+import { Button, Field, Input, Select, Textarea } from "@/shared/ui";
 import { saveTaskAction, type ActionState } from "../actions";
 import type { AdminStrings } from "../i18n";
-import { CONTENT_LOCALES, TASK_KINDS, type SkillOption, type StudioTask } from "../model";
-
-const BASIS_POINTS = 10000;
+import { CONTENT_LOCALES, TASK_KINDS, type StudioTask } from "../model";
 
 /** Same mapping stage-card uses; kept local so this file has no new import. */
 function localeLabel(contentLocale: string, strings: AdminStrings): string {
@@ -28,13 +26,6 @@ interface HintDraft {
 interface OptionDraft {
   labels: Record<string, string>;
   isCorrect: boolean;
-}
-
-interface SkillDraft {
-  skillId: string;
-  /** Held as a percentage in the UI; converted to basis points on save. */
-  percent: number;
-  evidenceRequired: boolean;
 }
 
 function emptyTranslations(): Record<string, string> {
@@ -66,13 +57,6 @@ function toDrafts(task: StudioTask) {
     selectionMode: (task.assessment?.selectionMode === "multiple" ? "multiple" : "single") as
       | "single"
       | "multiple",
-    skills: task.skills.map(
-      (skill): SkillDraft => ({
-        skillId: skill.skillId,
-        percent: Math.round(skill.weightBasisPoints / 100),
-        evidenceRequired: skill.evidenceRequired,
-      })
-    ),
   };
 }
 
@@ -81,7 +65,6 @@ export interface TaskEditorProps {
   courseId: string;
   versionId: string;
   task: StudioTask;
-  skills: SkillOption[];
   /**
    * Active Arena scenarios, for the gate picker. Defaulted to `[]` so the
    * editor still renders where the caller has not fetched them — the picker
@@ -98,7 +81,6 @@ export function TaskEditor({
   courseId,
   versionId,
   task,
-  skills,
   scenarios = [],
   strings,
   readOnly,
@@ -110,14 +92,12 @@ export function TaskEditor({
   const [state, setState] = useState<ActionState>({ status: "idle" });
 
   const [kind, setKind] = useState(task.kind);
-  const [minutes, setMinutes] = useState(task.expectedMinutes?.toString() ?? "");
   const [targetUrl, setTargetUrl] = useState(task.targetUrl ?? "");
   const [localizations, setLocalizations] = useState(initial.localizations);
   const [hints, setHints] = useState<HintDraft[]>(initial.hints);
   const [options, setOptions] = useState<OptionDraft[]>(initial.options);
   const [question, setQuestion] = useState(initial.question);
   const [selectionMode, setSelectionMode] = useState(initial.selectionMode);
-  const [skillDrafts, setSkillDrafts] = useState<SkillDraft[]>(initial.skills);
   // The two Phase 1c gates (§1.6). Both were reachable only by SQL until now.
   const [requiredScenarioId, setRequiredScenarioId] = useState(task.requiredHuntScenarioId ?? "");
   const [gateQuestion, setGateQuestion] = useState<Record<string, string>>({
@@ -125,7 +105,6 @@ export function TaskEditor({
     ...(task.gateQuestion ?? {}),
   });
 
-  const percentTotal = skillDrafts.reduce((sum, skill) => sum + (skill.percent || 0), 0);
   const kindLabel: Record<string, string> = {
     knowledge: s.taskKindKnowledge,
     practical: s.taskKindPractical,
@@ -147,7 +126,6 @@ export function TaskEditor({
         versionId,
         taskId: task.id,
         kind,
-        expectedMinutes: minutes.trim() === "" ? null : Number(minutes),
         targetUrl: targetUrl.trim() === "" ? null : targetUrl.trim(),
         requiredHuntScenarioId: requiredScenarioId === "" ? null : requiredScenarioId,
         // All three locales or nothing. A partly-filled question would be
@@ -170,13 +148,6 @@ export function TaskEditor({
           instructionsHtml: localizations[contentLocale]?.instructionsHtml ?? "",
         })),
         hints: hints.map((hint) => ({ translations: hint.translations })),
-        skills: skillDrafts
-          .filter((skill) => skill.skillId)
-          .map((skill) => ({
-            skillId: skill.skillId,
-            weightBasisPoints: Math.round((skill.percent || 0) * 100),
-            evidenceRequired: skill.evidenceRequired,
-          })),
         assessment:
           options.length === 0
             ? null
@@ -199,26 +170,15 @@ export function TaskEditor({
       )}
 
       {/* ── basics ────────────────────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={s.taskKind}>
-          <Select value={kind} onChange={(event) => setKind(event.target.value)} disabled={readOnly}>
-            {TASK_KINDS.map((value) => (
-              <option key={value} value={value}>
-                {kindLabel[value]}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label={s.taskMinutes}>
-          <Input
-            type="number"
-            min={0}
-            value={minutes}
-            onChange={(event) => setMinutes(event.target.value)}
-            disabled={readOnly}
-          />
-        </Field>
-      </div>
+      <Field label={s.taskKind}>
+        <Select value={kind} onChange={(event) => setKind(event.target.value)} disabled={readOnly}>
+          {TASK_KINDS.map((value) => (
+            <option key={value} value={value}>
+              {kindLabel[value]}
+            </option>
+          ))}
+        </Select>
+      </Field>
 
       {kind === "practical" && (
         <Field label={s.taskTargetUrl} hint={s.taskTargetUrlHint}>
@@ -385,121 +345,6 @@ export function TaskEditor({
         )}
       </section>
 
-      {/* ── skills ────────────────────────────────────────────────────── */}
-      <section className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h4 className="text-[15px] font-semibold">{s.taskSkills}</h4>
-            <p className="text-[13px] text-(--color-fg-muted)">{s.taskSkillsHint}</p>
-          </div>
-          {!readOnly && skills.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              iconLeft={<Plus className="size-4" aria-hidden />}
-              onClick={() =>
-                setSkillDrafts((current) => [
-                  ...current,
-                  {
-                    skillId: skills[0]?.id ?? "",
-                    percent: current.length === 0 ? 100 : 0,
-                    evidenceRequired: false,
-                  },
-                ])
-              }
-            >
-              {s.taskSkillAdd}
-            </Button>
-          )}
-        </div>
-
-        {skillDrafts.length === 0 ? (
-          <p className="text-[13px] text-(--color-fg-muted)">{s.taskSkillsEmpty}</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {skillDrafts.map((skill, index) => (
-              <li
-                key={index}
-                className="grid gap-2 rounded-(--radius-md) border border-(--color-border) p-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end"
-              >
-                <Field label={s.taskSkills}>
-                  <Select
-                    value={skill.skillId}
-                    disabled={readOnly}
-                    onChange={(event) =>
-                      setSkillDrafts((current) =>
-                        current.map((item, i) =>
-                          i === index ? { ...item, skillId: event.target.value } : item
-                        )
-                      )
-                    }
-                  >
-                    {skills.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.labels[locale] || option.labels.de || option.code}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-                <Field label={s.taskSkillWeight} className="sm:w-28">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={skill.percent}
-                    disabled={readOnly}
-                    onChange={(event) =>
-                      setSkillDrafts((current) =>
-                        current.map((item, i) =>
-                          i === index ? { ...item, percent: Number(event.target.value) } : item
-                        )
-                      )
-                    }
-                  />
-                </Field>
-                <label className="flex h-11 items-center gap-2 text-[13px]">
-                  <input
-                    type="checkbox"
-                    className="size-4 accent-(--color-brand)"
-                    checked={skill.evidenceRequired}
-                    disabled={readOnly}
-                    onChange={(event) =>
-                      setSkillDrafts((current) =>
-                        current.map((item, i) =>
-                          i === index ? { ...item, evidenceRequired: event.target.checked } : item
-                        )
-                      )
-                    }
-                  />
-                  {s.taskSkillEvidence}
-                </label>
-                {!readOnly && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    aria-label={`${strings.shared.delete} ${index + 1}`}
-                    onClick={() =>
-                      setSkillDrafts((current) => current.filter((_, i) => i !== index))
-                    }
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <p
-          className={cn(
-            "tabular text-[13px] font-semibold",
-            percentTotal === 100 ? "text-(--color-success)" : "text-(--color-warning)"
-          )}
-        >
-          {percentTotal} % / 100 %
-        </p>
-      </section>
-
       {/* ── assessment ────────────────────────────────────────────────── */}
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -623,9 +468,6 @@ export function TaskEditor({
           <Button variant="ghost" onClick={onSaved} disabled={pending}>
             {s.cancelTask}
           </Button>
-          {percentTotal !== BASIS_POINTS / 100 && (
-            <p className="self-center text-[13px] text-(--color-fg-muted)">{s.taskSkillsHint}</p>
-          )}
         </div>
       )}
     </div>

@@ -36,7 +36,6 @@ export function CourseDetail({
   const [state, setState] = useState<ActionState>({ status: "idle" });
 
   const [slug, setSlug] = useState(course.slug);
-  const [minutes, setMinutes] = useState(course.estimatedMinutes?.toString() ?? "");
   const [defaultLocale, setDefaultLocale] = useState(course.defaultLocale);
   const [confirmArchive, setConfirmArchive] = useState(false);
 
@@ -159,18 +158,9 @@ export function CourseDetail({
           <StatusBadge state={course.state} locale={locale} />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label={strings.shared.slug} required>
             <Input value={slug} onChange={(event) => setSlug(event.target.value)} />
-          </Field>
-          <Field label={strings.shared.minutes}>
-            <Input
-              type="number"
-              min={0}
-              inputMode="numeric"
-              value={minutes}
-              onChange={(event) => setMinutes(event.target.value)}
-            />
           </Field>
           <Field label={strings.courseNew.defaultLocale}>
             <select
@@ -205,7 +195,7 @@ export function CourseDetail({
                   courseId: course.id,
                   slug,
                   defaultLocale,
-                  estimatedMinutes: minutes.trim() === "" ? null : Number(minutes),
+                  estimatedMinutes: null,
                   heroImageUrl,
                 })
               )
