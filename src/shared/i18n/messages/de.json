@@ -954,7 +954,8 @@
       "of": "von",
       "results": "{count} Einträge",
       "resultsOne": "1 Eintrag",
-      "resultsNone": "Keine Einträge"
+      "resultsNone": "Keine Einträge",
+      "course": "Kurs"
     },
     "dashboard": {
       "title": "Übersicht",
@@ -995,7 +996,9 @@
       "ageLate": "Wartet über 72 Std.",
       "previous": "Zurück",
       "next": "Weiter",
-      "page": "Seite {page} von {pages}"
+      "page": "Seite {page} von {pages}",
+      "filterCourse": "Kurs",
+      "allCourses": "Alle Kurse"
     },
     "review": {
       "title": "Abgabe prüfen",

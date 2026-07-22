@@ -1,5 +1,7 @@
 import "server-only";
 
+import { toUiRole } from "@/shared/auth/role";
+import type { AppRole } from "@/shared/auth/types";
 import { createServerClient } from "@/shared/database/server";
 import { err, ok, mapPostgrestError, type Result } from "./result";
 
@@ -102,15 +104,28 @@ export async function getCourseAssignments(courseId: string): Promise<Result<Cou
   const unknown = (userId: string): AssignedPerson =>
     directory.get(userId) ?? { userId, displayName: userId.slice(0, 8), email: null };
 
-  // Which UI role each account maps onto. `toUiRole` collapses the database's
-  // eight roles onto three (src/shared/auth/role.ts); here we only need to know
-  // who may sensibly appear in the trainer picker.
-  const trainerCodes = new Set(["trainer", "senior_trainer", "reviewer"]);
-  const isTrainer = new Set<string>();
+  /**
+   * Which UI role each account maps onto.
+   *
+   * ⚠️ Through `toUiRole`, never a hand-written list of role codes. The
+   * previous version matched `["trainer","senior_trainer","reviewer"]` — two of
+   * which are not roles this database has — and said nothing about admins at
+   * all, so **every administrator appeared in the participant picker**. An
+   * admin enrolled as a learner is not a harmless oddity: they would get an
+   * enrolment, a cohort membership and a place on the trainer's progress board.
+   *
+   * `toUiRole` is the one mapping from the database's 8 roles onto the 3 the UI
+   * shows (src/shared/auth/role.ts), and it takes the HIGHEST role a person
+   * holds — which matters here, because admin@ditele.local also holds a learner
+   * assignment and a rule that looked at any single row would still offer them.
+   */
+  const uiRoleByUser = new Map<string, AppRole[]>();
   for (const row of rolesRes.data ?? []) {
-    const code = row.roles?.code;
-    if (code && trainerCodes.has(code)) isTrainer.add(row.user_id);
+    const code = row.roles?.code as AppRole | undefined;
+    if (!code) continue;
+    uiRoleByUser.set(row.user_id, [...(uiRoleByUser.get(row.user_id) ?? []), code]);
   }
+  const roleOf = (userId: string) => toUiRole(uiRoleByUser.get(userId) ?? []);
 
   const mentorsByLearner = new Map<string, AssignedPerson[]>();
   for (const row of mentorsRes.data ?? []) {
@@ -139,8 +154,15 @@ export async function getCourseAssignments(courseId: string): Promise<Result<Cou
   return ok({
     learners,
     trainers,
-    candidateLearners: everyone.filter((p) => !enrolled.has(p.userId) && !isTrainer.has(p.userId)),
-    candidateTrainers: everyone.filter((p) => !assigned.has(p.userId) && isTrainer.has(p.userId)),
+    // Only actual students may be enrolled, and only actual trainers assigned.
+    // Anyone with no role row at all resolves to "student" through toUiRole's
+    // fallback, which is the safe direction: a new account should be enrollable.
+    candidateLearners: everyone.filter(
+      (p) => !enrolled.has(p.userId) && roleOf(p.userId) === "student"
+    ),
+    candidateTrainers: everyone.filter(
+      (p) => !assigned.has(p.userId) && roleOf(p.userId) === "trainer"
+    ),
   });
 }
 

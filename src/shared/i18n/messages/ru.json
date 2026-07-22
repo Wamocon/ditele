@@ -661,7 +661,8 @@
       "of": "из",
       "results": "Записей: {count}",
       "resultsOne": "1 запись",
-      "resultsNone": "Нет записей"
+      "resultsNone": "Нет записей",
+      "course": "Курс"
     },
     "dashboard": {
       "title": "Обзор",
@@ -702,7 +703,9 @@
       "ageLate": "Ждёт более 72 ч",
       "previous": "Назад",
       "next": "Далее",
-      "page": "Страница {page} из {pages}"
+      "page": "Страница {page} из {pages}",
+      "filterCourse": "Курс",
+      "allCourses": "Все курсы"
     },
     "review": {
       "title": "Проверить работу",

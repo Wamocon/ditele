@@ -12,7 +12,7 @@ export interface FilterOption {
 }
 
 export interface QueueFiltersProps {
-  labels: { state: string; cohort: string; sort: string; apply: string; reset: string };
+  labels: { state: string; course: string; sort: string; apply: string; reset: string };
   resetHref: string;
   fields: { name: string; label: string; value: string; options: FilterOption[] }[];
   children?: ReactNode;

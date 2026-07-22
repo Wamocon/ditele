@@ -56,6 +56,9 @@ export interface CourseLocalization {
   summary: string;
   descriptionHtml: string;
   learningOutcomes: string[];
+  /** The two motivational videos (§1.1). Per-locale, like the texts. */
+  examVideoUrl: string;
+  completionVideoUrl: string;
 }
 
 export interface AdminCourseRow {
@@ -90,6 +93,8 @@ export interface AdminCourseDetail {
   state: RecordState;
   defaultLocale: string;
   estimatedMinutes: number | null;
+  /** §1.1's cover image. One per course, so it sits beside the slug. */
+  heroImageUrl: string;
   updatedAt: string;
   localizations: CourseLocalization[];
   versions: ContentVersionSummary[];

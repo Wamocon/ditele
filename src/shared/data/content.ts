@@ -160,7 +160,7 @@ export async function getAdminCourse(courseId: string): Promise<Result<AdminCour
   const supabase = await createServerClient();
   const { data: course, error } = await supabase
     .from("courses")
-    .select("id, slug, state, default_locale, estimated_minutes, updated_at")
+    .select("id, slug, state, default_locale, estimated_minutes, hero_image_url, updated_at")
     .eq("id", courseId)
     .maybeSingle();
   if (error) return err(mapPostgrestError(error));
@@ -169,7 +169,7 @@ export async function getAdminCourse(courseId: string): Promise<Result<AdminCour
   const [localizations, versions] = await Promise.all([
     supabase
       .from("course_localizations")
-      .select("locale, title, summary, description_html, learning_outcomes")
+      .select("locale, title, summary, description_html, learning_outcomes, exam_video_url, completion_video_url")
       .eq("course_id", courseId),
     supabase
       .from("content_versions")
@@ -199,6 +199,7 @@ export async function getAdminCourse(courseId: string): Promise<Result<AdminCour
     state: asString(course.state) as RecordState,
     defaultLocale: asString(course.default_locale),
     estimatedMinutes: asNullableNumber(course.estimated_minutes),
+    heroImageUrl: asNullableString(course.hero_image_url) ?? "",
     updatedAt: asString(course.updated_at),
     localizations: ((localizations.data ?? []) as Row[]).map(
       (row): CourseLocalization => ({
@@ -207,6 +208,8 @@ export async function getAdminCourse(courseId: string): Promise<Result<AdminCour
         summary: asString(row.summary),
         descriptionHtml: asString(row.description_html),
         learningOutcomes: asStringArray(row.learning_outcomes),
+        examVideoUrl: asNullableString(row.exam_video_url) ?? "",
+        completionVideoUrl: asNullableString(row.completion_video_url) ?? "",
       })
     ),
     versions: versionRows.map(
@@ -248,7 +251,7 @@ export async function getStudioWorkspace(
     supabase.from("courses").select("id, slug").eq("id", courseId).maybeSingle(),
     supabase
       .from("course_localizations")
-      .select("locale, title, summary, description_html, learning_outcomes")
+      .select("locale, title, summary, description_html, learning_outcomes, exam_video_url, completion_video_url")
       .eq("course_id", courseId),
     supabase
       .from("stages")
@@ -458,6 +461,8 @@ export async function getStudioWorkspace(
       summary: asString(row.summary),
       descriptionHtml: asString(row.description_html),
       learningOutcomes: asStringArray(row.learning_outcomes),
+      examVideoUrl: asNullableString(row.exam_video_url) ?? "",
+      completionVideoUrl: asNullableString(row.completion_video_url) ?? "",
     })),
     stages: studioStages,
     skills: ((skills.data ?? []) as Row[]).map(
@@ -773,8 +778,17 @@ export async function upsertCourseLocalization(input: {
   title: string;
   summary: string;
   descriptionHtml: string;
+  /** The two motivational videos (§1.1). Blank clears them. */
+  examVideoUrl?: string;
+  completionVideoUrl?: string;
 }): Promise<Result<true>> {
   const supabase = await createServerClient();
+  const blankToNull = (value: string | undefined) => {
+    const trimmed = (value ?? "").trim();
+    // Blank must become NULL, not "": the protocol CHECK constraints added in
+    // 20260728100000 reject an empty string.
+    return trimmed === "" ? null : trimmed;
+  };
   return fromSupabase(async () => {
     const { error } = await supabase.from("course_localizations").upsert(
       {
@@ -783,6 +797,8 @@ export async function upsertCourseLocalization(input: {
         title: input.title,
         summary: input.summary,
         description_html: input.descriptionHtml,
+        exam_video_url: blankToNull(input.examVideoUrl),
+        completion_video_url: blankToNull(input.completionVideoUrl),
         learning_outcomes: [],
       },
       { onConflict: "course_id,locale" }

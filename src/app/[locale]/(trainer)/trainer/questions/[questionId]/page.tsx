@@ -73,7 +73,7 @@ export default async function Page({
         className="mb-6"
         items={[
           { label: t("trainer.shared.learner"), value: question.learnerName },
-          { label: t("trainer.shared.cohort"), value: question.cohortName },
+          { label: t("trainer.shared.course"), value: question.courseTitle },
           { label: t("trainer.shared.task"), value: question.taskTitle },
           {
             label: t("trainer.questions.assignedTo"),

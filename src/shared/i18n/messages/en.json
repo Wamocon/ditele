@@ -661,7 +661,8 @@
       "of": "of",
       "results": "{count} entries",
       "resultsOne": "1 entry",
-      "resultsNone": "No entries"
+      "resultsNone": "No entries",
+      "course": "Course"
     },
     "dashboard": {
       "title": "Overview",
@@ -702,7 +703,9 @@
       "ageLate": "Waiting over 72 h",
       "previous": "Back",
       "next": "Next",
-      "page": "Page {page} of {pages}"
+      "page": "Page {page} of {pages}",
+      "filterCourse": "Course",
+      "allCourses": "All courses"
     },
     "review": {
       "title": "Review submission",

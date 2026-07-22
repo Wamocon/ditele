@@ -150,9 +150,16 @@ export async function saveCourseMetaAction(input: {
   slug: string;
   defaultLocale: string;
   estimatedMinutes: number | null;
+  /** §1.1's cover image. Blank clears it; the column rejects an empty string. */
+  heroImageUrl?: string;
 }): Promise<ActionState> {
   await requireAdmin(input.locale);
-  const result = await updateCourseMeta(input);
+  const result = await updateCourseMeta({
+    ...input,
+    ...(input.heroImageUrl === undefined
+      ? {}
+      : { heroImageUrl: input.heroImageUrl.trim() === "" ? null : input.heroImageUrl.trim() }),
+  });
   revalidatePath(`/${input.locale}/admin/courses/${input.courseId}`);
   revalidatePath(`/${input.locale}/admin/courses`);
   return settle(result);
@@ -165,6 +172,8 @@ export async function saveCourseLocalizationAction(input: {
   title: string;
   summary: string;
   descriptionHtml: string;
+  examVideoUrl?: string;
+  completionVideoUrl?: string;
 }): Promise<ActionState> {
   await requireAdmin(input.locale);
   const result = await upsertCourseLocalization({
@@ -173,6 +182,8 @@ export async function saveCourseLocalizationAction(input: {
     title: input.title,
     summary: input.summary,
     descriptionHtml: input.descriptionHtml,
+    examVideoUrl: input.examVideoUrl ?? "",
+    completionVideoUrl: input.completionVideoUrl ?? "",
   });
   revalidatePath(`/${input.locale}/admin/courses/${input.courseId}`);
   revalidatePath(`/${input.locale}/admin/courses`);

@@ -50,6 +50,11 @@ export function CourseDetail({
             title: entry?.title ?? "",
             summary: entry?.summary ?? "",
             descriptionHtml: entry?.descriptionHtml ?? "",
+            // §1.1 marks both videos translated, and course_localizations keeps
+            // a row per locale, so they belong in the per-locale block rather
+            // than beside the slug.
+            examVideoUrl: entry?.examVideoUrl ?? "",
+            completionVideoUrl: entry?.completionVideoUrl ?? "",
           },
         ];
       })
@@ -60,6 +65,10 @@ export function CourseDetail({
     startTransition(async () => {
       setState(await action());
     });
+
+  // §1.1's cover image, editable after creation — the create form could set it
+  // and nothing could change it afterwards.
+  const [heroImageUrl, setHeroImageUrl] = useState(course.heroImageUrl);
 
   const archived = course.state === "archived";
 
@@ -117,6 +126,14 @@ export function CourseDetail({
           </Field>
         </div>
 
+        <Field label={strings.courseNew.heroImage} hint={strings.courseNew.heroImageHint}>
+          <Input
+            value={heroImageUrl}
+            onChange={(event) => setHeroImageUrl(event.target.value)}
+            placeholder="https://…"
+          />
+        </Field>
+
         <div>
           <Button
             loading={pending}
@@ -128,6 +145,7 @@ export function CourseDetail({
                   slug,
                   defaultLocale,
                   estimatedMinutes: minutes.trim() === "" ? null : Number(minutes),
+                  heroImageUrl,
                 })
               )
             }
@@ -249,6 +267,39 @@ export function CourseDetail({
                 />
               </Field>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label={strings.courseNew.examVideo} hint={strings.courseNew.videoHint}>
+                  <Input
+                    value={draft.examVideoUrl}
+                    placeholder="https://…"
+                    onChange={(event) =>
+                      setDrafts((current) => ({
+                        ...current,
+                        [contentLocale]: {
+                          ...current[contentLocale]!,
+                          examVideoUrl: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </Field>
+                <Field label={strings.courseNew.completionVideo} hint={strings.courseNew.videoHint}>
+                  <Input
+                    value={draft.completionVideoUrl}
+                    placeholder="https://…"
+                    onChange={(event) =>
+                      setDrafts((current) => ({
+                        ...current,
+                        [contentLocale]: {
+                          ...current[contentLocale]!,
+                          completionVideoUrl: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </Field>
+              </div>
+
               <div>
                 <Button
                   size="sm"
@@ -263,6 +314,8 @@ export function CourseDetail({
                         title: draft.title,
                         summary: draft.summary,
                         descriptionHtml: draft.descriptionHtml,
+                        examVideoUrl: draft.examVideoUrl,
+                        completionVideoUrl: draft.completionVideoUrl,
                       })
                     )
                   }

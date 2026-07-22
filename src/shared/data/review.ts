@@ -158,8 +158,8 @@ export interface QueueItem {
   learnerName: string;
   taskId: string;
   taskTitle: string;
-  cohortId: string;
-  cohortName: string;
+  courseId: string;
+  courseTitle: string;
   submittedAt: string;
   waitingHours: number;
   attemptNumber: number;
@@ -172,7 +172,8 @@ export interface QueueItem {
 export interface QueuePage {
   items: QueueItem[];
   total: number;
-  cohorts: { id: string; name: string }[];
+  /** For the queue's filter. Courses, not cohorts — see readCourseTitles. */
+  courses: { id: string; name: string }[];
 }
 
 /* ── Small shared readers ───────────────────────────────────────────────── */
@@ -189,6 +190,65 @@ async function readProfiles(supabase: Supabase, userIds: string[]): Promise<Map<
 async function readCohorts(supabase: Supabase): Promise<Map<string, string>> {
   const { data } = await supabase.from("cohorts").select("id,name");
   return new Map((data ?? []).map((row) => [row.id, row.name]));
+}
+
+/**
+ * Course title per COHORT id.
+ *
+ * `public.questions` carries `cohort_id` and `task_id` but no `course_id`, so
+ * the question screens have to go through the cohort to name the course. That
+ * indirection is the clearest argument for the cohort concept being vestigial:
+ * the row exists only as a pointer to the course the reader actually wanted.
+ */
+async function readCourseTitlesByCohort(
+  supabase: Supabase,
+  cohortIds: string[],
+  locale: string
+): Promise<Map<string, string>> {
+  const unique = [...new Set(cohortIds)].filter(Boolean);
+  if (unique.length === 0) return new Map();
+  const { data } = await supabase.from("cohorts").select("id,course_id").in("id", unique);
+  const courseByCohort = new Map((data ?? []).map((row) => [row.id, row.course_id]));
+  const titles = await readCourseTitles(supabase, [...courseByCohort.values()], locale);
+  return new Map(
+    [...courseByCohort].map(([cohortId, courseId]) => [cohortId, titles.get(courseId) ?? "—"])
+  );
+}
+
+/**
+ * Course titles for the review queue.
+ *
+ * The queue used to show the COHORT name, and a cohort carries no information a
+ * trainer reviewing a submission can act on — the seeded one is called "Release
+ * 0 Cohort" and every row said the same thing. What a trainer needs to know is
+ * which COURSE the work belongs to.
+ *
+ * Falls back to the slug, then to an em dash, so a course whose German
+ * localization is missing still identifies itself.
+ */
+async function readCourseTitles(
+  supabase: Supabase,
+  courseIds: string[],
+  locale: string
+): Promise<Map<string, string>> {
+  const unique = [...new Set(courseIds)];
+  if (unique.length === 0) return new Map();
+  const [localizations, courses] = await Promise.all([
+    supabase.from("course_localizations").select("course_id,locale,title").in("course_id", unique),
+    supabase.from("courses").select("id,slug").in("id", unique),
+  ]);
+  const bySlug = new Map((courses.data ?? []).map((row) => [row.id, row.slug]));
+  const titles = new Map<string, string>();
+  for (const id of unique) {
+    const rows = (localizations.data ?? []).filter((row) => row.course_id === id);
+    const pick =
+      rows.find((row) => row.locale === locale)?.title ??
+      rows.find((row) => row.locale === "de")?.title ??
+      bySlug.get(id) ??
+      "—";
+    titles.set(id, pick);
+  }
+  return titles;
 }
 
 /**
@@ -238,7 +298,7 @@ export function hoursSince(iso: string): number {
 export interface QueueFilters {
   locale: string;
   state?: SubmissionState | undefined;
-  cohortId?: string | undefined;
+  courseId?: string | undefined;
   /** Oldest first is the default — the queue is a FIFO of people waiting. */
   sort?: "oldest" | "newest" | undefined;
   limit?: number | undefined;
@@ -260,15 +320,15 @@ export async function listReviewQueue(filters: QueueFilters): Promise<Result<Que
 
     if (filters.state) query = query.eq("state", filters.state);
     else query = query.in("state", [...OPEN_SUBMISSION_STATES]);
-    if (filters.cohortId) query = query.eq("cohort_id", filters.cohortId);
+    if (filters.courseId) query = query.eq("course_id", filters.courseId);
 
     const { data, error, count } = await query;
     if (error) return err(mapReviewError(error));
 
     const rows = z.array(SubmissionRowSchema).parse(data ?? []);
-    const [profiles, cohorts, titles, attempts] = await Promise.all([
+    const [profiles, courseTitles, titles, attempts] = await Promise.all([
       readProfiles(supabase, rows.map((r) => r.learner_id)),
-      readCohorts(supabase),
+      readCourseTitles(supabase, rows.map((r) => r.course_id), filters.locale),
       readTaskTitles(supabase, rows.map((r) => r.task_id), filters.locale),
       readAttemptNumbers(supabase, rows.map((r) => r.attempt_id)),
     ]);
@@ -283,8 +343,8 @@ export async function listReviewQueue(filters: QueueFilters): Promise<Result<Que
         learnerName: profiles.get(row.learner_id) ?? "—",
         taskId: row.task_id,
         taskTitle: titles.get(row.task_id) || "—",
-        cohortId: row.cohort_id,
-        cohortName: cohorts.get(row.cohort_id) ?? "—",
+        courseId: row.course_id,
+        courseTitle: courseTitles.get(row.course_id) ?? "—",
         submittedAt,
         waitingHours: hoursSince(submittedAt),
         attemptNumber: attempts.get(row.attempt_id) ?? row.latest_version_number,
@@ -298,7 +358,11 @@ export async function listReviewQueue(filters: QueueFilters): Promise<Result<Que
     return ok({
       items,
       total: count ?? items.length,
-      cohorts: [...cohorts].map(([id, name]) => ({ id, name })),
+      // The filter list is COURSES now. A trainer filtering their queue is
+      // asking "show me the work for this course", never "for this cohort" —
+      // and with one auto-created cohort per course the old filter offered a
+      // single option that changed nothing.
+      courses: [...courseTitles].map(([id, name]) => ({ id, name })),
     });
   } catch (cause) {
     return err(unexpected(cause));
@@ -384,6 +448,7 @@ export interface ReviewDetail {
   cohortId: string;
   cohortName: string;
   cohortState: string;
+  courseTitle: string;
 
   taskId: string;
   taskTitle: string;
@@ -473,6 +538,12 @@ export async function getReviewDetail(
       cohortId: submission.cohort_id,
       cohortName: cohorts.get(submission.cohort_id) ?? "—",
       cohortState,
+      // What a reviewer can actually act on. cohortName is kept only because
+      // cohortState still drives the decision lock; nothing renders it.
+      courseTitle:
+        (await readCourseTitles(supabase, [submission.course_id], locale)).get(
+          submission.course_id
+        ) ?? "—",
 
       taskId: submission.task_id,
       taskTitle: context.task_title || instructions.title || "—",
@@ -707,6 +778,8 @@ export interface QuestionItem {
   learnerName: string;
   cohortId: string;
   cohortName: string;
+  /** What the screens show. See readCourseTitlesByCohort. */
+  courseTitle: string;
   taskId: string;
   taskTitle: string;
   assignedTrainerId: string | null;
@@ -782,15 +855,16 @@ export async function listQuestions(args: {
     if (error) return err(mapReviewError(error));
 
     const rows = z.array(QuestionRowSchema).parse(data ?? []);
-    const [profiles, cohorts, titles, counts] = await Promise.all([
+    const [profiles, cohorts, titles, counts, courseTitles] = await Promise.all([
       readProfiles(supabase, rows.flatMap((r) => [r.learner_id, r.assigned_trainer_id ?? ""])),
       readCohorts(supabase),
       readTaskTitles(supabase, rows.map((r) => r.task_id), args.locale),
       readMessageCounts(supabase, rows.map((r) => r.id)),
+      readCourseTitlesByCohort(supabase, rows.map((r) => r.cohort_id), args.locale),
     ]);
 
     return ok({
-      items: rows.map((row) => toQuestionItem(row, profiles, cohorts, titles, counts)),
+      items: rows.map((row) => toQuestionItem(row, profiles, cohorts, titles, counts, courseTitles)),
       total: count ?? rows.length,
     });
   } catch (cause) {
@@ -803,7 +877,8 @@ function toQuestionItem(
   profiles: Map<string, string>,
   cohorts: Map<string, string>,
   titles: Map<string, string>,
-  counts: Map<string, number>
+  counts: Map<string, number>,
+  courseTitles: Map<string, string>
 ): QuestionItem {
   return {
     id: row.id,
@@ -813,6 +888,7 @@ function toQuestionItem(
     learnerName: profiles.get(row.learner_id) ?? "—",
     cohortId: row.cohort_id,
     cohortName: cohorts.get(row.cohort_id) ?? "—",
+    courseTitle: courseTitles.get(row.cohort_id) ?? "—",
     taskId: row.task_id,
     taskTitle: titles.get(row.task_id) || "—",
     assignedTrainerId: row.assigned_trainer_id,
@@ -862,7 +938,7 @@ export async function getQuestionDetail(
       .order("created_at", { ascending: true });
 
     const messages = messageRows ?? [];
-    const [profiles, cohorts, titles, counts] = await Promise.all([
+    const [profiles, cohorts, titles, counts, courseTitles] = await Promise.all([
       readProfiles(supabase, [
         row.learner_id,
         row.assigned_trainer_id ?? "",
@@ -871,9 +947,10 @@ export async function getQuestionDetail(
       readCohorts(supabase),
       readTaskTitles(supabase, [row.task_id], locale),
       readMessageCounts(supabase, [row.id]),
+      readCourseTitlesByCohort(supabase, [row.cohort_id], locale),
     ]);
 
-    const item = toQuestionItem(row, profiles, cohorts, titles, counts);
+    const item = toQuestionItem(row, profiles, cohorts, titles, counts, courseTitles);
     return ok({
       ...item,
       messages: messages.map((message) => ({

@@ -113,7 +113,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                         {item.learnerName}
                       </span>
                       <span className="truncate text-[13px] text-(--color-fg-muted)">
-                        {item.taskTitle} · {item.cohortName}
+                        {item.taskTitle} · {item.courseTitle}
                       </span>
                     </span>
                     <span className="flex shrink-0 flex-wrap items-center gap-2">
@@ -128,51 +128,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
         )}
       </section>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-[22px] font-semibold leading-7">{t("trainer.dashboard.cohorts")}</h2>
 
-        {dashboard.cohorts.length === 0 ? (
-          <EmptyState
-            title={t("trainer.dashboard.cohortsEmptyTitle")}
-            description={t("trainer.dashboard.cohortsEmptyText")}
-          />
-        ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:gap-5">
-            {dashboard.cohorts.map((cohort) => (
-              <li key={cohort.id}>
-                <Card interactive padded={false} className="h-full">
-                  <div className="flex h-full flex-col gap-3 p-4 lg:p-5">
-                    <span className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-[18px] font-semibold leading-6">{cohort.name}</span>
-                      <StatusBadge state={cohort.state} locale={locale} />
-                    </span>
-                    <span className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-(--color-fg-muted)">
-                      <span>
-                        {t("trainer.groups.learners")}:{" "}
-                        <span className="tabular font-semibold text-(--color-fg)">
-                          {cohort.learnerCount}
-                        </span>
-                      </span>
-                      <span>
-                        {t("trainer.groups.openSubmissions")}:{" "}
-                        <span className="tabular font-semibold text-(--color-fg)">
-                          {cohort.openSubmissions}
-                        </span>
-                      </span>
-                      <span>
-                        {t("trainer.groups.openQuestions")}:{" "}
-                        <span className="tabular font-semibold text-(--color-fg)">
-                          {cohort.openQuestions}
-                        </span>
-                      </span>
-                    </span>
-                  </div>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </>
   );
 }

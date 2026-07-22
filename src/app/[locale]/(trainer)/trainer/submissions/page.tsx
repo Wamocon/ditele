@@ -50,14 +50,14 @@ export default async function Page({
   };
 
   const state = asSubmissionState(first("state"));
-  const cohortId = first("cohort") || undefined;
+  const courseId = first("course") || undefined;
   const sort = first("sort") === "newest" ? ("newest" as const) : ("oldest" as const);
   const page = Math.max(1, Number(first("page") ?? 1) || 1);
 
   const result = await listReviewQueue({
     locale,
     state,
-    cohortId,
+    courseId,
     sort,
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
@@ -76,7 +76,7 @@ export default async function Page({
     );
   }
 
-  const { items, total, cohorts } = result.data;
+  const { items, total, courses } = result.data;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const columns: Column<QueueItem>[] = [
@@ -93,7 +93,9 @@ export default async function Page({
       ),
     },
     { key: "task", header: t("trainer.shared.task"), cell: (row) => row.taskTitle },
-    { key: "cohort", header: t("trainer.shared.cohort"), cell: (row) => row.cohortName, hideOnMobile: true },
+    // Course, not cohort: a cohort name tells a trainer nothing they can act
+    // on, and with one auto-created cohort per course every row said the same.
+    { key: "course", header: t("trainer.shared.course"), cell: (row) => row.courseTitle, hideOnMobile: true },
     {
       key: "submitted",
       header: t("trainer.shared.submittedAt"),
@@ -139,7 +141,7 @@ export default async function Page({
         resetHref={base}
         labels={{
           state: t("trainer.queue.filterState"),
-          cohort: t("trainer.queue.filterCohort"),
+          course: t("trainer.queue.filterCourse"),
           sort: t("trainer.queue.filterSort"),
           apply: t("trainer.queue.apply"),
           reset: t("trainer.queue.reset"),
@@ -163,12 +165,12 @@ export default async function Page({
             ],
           },
           {
-            name: "cohort",
-            label: t("trainer.queue.filterCohort"),
-            value: cohortId ?? "",
+            name: "course",
+            label: t("trainer.queue.filterCourse"),
+            value: courseId ?? "",
             options: [
-              { value: "", label: t("trainer.queue.allCohorts") },
-              ...cohorts.map((cohort) => ({ value: cohort.id, label: cohort.name })),
+              { value: "", label: t("trainer.queue.allCourses") },
+              ...courses.map((course) => ({ value: course.id, label: course.name })),
             ],
           },
           {
