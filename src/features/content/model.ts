@@ -22,6 +22,23 @@ export const CONTENT_LOCALES = ["de"] as const;
 export type ContentLocale = (typeof CONTENT_LOCALES)[number];
 
 /**
+ * Whether the studio should name the language of a field at all.
+ *
+ * With one content locale there is nothing to disambiguate, and the studio was
+ * saying so anyway: "Titel (Deutsch)", a "DEUTSCH" heading above the only
+ * editor there is, "Kursinhalte werden auf Deutsch verfasst", and a gate-question
+ * hint that still read "fill in all three languages or leave all empty" beside
+ * a single box. An author writing one course in one language does not need to
+ * be told which language they are typing in — and the three-language sentence
+ * was not merely noise, it was wrong.
+ *
+ * Derived rather than hardcoded false: put a second locale back in
+ * `CONTENT_LOCALES` and every label, heading and hint returns on its own,
+ * which is exactly what the comment above promises.
+ */
+export const SHOW_CONTENT_LOCALE_LABELS = CONTENT_LOCALES.length > 1;
+
+/**
  * ⚠️ `tasks.task_kind` is a CHECK constraint, not an enum — it is typed `string`
  * in database.types.ts, so TypeScript will not catch a wrong value.
  * Allowed values (migration …091000 line 247): practical | knowledge | placement.

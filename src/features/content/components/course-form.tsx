@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import type { Route } from "next";
 import { Button, Card, CardTitle, Field, Input, Textarea } from "@/shared/ui";
 import { createCourseAction } from "../actions";
+import { CONTENT_LOCALES, SHOW_CONTENT_LOCALE_LABELS } from "../model";
 import type { AdminStrings } from "../i18n";
 
 /** `Grundlagen des Testens!` → `grundlagen-des-testens`. */
@@ -117,17 +118,36 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
           />
         </Field>
 
-        <Field label={s.defaultLocale}>
-          <select
-            value={defaultLocale}
-            onChange={(event) => setDefaultLocale(event.target.value)}
-            className="h-11 w-full rounded-(--radius-md) border border-(--color-border-strong) bg-(--color-bg) px-3 pr-8 text-[15px] text-(--color-fg)"
-          >
-            <option value="de">{strings.shared.localeDe}</option>
-            <option value="en">{strings.shared.localeEn}</option>
-            <option value="ru">{strings.shared.localeRu}</option>
-          </select>
-        </Field>
+        {/*
+          This picker offered de, en and ru while `createCourseAction` writes
+          the localization row with a hardcoded `locale: "de"`. Choosing English
+          therefore created a course whose `default_locale` was `en` and which
+          had no `en` text at all — the catalogue's title lookup falls back
+          through `default_locale` and would have found nothing there.
+
+          It now offers only the locales content is actually authored in, which
+          with one locale is no choice at all, so it is not shown. The value
+          still posts; it is simply the only one it could be.
+        */}
+        {SHOW_CONTENT_LOCALE_LABELS && (
+          <Field label={s.defaultLocale}>
+            <select
+              value={defaultLocale}
+              onChange={(event) => setDefaultLocale(event.target.value)}
+              className="h-11 w-full rounded-(--radius-md) border border-(--color-border-strong) bg-(--color-bg) px-3 pr-8 text-[15px] text-(--color-fg)"
+            >
+              {CONTENT_LOCALES.map((contentLocale) => (
+                <option key={contentLocale} value={contentLocale}>
+                  {contentLocale === "de"
+                    ? strings.shared.localeDe
+                    : contentLocale === "en"
+                      ? strings.shared.localeEn
+                      : strings.shared.localeRu}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
       </Card>
 
       <Card className="flex flex-col gap-4">

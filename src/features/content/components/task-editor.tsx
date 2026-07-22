@@ -5,13 +5,23 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button, Field, Input, Select, Textarea } from "@/shared/ui";
 import { saveTaskAction, type ActionState } from "../actions";
 import type { AdminStrings } from "../i18n";
-import { CONTENT_LOCALES, type StudioTask } from "../model";
+import { CONTENT_LOCALES, SHOW_CONTENT_LOCALE_LABELS, type StudioTask } from "../model";
 
 /** Same mapping stage-card uses; kept local so this file has no new import. */
 function localeLabel(contentLocale: string, strings: AdminStrings): string {
   if (contentLocale === "de") return strings.shared.localeDe;
   if (contentLocale === "en") return strings.shared.localeEn;
   return strings.shared.localeRu;
+}
+
+/**
+ * "Frage" or "Frage DE", depending on whether there is more than one language
+ * in play. With a single content locale the suffix names something the author
+ * has no choice about, and it appeared on screen as a bare "DE" next to a
+ * placeholder that also read "DE".
+ */
+function localeSuffixed(label: string, contentLocale: string): string {
+  return SHOW_CONTENT_LOCALE_LABELS ? `${label} ${contentLocale.toUpperCase()}` : label;
 }
 
 interface LocalizedDraft {
@@ -259,8 +269,8 @@ export function TaskEditor({
       <fieldset className="flex flex-col gap-2 rounded-(--radius-md) border border-(--color-border) p-3">
         <legend className="px-1 text-[13px] font-semibold">{s.taskGateQuestion}</legend>
         <p className="text-[13px] text-(--color-fg-muted)">{s.taskGateQuestionHint}</p>
-        {CONTENT_LOCALES.map((contentLocale) => (
-          <Field key={contentLocale} label={localeLabel(contentLocale, strings)}>
+        {CONTENT_LOCALES.map((contentLocale) => {
+          const input = (
             <Input
               value={gateQuestion[contentLocale] ?? ""}
               onChange={(event) =>
@@ -270,22 +280,31 @@ export function TaskEditor({
                 }))
               }
               disabled={readOnly}
+              // Only used in the single-locale case below, where the fieldset's
+              // own legend is the field's name and a second visible label would
+              // just repeat it.
+              aria-label={s.taskGateQuestion}
             />
-          </Field>
-        ))}
+          );
+          return SHOW_CONTENT_LOCALE_LABELS ? (
+            <Field key={contentLocale} label={localeLabel(contentLocale, strings)}>
+              {input}
+            </Field>
+          ) : (
+            <div key={contentLocale}>{input}</div>
+          );
+        })}
       </fieldset>
 
       {/* ── localizations ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         {CONTENT_LOCALES.map((contentLocale) => (
           <div key={contentLocale} className="flex flex-col gap-3 rounded-(--radius-md) bg-(--color-surface) p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
-              {contentLocale === "de"
-                ? strings.shared.localeDe
-                : contentLocale === "en"
-                  ? strings.shared.localeEn
-                  : strings.shared.localeRu}
-            </p>
+            {SHOW_CONTENT_LOCALE_LABELS && (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
+                {localeLabel(contentLocale, strings)}
+              </p>
+            )}
             <Field label={strings.shared.title} required>
               <Input
                 value={localizations[contentLocale]?.title ?? ""}
@@ -349,8 +368,10 @@ export function TaskEditor({
                   {CONTENT_LOCALES.map((contentLocale) => (
                     <Input
                       key={contentLocale}
-                      aria-label={`${s.taskHints} ${index + 1} ${contentLocale.toUpperCase()}`}
-                      placeholder={contentLocale.toUpperCase()}
+                      aria-label={localeSuffixed(`${s.taskHints} ${index + 1}`, contentLocale)}
+                      {...(SHOW_CONTENT_LOCALE_LABELS
+                        ? { placeholder: contentLocale.toUpperCase() }
+                        : {})}
                       value={hint.translations[contentLocale] ?? ""}
                       disabled={readOnly}
                       onChange={(event) =>
@@ -401,7 +422,7 @@ export function TaskEditor({
             one option exists (a question with no answers is not a test). */}
         <div className="grid gap-2 sm:grid-cols-3">
           {CONTENT_LOCALES.map((contentLocale) => (
-            <Field key={contentLocale} label={`${s.taskAssessmentQuestion} ${contentLocale.toUpperCase()}`}>
+            <Field key={contentLocale} label={localeSuffixed(s.taskAssessmentQuestion, contentLocale)}>
               <Input
                 value={question[contentLocale] ?? ""}
                 disabled={readOnly}
@@ -435,8 +456,10 @@ export function TaskEditor({
                   {CONTENT_LOCALES.map((contentLocale) => (
                     <Input
                       key={contentLocale}
-                      aria-label={`${s.taskOptions} ${index + 1} ${contentLocale.toUpperCase()}`}
-                      placeholder={contentLocale.toUpperCase()}
+                      aria-label={localeSuffixed(`${s.taskOptions} ${index + 1}`, contentLocale)}
+                      {...(SHOW_CONTENT_LOCALE_LABELS
+                        ? { placeholder: contentLocale.toUpperCase() }
+                        : {})}
                       value={option.labels[contentLocale] ?? ""}
                       disabled={readOnly}
                       onChange={(event) =>
