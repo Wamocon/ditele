@@ -1722,7 +1722,15 @@
       "NETWORK": "Verbindung zum Server fehlgeschlagen.",
       "AUTH": "Das Passwort konnte nicht geändert werden. Prüfe die Passwortregeln.",
       "SHAPE": "Die Daten konnten gerade nicht geladen werden. Bitte versuche es erneut.",
-      "UNKNOWN": "Die Aktion konnte nicht ausgeführt werden."
+      "UNKNOWN": "Die Aktion konnte nicht ausgeführt werden.",
+      "READY_COURSE_TEXTS": "Für die Freigabe müssen Titel, Kurzbeschreibung und Beschreibung des Kurses ausgefüllt sein.",
+      "READY_NO_STAGE": "Der Kurs braucht mindestens einen Abschnitt.",
+      "READY_STAGE_ORDER": "Die Reihenfolge der Abschnitte hat eine Lücke. Bitte sortieren Sie sie neu.",
+      "READY_STAGE_TEXTS": "Jeder Abschnitt braucht einen Titel und eine Beschreibung und mindestens eine Aufgabe.",
+      "READY_TASK_TEXTS": "Jede Aufgabe braucht einen Titel, eine Anleitung und vollständige Hinweise.",
+      "READY_ASSESSMENT": "Eine Wissensfrage ist unvollständig: Frage, Antwortoptionen oder die richtige Antwort fehlen.",
+      "READY_MEDIA": "Ein hinterlegtes Medium ist nicht verfügbar.",
+      "READY_RUBRIC": "Jede Praxisaufgabe braucht eine aktive Bewertungsvorlage."
     }
   },
   "adminOps": {

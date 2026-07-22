@@ -13,7 +13,7 @@ import {
   type ActionState,
 } from "../actions";
 import type { AdminStrings } from "../i18n";
-import { CONTENT_LOCALES, type StudioStage } from "../model";
+import { CONTENT_LOCALES, SHOW_CONTENT_LOCALE_LABELS, type StudioStage } from "../model";
 import { TaskEditorDialog } from "./task-editor-dialog";
 
 function localeLabel(locale: string, strings: AdminStrings): string {
@@ -198,9 +198,11 @@ export function StageCard({
         <div className="flex flex-col gap-3 rounded-(--radius-md) bg-(--color-surface) p-3">
           {CONTENT_LOCALES.map((contentLocale) => (
             <div key={contentLocale} className="flex flex-col gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
-                {localeLabel(contentLocale, strings)}
-              </p>
+              {SHOW_CONTENT_LOCALE_LABELS && (
+                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
+                  {localeLabel(contentLocale, strings)}
+                </p>
+              )}
               <Field label={strings.shared.title} required>
                 <Input
                   value={drafts[contentLocale]?.title ?? ""}
