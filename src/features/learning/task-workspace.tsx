@@ -29,6 +29,7 @@ import {
 } from "./model";
 import { saveDraftAction, startAttemptAction, submitAttemptAction } from "./actions";
 import { GateQuestionPanel } from "./gate-question";
+import { TaskFeedback } from "./task-feedback";
 import { DefectForm, formatDefectReport, isDefectComplete } from "./defect-form";
 import { HintCascade } from "./hint-cascade";
 import { VideoEmbed } from "@/shared/ui";
@@ -400,6 +401,15 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
         </div>
       )}
 
+      {/* The END video plays once the task is finished, and the emoji asks how
+          it felt — both only in a finished (read-only) attempt. */}
+      {readOnly && attempt && task.videoUrl && (
+        <VideoEmbed url={task.videoUrl} title={task.title} locale={locale} />
+      )}
+      {readOnly && attempt && (
+        <TaskFeedback locale={locale} taskId={task.id} initial={null} strings={s} />
+      )}
+
       {attempt?.state === "revision_required" && (
         <div className="flex items-start gap-3 rounded-(--radius-md) border border-(--color-warning) bg-(--color-warning-soft) px-4 py-3">
           <CircleAlert className="mt-0.5 size-5 shrink-0 text-(--color-warning)" aria-hidden />
@@ -544,13 +554,12 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
             </div>
           </div>
 
-          {/* Workflow B — "Intro-Video ansehen" leads into the scenario. */}
+          {/* The START video plays when the task opens (Workflow B — the
+              intro leads into the scenario). The END video has moved to the
+              finished panel below, where it plays once the task is done. */}
           {task.introVideoUrl && (
             <VideoEmbed url={task.introVideoUrl} title={task.title} intro locale={locale} />
           )}
-
-          {/* Workflow A — "Video ansehen" then "PDF-Skript lesen". */}
-          {task.videoUrl && <VideoEmbed url={task.videoUrl} title={task.title} locale={locale} />}
 
           {task.documentUrl && (
             /* Material row: a tinted type tile, the name with its format

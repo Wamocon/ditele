@@ -78,7 +78,8 @@
     "settings": "Settings",
     "more": "More",
     "arena": "Arena",
-    "arenaAdmin": "Arena"
+    "arenaAdmin": "Arena",
+    "feedbackAdmin": "Feedback"
   },
   "home": {
     "title": "Learn software testing by doing it.",
@@ -264,7 +265,15 @@
       "lockReasonGateQuestion": "Answer the question on the previous task first.",
       "lockReasonGateQuestionNamed": "Answer the question on “{task}” first.",
       "lockAnswerQuestion": "Answer the question",
-      "arenaBadge": "Arena"
+      "arenaBadge": "Arena",
+      "feedbackTitle": "How was this course?",
+      "feedbackPrompt": "Your rating helps us improve the course.",
+      "feedbackStars": "{count} of 5 stars",
+      "feedbackComment": "Comment",
+      "feedbackCommentPlaceholder": "What did you like? What could we improve? (optional)",
+      "feedbackSubmit": "Send feedback",
+      "feedbackThanks": "Thanks for your feedback!",
+      "feedbackFailed": "Could not save your feedback."
     },
     "tasks": {
       "title": "Tasks",
@@ -345,6 +354,12 @@
       "validationDefect": "Please fill in the summary, the steps, and the expected and actual results.",
       "validationOption": "Please answer the comprehension question.",
       "submittedTitle": "Submitted",
+      "feedbackPrompt": "How was this task?",
+      "feedbackUnhappy": "Not happy",
+      "feedbackNeutral": "Neutral",
+      "feedbackHappy": "Very happy",
+      "feedbackThanks": "Thanks for your feedback!",
+      "feedbackFailed": "Could not save your feedback.",
       "submittedDescription": "Your work is queued for review. You will be notified once it has been reviewed.",
       "submittedAt": "Submitted on {date}",
       "submittedReadOnly": "This submission has been sent and can no longer be changed.",
@@ -917,6 +932,20 @@
     }
   },
   "admin": {
+    "feedback": {
+      "title": "Feedback",
+      "description": "Learner ratings and comments on courses and tasks.",
+      "courseHeading": "Course ratings",
+      "courseEmpty": "No course ratings yet",
+      "courseEmptyDescription": "Once learners complete and rate a course, they appear here.",
+      "taskHeading": "Task feedback",
+      "taskEmpty": "No task feedback yet",
+      "taskEmptyDescription": "Once learners finish and rate tasks, they appear here.",
+      "sentimentUnhappy": "Not happy",
+      "sentimentNeutral": "Neutral",
+      "sentimentHappy": "Very happy",
+      "anonymous": "Unknown"
+    },
     "editorTitle": "Edit course",
     "draftVersion": "Draft v3",
     "courseDetails": "Course details",

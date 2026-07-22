@@ -4,6 +4,7 @@ import { EmptyState, ErrorState, StatusBadge } from "@/shared/ui";
 import { getMyLearningCourse } from "@/shared/data/learning";
 import { ProgressBar } from "@/features/learning/course-ui";
 import { StageList } from "@/features/learning/stage-list";
+import { CourseFeedback } from "@/features/learning/course-feedback";
 import { format, learnStrings } from "@/features/learning/i18n";
 
 export async function generateMetadata({
@@ -76,6 +77,12 @@ export default async function Page({
         ) : (
           <StageList stages={course.stages} locale={locale} strings={s.course} />
         )}
+
+        {/* Course complete — invite a 5-star rating and a comment. */}
+        {course.totalActivities > 0 &&
+          course.completedActivities >= course.totalActivities && (
+            <CourseFeedback locale={locale} courseId={courseId} strings={s.course} />
+          )}
       </div>
     </>
   );

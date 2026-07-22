@@ -78,7 +78,8 @@
     "settings": "Настройки",
     "more": "Ещё",
     "arena": "Арена",
-    "arenaAdmin": "Арена"
+    "arenaAdmin": "Арена",
+    "feedbackAdmin": "Отзывы"
   },
   "home": {
     "title": "Тестирование ПО изучают на практике.",
@@ -264,7 +265,15 @@
       "lockReasonGateQuestion": "Сначала ответьте на вопрос к предыдущему заданию.",
       "lockReasonGateQuestionNamed": "Сначала ответьте на вопрос к «{task}».",
       "lockAnswerQuestion": "Ответить на вопрос",
-      "arenaBadge": "Арена"
+      "arenaBadge": "Арена",
+      "feedbackTitle": "Как вам этот курс?",
+      "feedbackPrompt": "Ваша оценка помогает нам улучшить курс.",
+      "feedbackStars": "{count} из 5 звёзд",
+      "feedbackComment": "Комментарий",
+      "feedbackCommentPlaceholder": "Что понравилось? Что можно улучшить? (необязательно)",
+      "feedbackSubmit": "Отправить отзыв",
+      "feedbackThanks": "Спасибо за отзыв!",
+      "feedbackFailed": "Не удалось сохранить отзыв."
     },
     "tasks": {
       "title": "Задания",
@@ -345,6 +354,12 @@
       "validationDefect": "Пожалуйста, заполните краткое описание, шаги, ожидаемый и фактический результат.",
       "validationOption": "Пожалуйста, ответьте на проверочный вопрос.",
       "submittedTitle": "Работа отправлена",
+      "feedbackPrompt": "Как вам это задание?",
+      "feedbackUnhappy": "Не понравилось",
+      "feedbackNeutral": "Нормально",
+      "feedbackHappy": "Очень понравилось",
+      "feedbackThanks": "Спасибо за отзыв!",
+      "feedbackFailed": "Не удалось сохранить отзыв.",
       "submittedDescription": "Ваша работа поставлена в очередь на проверку. Мы сообщим, когда её проверят.",
       "submittedAt": "Отправлено {date}",
       "submittedReadOnly": "Эта работа отправлена, изменить её больше нельзя.",
@@ -917,6 +932,20 @@
     }
   },
   "admin": {
+    "feedback": {
+      "title": "Отзывы",
+      "description": "Оценки и отзывы учащихся о курсах и заданиях.",
+      "courseHeading": "Оценки курсов",
+      "courseEmpty": "Пока нет оценок курсов",
+      "courseEmptyDescription": "Как только учащиеся завершат и оценят курс, они появятся здесь.",
+      "taskHeading": "Отзывы о заданиях",
+      "taskEmpty": "Пока нет отзывов о заданиях",
+      "taskEmptyDescription": "Как только учащиеся завершат и оценят задания, они появятся здесь.",
+      "sentimentUnhappy": "Не понравилось",
+      "sentimentNeutral": "Нормально",
+      "sentimentHappy": "Очень понравилось",
+      "anonymous": "Неизвестно"
+    },
     "editorTitle": "Редактировать курс",
     "draftVersion": "Черновик v3",
     "courseDetails": "Данные курса",

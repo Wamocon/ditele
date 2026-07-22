@@ -78,7 +78,8 @@
     "integrations": "Integrationen",
     "settings": "Einstellungen",
     "more": "Mehr",
-    "arenaAdmin": "Arena"
+    "arenaAdmin": "Arena",
+    "feedbackAdmin": "Feedback"
   },
   "home": {
     "title": "Softwaretesten lernt man durch Testen.",
@@ -454,7 +455,15 @@
       "lockReasonGateQuestion": "Beantworten Sie zuerst die Frage zur vorherigen Aufgabe.",
       "lockReasonGateQuestionNamed": "Beantworten Sie zuerst die Frage zu „{task}“.",
       "lockAnswerQuestion": "Frage beantworten",
-      "arenaBadge": "Arena"
+      "arenaBadge": "Arena",
+      "feedbackTitle": "Wie war dieser Kurs?",
+      "feedbackPrompt": "Deine Bewertung hilft uns, den Kurs zu verbessern.",
+      "feedbackStars": "{count} von 5 Sternen",
+      "feedbackComment": "Kommentar",
+      "feedbackCommentPlaceholder": "Was hat dir gefallen? Was können wir verbessern? (optional)",
+      "feedbackSubmit": "Feedback senden",
+      "feedbackThanks": "Danke für dein Feedback!",
+      "feedbackFailed": "Feedback konnte nicht gespeichert werden."
     },
     "tasks": {
       "title": "Aufgaben",
@@ -549,6 +558,12 @@
       "validationDefect": "Bitte fülle Kurzbeschreibung, Schritte, erwartetes und tatsächliches Ergebnis aus.",
       "validationOption": "Bitte beantworte die Verständnisfrage.",
       "submittedTitle": "Abgabe eingereicht",
+      "feedbackPrompt": "Wie war diese Aufgabe?",
+      "feedbackUnhappy": "Nicht zufrieden",
+      "feedbackNeutral": "Neutral",
+      "feedbackHappy": "Sehr zufrieden",
+      "feedbackThanks": "Danke für dein Feedback!",
+      "feedbackFailed": "Feedback konnte nicht gespeichert werden.",
       "submittedDescription": "Deine Abgabe liegt zur Prüfung bereit. Du wirst benachrichtigt, sobald sie geprüft wurde.",
       "submittedAt": "Eingereicht am {date}",
       "submittedReadOnly": "Diese Abgabe ist eingereicht und kann nicht mehr geändert werden.",
@@ -1210,6 +1225,20 @@
     }
   },
   "admin": {
+    "feedback": {
+      "title": "Feedback",
+      "description": "Bewertungen und Rückmeldungen der Lernenden zu Kursen und Aufgaben.",
+      "courseHeading": "Kursbewertungen",
+      "courseEmpty": "Noch keine Kursbewertungen",
+      "courseEmptyDescription": "Sobald Lernende einen Kurs abschließen und bewerten, erscheinen sie hier.",
+      "taskHeading": "Aufgaben-Feedback",
+      "taskEmpty": "Noch kein Aufgaben-Feedback",
+      "taskEmptyDescription": "Sobald Lernende Aufgaben abschließen und bewerten, erscheinen sie hier.",
+      "sentimentUnhappy": "Nicht zufrieden",
+      "sentimentNeutral": "Neutral",
+      "sentimentHappy": "Sehr zufrieden",
+      "anonymous": "Unbekannt"
+    },
     "shared": {
       "created": "Erstellt",
       "updated": "Aktualisiert",

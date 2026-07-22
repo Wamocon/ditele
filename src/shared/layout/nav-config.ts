@@ -135,6 +135,7 @@ export const ADMIN_NAV: NavItem[] = [
    * out of §9 with this one.
    */
   { path: "/admin/arena", label: "Arena", labelKey: "arenaAdmin", owner: "WS-5" },
+  { path: "/admin/feedback", label: "Feedback", labelKey: "feedbackAdmin", owner: "WS-5" },
   /**
    * The learner progress board. Added by WS-13 under `ISSUES.md` I-056 — WS-12
    * built the route but §7 grants the nav exception to WS-8 only, so it shipped

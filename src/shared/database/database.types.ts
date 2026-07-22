@@ -1332,6 +1332,64 @@ export type Database = {
           },
         ]
       }
+      course_feedback: {
+        Row: {
+          comment: string
+          course_id: string
+          created_at: string
+          enrollment_id: string
+          id: string
+          learner_id: string
+          organization_id: string
+          stars: number
+          updated_at: string
+        }
+        Insert: {
+          comment?: string
+          course_id: string
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          learner_id: string
+          organization_id: string
+          stars: number
+          updated_at?: string
+        }
+        Update: {
+          comment?: string
+          course_id?: string
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          learner_id?: string
+          organization_id?: string
+          stars?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_feedback_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_feedback_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_feedback_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_localizations: {
         Row: {
           completion_video_url: string | null
@@ -5242,6 +5300,61 @@ export type Database = {
           },
         ]
       }
+      task_feedback: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          id: string
+          learner_id: string
+          organization_id: string
+          sentiment: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          learner_id: string
+          organization_id: string
+          sentiment: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          learner_id?: string
+          organization_id?: string
+          sentiment?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_feedback_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_feedback_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_feedback_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_gate_questions: {
         Row: {
           created_at: string
@@ -6689,6 +6802,17 @@ export type Database = {
           user_id: string
         }[]
       }
+      list_course_feedback_for_admin: {
+        Args: { p_organization_id: string }
+        Returns: {
+          comment: string
+          course_id: string
+          course_title: string
+          learner_name: string
+          stars: number
+          submitted_at: string
+        }[]
+      }
       list_my_available_question_contexts: {
         Args: { p_locale?: string }
         Returns: {
@@ -6781,6 +6905,16 @@ export type Database = {
         }[]
       }
       list_progress_board: { Args: { p_locale?: string }; Returns: Json }
+      list_task_feedback_for_admin: {
+        Args: { p_organization_id: string }
+        Returns: {
+          learner_name: string
+          sentiment: string
+          submitted_at: string
+          task_id: string
+          task_title: string
+        }[]
+      }
       list_visible_skill_prerequisites: {
         Args: never
         Returns: {
@@ -7259,6 +7393,45 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "content_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      submit_course_feedback: {
+        Args: { p_comment?: string; p_course_id: string; p_stars: number }
+        Returns: {
+          comment: string
+          course_id: string
+          created_at: string
+          enrollment_id: string
+          id: string
+          learner_id: string
+          organization_id: string
+          stars: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "course_feedback"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      submit_task_feedback: {
+        Args: { p_sentiment: string; p_task_id: string }
+        Returns: {
+          created_at: string
+          enrollment_id: string
+          id: string
+          learner_id: string
+          organization_id: string
+          sentiment: string
+          task_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "task_feedback"
           isOneToOne: true
           isSetofReturn: false
         }
