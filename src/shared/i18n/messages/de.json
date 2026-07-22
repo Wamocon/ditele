@@ -453,7 +453,8 @@
       "lockGoToArena": "Zur Arena",
       "lockReasonGateQuestion": "Beantworten Sie zuerst die Frage zur vorherigen Aufgabe.",
       "lockReasonGateQuestionNamed": "Beantworten Sie zuerst die Frage zu „{task}“.",
-      "lockAnswerQuestion": "Frage beantworten"
+      "lockAnswerQuestion": "Frage beantworten",
+      "arenaBadge": "Arena"
     },
     "tasks": {
       "title": "Aufgaben",

@@ -89,6 +89,11 @@ function lockReasonText(reason: LockReason | undefined, strings: LearnStrings["c
 function ActivityIcon({ activity }: { activity: LearningActivity }) {
   const className = "size-5 shrink-0";
   if (activity.locked) return <Lock className={cn(className, "text-(--color-fg-subtle)")} aria-hidden />;
+  // §5.5: an Arena task is visually distinct. The crossed swords mark it apart
+  // from every course-task state icon at a glance; its state still shows through
+  // the StatusBadge beside the title, so nothing is lost by overriding the icon.
+  if (activity.taskKind === "hunt")
+    return <Swords className={cn(className, "text-(--color-brand)")} aria-hidden />;
   switch (activity.state) {
     case "accepted":
     case "completed":
@@ -150,6 +155,9 @@ export function TaskListItem({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[15px] font-semibold leading-6">{activity.title}</span>
+          {/* §5.5: the kind badge, so the row reads as an Arena task before it is
+              opened — and cues that clicking it goes to the Arena, not a task page. */}
+          {activity.taskKind === "hunt" && <Badge tone="brand">{strings.arenaBadge}</Badge>}
           {!activity.locked && activity.state !== "available" && (
             <StatusBadge state={activity.state} locale={locale} />
           )}
@@ -291,10 +299,19 @@ export function TaskListItem({
     );
   }
 
+  // §5.5: "an Arena row sends the learner to Arena, a course row opens the task."
+  // The gate question stays on the course task — this only changes where the row
+  // opens, not where the question lives.
+  const href = (
+    activity.taskKind === "hunt"
+      ? arenaHubHref(locale)
+      : `/${locale}/learn/tasks/${activity.id}`
+  ) as Route;
+
   return (
     <li>
       <Link
-        href={`/${locale}/learn/tasks/${activity.id}` as Route}
+        href={href}
         className={cn(
           shared,
           "bg-(--color-bg) transition-[background-color,border-color,transform] duration-(--duration-base) ease-(--ease-out)",

@@ -40,6 +40,16 @@ export interface LearningActivity {
   position: number;
   state: string;
   /**
+   * `knowledge` · `practical` · `hunt` (§5.5). A `hunt` row is an **Arena task**:
+   * it is listed here like any other, but it opens in the Arena rather than the
+   * task workspace, and is rendered visually distinct. Carried out of the frozen
+   * snapshot by `get_my_learning_course` (20260803100000). Empty string when the
+   * projection predates that migration — treated as a course task, which is the
+   * safe default (it opens the task page rather than sending a course task to the
+   * Arena).
+   */
+  taskKind: string;
+  /**
    * The enriched shape, not `string[]`. WS-8's G8 work added
    * `required_task_id` / `_kind` / `_title` so a locked task can link to the
    * hunt that unlocks it; typing this as `string[]` is what let the mismatch

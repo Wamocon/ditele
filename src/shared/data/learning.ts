@@ -114,6 +114,11 @@ const ActivityRow = z.object({
   available_from: z.string().nullish().transform((v) => v ?? null),
   due_at: z.string().nullish().transform((v) => v ?? null),
   expected_minutes: int,
+  // §6.2: added to the projection by 20260803100000. Optional for the same
+  // reason `media` is on the task row — an older projection never sent it, and a
+  // required field would fail the parse and blank the whole course. `text`
+  // normalises a missing value to "", which the UI reads as a course task.
+  task_kind: text,
 });
 
 const StageRow = z.object({
@@ -326,6 +331,7 @@ export async function getMyLearningCourse(
             description: activity.description,
             position: activity.position,
             state: activity.state,
+            taskKind: activity.task_kind,
             lockReasons: activity.lock_reasons,
             availableFrom: activity.available_from,
             dueAt: activity.due_at,

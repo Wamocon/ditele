@@ -263,7 +263,8 @@
       "lockGoToArena": "На Арену",
       "lockReasonGateQuestion": "Сначала ответьте на вопрос к предыдущему заданию.",
       "lockReasonGateQuestionNamed": "Сначала ответьте на вопрос к «{task}».",
-      "lockAnswerQuestion": "Ответить на вопрос"
+      "lockAnswerQuestion": "Ответить на вопрос",
+      "arenaBadge": "Арена"
     },
     "tasks": {
       "title": "Задания",
