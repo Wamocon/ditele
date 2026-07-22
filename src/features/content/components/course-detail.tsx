@@ -14,7 +14,12 @@ import {
   type ActionState,
 } from "../actions";
 import { adminStrings, format, formatDate, type AdminStrings } from "../i18n";
-import { CONTENT_LOCALES, isVersionEditable, type AdminCourseDetail } from "../model";
+import {
+  CONTENT_LOCALES,
+  SHOW_CONTENT_LOCALE_LABELS,
+  isVersionEditable,
+  type AdminCourseDetail,
+} from "../model";
 
 function localeLabel(locale: string, strings: AdminStrings): string {
   if (locale === "de") return strings.shared.localeDe;
@@ -162,19 +167,24 @@ export function CourseDetail({
           <Field label={strings.shared.slug} required>
             <Input value={slug} onChange={(event) => setSlug(event.target.value)} />
           </Field>
-          <Field label={strings.courseNew.defaultLocale}>
-            <select
-              value={defaultLocale}
-              onChange={(event) => setDefaultLocale(event.target.value)}
-              className="h-11 w-full rounded-(--radius-md) border border-(--color-border-strong) bg-(--color-bg) px-3 pr-8 text-[15px] text-(--color-fg)"
-            >
-              {CONTENT_LOCALES.map((contentLocale) => (
-                <option key={contentLocale} value={contentLocale}>
-                  {localeLabel(contentLocale, strings)}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {/* A picker with one option is not a choice. `defaultLocale` still
+              rides along in state and still posts — the value is simply the
+              only one there is, so there is nothing to ask. */}
+          {SHOW_CONTENT_LOCALE_LABELS && (
+            <Field label={strings.courseNew.defaultLocale}>
+              <select
+                value={defaultLocale}
+                onChange={(event) => setDefaultLocale(event.target.value)}
+                className="h-11 w-full rounded-(--radius-md) border border-(--color-border-strong) bg-(--color-bg) px-3 pr-8 text-[15px] text-(--color-fg)"
+              >
+                {CONTENT_LOCALES.map((contentLocale) => (
+                  <option key={contentLocale} value={contentLocale}>
+                    {localeLabel(contentLocale, strings)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
         </div>
 
         <Field label={strings.courseNew.heroImage} hint={strings.courseNew.heroImageHint}>
@@ -266,9 +276,11 @@ export function CourseDetail({
               className="flex flex-col gap-3 rounded-(--radius-md) bg-(--color-surface) p-3"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
-                  {localeLabel(contentLocale, strings)}
-                </p>
+                {SHOW_CONTENT_LOCALE_LABELS && (
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-(--color-fg-muted)">
+                    {localeLabel(contentLocale, strings)}
+                  </p>
+                )}
                 <Badge tone={complete ? "success" : "warning"}>
                   {complete ? (
                     <Check className="size-3" aria-hidden />
