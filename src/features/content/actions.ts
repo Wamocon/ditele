@@ -10,6 +10,7 @@ import {
   createTask,
   createVersion,
   decideReview,
+  getAdminCourse,
   deleteStage,
   deleteTask,
   loadArchiveImpact,
@@ -196,9 +197,64 @@ export async function setCourseStateAction(input: {
   state: RecordState;
 }): Promise<ActionState> {
   await requireAdmin(input.locale);
+
+  /**
+   * ⭐ ACTIVATING A COURSE PUBLISHES IT.
+   *
+   * These were two separate axes, and the split is the single thing that made
+   * the admin flow unusable. An admin would create a course, write its tasks,
+   * add participants — and hit *"This course has no published version yet"*,
+   * with no obvious connection between "activate", which they had done, and
+   * "publish", which lives on a different screen under a version they never
+   * asked to think about.
+   *
+   * The product owner's sentence is the specification: "I can add participants
+   * and can activate it, and when I activate the course it needs to be visible
+   * for all the participants." One action, one outcome.
+   *
+   * So activation now walks the version lifecycle first: draft → in_review →
+   * published. Nothing is skipped and no guard is bypassed — the same three
+   * commands the studio has always called, in order, each with the row version
+   * read immediately before it.
+   *
+   * ⚠️ Only DRAFT versions are touched. A course that already has a published
+   * version activates without republishing anything, so re-activating after a
+   * deactivation cannot quietly promote half-finished edits.
+   *
+   * If the content is not ready — a task with no complete skill mapping, a
+   * practical task with no rubric — `submit_content_for_review` refuses and its
+   * message is returned as-is. That message names the actual problem, which is
+   * far more useful than a generic "could not activate".
+   */
+  if (input.state === "active") {
+    const detail = await getAdminCourse(input.courseId);
+    if (detail.ok) {
+      const versions = detail.data.versions;
+      const hasPublished = versions.some((version) => version.state === "published");
+      const draft = versions.find((version) => version.state === "draft");
+      const inReview = versions.find((version) => version.state === "in_review");
+
+      if (!hasPublished && (draft || inReview)) {
+        const versionId = (draft ?? inReview)!.id;
+        if (draft) {
+          const submitted = await submitForReview(versionId);
+          if (!submitted.ok) return settle(submitted);
+        }
+        // `approved` deliberately does NOT change the state — it stays
+        // `in_review` and bumps row_version. Publishing is the step that moves
+        // it, which is why both calls are here and in this order.
+        const approved = await decideReview(versionId, "approved", "Aktiviert");
+        if (!approved.ok) return settle(approved);
+        const published = await publishVersion(versionId);
+        if (!published.ok) return settle(published);
+      }
+    }
+  }
+
   const result = await setCourseState(input.courseId, input.state);
   revalidatePath(`/${input.locale}/admin/courses/${input.courseId}`);
   revalidatePath(`/${input.locale}/admin/courses`);
+  revalidatePath(`/${input.locale}/admin/courses/${input.courseId}/people`);
   return settle(result);
 }
 
