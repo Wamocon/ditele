@@ -1,7 +1,8 @@
 # DiTeLe — Course Authoring & Arena Build
 
-**Status:** Phase 0 and Phase 1a shipped. Phases 1b onward not started.
-**Last updated:** 2026-07-22, at commit `87129bd`.
+**Status:** Phases 0, 1a, 1b, 1c and 2 shipped. **Phase 3 is next**, and Phase 4
+is blocked behind it.
+**Last updated:** 2026-07-22, at commit `b5fbdde`.
 
 This is the working spec for the current build. It exists because the
 requirements and the design decisions behind them were agreed in conversation
@@ -227,55 +228,105 @@ Three defects the schema caught, each fixed in its own migration:
 
 ---
 
-## 4. What is left
+### Phase 1b — assignment write paths (`6546be3`, see §7)
 
-### Phase 1b — assignment write paths
+Six `SECURITY DEFINER` commands: `enroll_learner_in_course`,
+`remove_learner_from_course`, `assign_trainer_to_course`,
+`remove_trainer_from_course`, `assign_trainer_to_learner`,
+`remove_trainer_from_learner`.
 
-Direct inserts are refused today (`42501`, ISSUES I-011/I-012). Needed as
-`SECURITY DEFINER` RPCs:
+The build plan asked whether `cohort_memberships.role` was the right home for
+all three relationships. It is the right home for none of them and the answer
+differs per relationship:
 
-- enrol a learner on a course
-- assign a trainer to a course
-- assign a trainer to a learner
-- remove each of the above
+| | Home | Why |
+|---|---|---|
+| trainer ↔ course | `course_trainers`, **already existed** | added by `20260721130000`, which explicitly superseded `cohort_memberships(role='trainer')`. Only the write path was missing |
+| trainer ↔ learner | `learner_trainers`, **new** | `cohort_memberships` pairs a user with a *cohort*. This pairs a user with a *user*, and there is nowhere to put the second `user_id` |
+| learner ↔ course | `enrollments` + a cohort membership | not a choice: `current_actor_pinned_course_context` needs state `assigned`, an **active** cohort with a **published** pin, and an active `cohort_memberships` row |
 
-`cohort_memberships` already has a `role` column, so trainers and learners share
-the membership table. Check whether that is the right home before adding a new
-one.
+Cohort administration was removed from the product (QA plan §9) and only one of
+five courses had a cohort, so `app_private.ensure_default_course_cohort` creates
+one on demand, `flexible` rather than `scheduled` — a scheduled cohort with no
+`task_schedules` rows locks every task.
 
-### Phase 1c — Arena schema and the gates
+### Phase 1c — Arena schema and the gates (`ac9ec9c`)
 
-Each of these changes the **snapshot**, so each needs the column, the snapshot
-builder and the validator changed **in the same migration** — see
-[§6.3](#63-the-snapshot-is-the-dangerous-part).
+- `hunt_scenarios.html` + `start_media_url` / `end_media_url`, nullable and
+  additive: null keeps the component-registry engine, non-null renders
+  free-form admin HTML.
+- **Planted defects are a TABLE**, `hunt_scenario_defects` — this was the
+  decision left open. Reasons in the migration header; the short version is that
+  `hunt_findings.planted_code` is the join key behind the trainer's "2 von 5
+  gefunden", and `unique (scenario_id, code)` makes a typo'd code impossible
+  rather than merely wrong. `configuration.defects` stays as what it always was
+  (how the *engine* injects a bug) and the grading half was backfilled across.
+  **No learner-readable policy at all.**
+- `tasks.required_hunt_scenario_id`, matched on the scenario **code** so
+  publishing a new scenario version does not re-lock finished learners.
+- `task_gate_questions` + `task_gate_responses`, and the
+  `gate_question` lock reason.
 
-- `hunt_scenarios.html` plus a planted-defects store (new table, or a jsonb
-  column with a shape check — decide and record which).
-- `tasks.required_hunt_scenario_id` — the Arena gate.
-- `task_gate_questions` — the pre-task question, its answers, and a skipped
-  state; plus the "next task stays locked until answered" rule, which belongs in
-  `app_private.learner_snapshot_task_lock_reasons` where the existing lock
-  reasons already live.
+### Phase 2 — admin UI, partly (`b5fbdde`)
 
-### Phase 2 — admin UI
+**Done:** card grid two per row with enrolled/trainer counts and
+active/inactive; the duplicate button (`duplicate_course` had shipped in Phase
+1a with no caller); `/admin/courses/[courseId]/people`, which wires all six
+Phase 1b commands.
 
-Course form (no redirect URL), duplicate button, card grid two per row with
-enrolled counts and active/inactive, task modal, assignment screens.
+**Not done, and still Phase 2:**
 
-### Phase 3 — Arena authoring and the sandbox
+- **Course form fields.** `hero_image_url`, `exam_video_url`,
+  `completion_video_url` and course duration exist in the schema since Phase 1a
+  but have no input on `/admin/courses/new` or the course editor. En/De/Ru tabs
+  per §1.1.
+- **The task modal** (§1.4). Every field already has schema (§5) —
+  `task_model_answers`, `task_assessments`, `task_options`,
+  `task_option_answers`, `task_hints`, `tasks.intro_video_url` / `.video_url`,
+  `tasks.bug_category_id` — plus the two added in Phase 1c,
+  `required_hunt_scenario_id` and `task_gate_questions`. A **modal**, explicitly
+  not a page and not a dropdown.
+- **`set_task_gate_question` has no caller.** It is granted and tested; nothing
+  in the UI invokes it.
+
+### Phase 3 — Arena authoring and the sandbox — NOT STARTED
 
 Admin authoring modal, the sandboxed renderer, the student ticket form, the
 trainer review, the course-task gate in the learner UI.
 
-### Phase 4 — Arena for trainer and admin
+The whole database side of this is built, tested and callable. What is missing
+is entirely UI. Specifically:
+
+- `upsert_hunt_scenario` and `set_hunt_scenario_defects` are granted, typed in
+  `database.types.ts`, and have **no caller**.
+- The sandboxed renderer for `hunt_scenarios.html` does not exist. The existing
+  `sandbox-frame.tsx` renders the *registry* engine, not free-form HTML. §2.1 is
+  not negotiable: `sandbox="allow-scripts"` and **nothing else**.
+- The learner UI ignores the two new lock reasons. `required_hunt` and
+  `gate_question` are produced correctly by
+  `learner_snapshot_task_lock_reasons` and nothing renders them, so a gated task
+  is locked with no explanation on screen.
+- `answer_task_gate_question` / `skip_task_gate_question` have no caller, so
+  "ANSWER NOW or SKIP AND DO IT LATER" cannot be chosen.
+
+### Phase 4 — Arena for trainer and admin — BLOCKED ON PHASE 3
 
 New routes plus nav entries. Arena is missing from those headers today because
 `/learn/arena` exists only in `STUDENT_NAV`.
+
+⚠️ **Add the routes before the nav entries.** QA plan TC-NAV-02 requires that
+every navigation item open a page with real content; a nav entry pointing at a
+route that does not exist yet turns a missing feature into a failing test and a
+404 in a demo.
 
 ### Phase 5 — verification
 
 `npm run verify`, a three-role click-through, and an update to
 `docs/QA_TEST_PLAN.md`.
+
+`npm run verify` runs `i18n:check`, `secrets:check`, `a11y:contrast`,
+`typecheck`, `lint`, `test` and `build`. As of `b5fbdde` the first four and the
+build pass; the full chain has not been run end to end in one go.
 
 ---
 
@@ -355,6 +406,62 @@ Relevant functions: `app_private.build_content_snapshot`,
 `snapshot_task_payload`, `is_valid_learner_content_snapshot`,
 `learner_snapshot_task_lock_reasons`.
 
+### 6.3a A plpgsql local must never share a name with a column
+
+This cost time **four** times in one session and it is the single most expensive
+habit in this schema:
+
+```sql
+declare gate_question_id uuid;
+...
+where response_record.gate_question_id = gate_question_id   -- 42702
+```
+
+plpgsql resolves the bare name to the **column**, not the variable, and raises
+`42702 column reference is ambiguous`. Fixed in `20260729110000`
+(`organization_id`), `20260729120000` (`cohort_id`) and `20260730400000`
+(`gate_question_id`); avoided by naming in `20260731100000`.
+
+**The third one was invisible**, and that is the real lesson.
+`learner_snapshot_task_lock_reasons` ends with `exception when others then
+return reasons || 'configuration'`, so the 42702 became a generic
+"misconfigured" lock. The gate rule never evaluated once; answered and skipped
+produced byte-identical output. It was found only by running the rule in **all
+four states** and comparing — a single-state test sees a lock, which is exactly
+what a lock test expects to see.
+
+Name locals `<thing>_row`, `<thing>_record`, `target_<thing>` or
+`resolved_<thing>`, as the surrounding code already does.
+
+### 6.3b Postgres regular expressions are not Perl's
+
+Two traps, both of which turned `sanitize_scenario_html` into a silent no-op
+before it was caught (`20260730100000`):
+
+- **`\b` is a BACKSPACE character.** The word-boundary escape is `\y`. A pattern
+  using `\b` matches nothing and the function returns its input unchanged.
+- **Greediness belongs to the whole pattern, not to one quantifier.** The FIRST
+  quantifier decides it. `'<script\s[^>]*\ysrc…>.*?</script>'` has a greedy
+  `[^>]*` first, so the `.*?` is greedy too and the match runs to the LAST
+  `</script>`, deleting everything between.
+
+Both were caught only because the verification asserts on the **result** of
+sanitising a hostile string, not on the function existing. A security control
+that quietly does nothing looks identical to one that works.
+
+### 6.3c A rolled-back test cannot find a second-request bug
+
+Testing inside `begin; … rollback;` is right for most things and wrong for
+anything whose failure needs a previous request to have **committed**. Two bugs
+in `20260731100000` — a permanently-taken idempotency key and a duplicated
+cohort membership — both required enrol → *commit* → remove → *commit* →
+re-enrol, and both passed every rolled-back check before that.
+
+The cheapest way to get this coverage is to drive the real RPCs over PostgREST
+with a real JWT, which also proves the `execute` grants, the overload
+resolution, and that `auth.uid()` is the signed-in user rather than null. A
+200 from a page while signed OUT proves only that the redirect works.
+
 ### 6.4 Testing
 
 Sign-in is rate limited to **5 attempts per address and 30 per browser per 15
@@ -371,3 +478,30 @@ before believing it.
 It has happened repeatedly (ISSUES I-042): files changing mid-edit, and work
 swept into another session's commit. Check `git status` before you start and
 before you commit, and stage explicitly — never `git add -A`.
+
+**It happened again on 2026-07-22.** Commit `6546be3`, whose message is
+"Profiles: drop the Appearance section, give every role a profile photo",
+contains the three Phase 1b migrations — 2,127 lines of assignment schema — with
+no mention of them. They were untracked in the working tree when that session
+staged everything.
+
+Nothing was lost and the history was not rewritten, because that session was
+still live and rewriting shared history under a running session is worse than a
+misfiled commit. But if you are looking for where `learner_trainers` came from,
+`git log -- supabase/migrations/20260729100000_assignment_write_paths.sql` is
+the only way to find it, and the commit message will not help you.
+
+---
+
+## 7. Where each phase actually landed
+
+Because §6.5 happened, the commit a phase is *in* is not always the commit that
+*claims* it.
+
+| Phase | Commit | Message says |
+|---|---|---|
+| 0 | `3ab611d` | yes |
+| 1a | `87129bd` | yes |
+| **1b** | **`6546be3`** | **no — says "Profiles… profile photo"** |
+| 1c | `ac9ec9c` | yes |
+| 2 (part) | `b5fbdde` | yes |

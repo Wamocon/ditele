@@ -1,7 +1,7 @@
 # DiTeLe — QA Test Plan
 
 **For:** the testing team
-**Applies to:** commit `9fc0056` and later
+**Applies to:** commit `b5fbdde` and later
 **Last verified against a running build:** 2026-07-22
 
 Every step, label and expected result below was executed against a production
@@ -265,6 +265,66 @@ and open reports, plus a content-status breakdown and a recent-activity list.
 **Expect:** the course is created and you land on its editor. It appears in the
 course list.
 
+> The form has **no** cover image, motivational video or duration input yet.
+> Those columns exist in the database but no field has been built — see
+> [§9](#9-not-built-yet). Do not report them missing.
+
+### TC-ADMIN-02a — the course list is cards, two per row
+1. **Kurse**.
+
+**Expect:** courses render as **cards, two per row** on a desktop window — not a
+table. Each card shows the course title, its identifier, a status badge
+(*Entwurf / Aktiv / Inaktiv / Archiviert*), and four figures: **Teilnehmende**,
+**Trainer**, **Aufgaben**, **Dauer**. A course nobody is on shows `0`, not a
+blank. Narrow the window below ~768px and the cards go to one per row.
+
+**Also expect:** the search box and the status filter still work, and filtering
+by *Aktiv* shows only the cards whose badge says *Aktiv*.
+
+### TC-ADMIN-02b — duplicate a course
+1. **Kurse** → on any card, **Duplizieren**.
+2. A field appears pre-filled with `<identifier>-kopie`. Submit it.
+3. Reload the list.
+
+**Expect:** a new card appears with the suffix ` (Kopie)` on its title. It is in
+**Entwurf**, its task count matches the original, and its **Teilnehmende** and
+**Trainer** figures are **0** — a duplicate deliberately copies the content and
+not the people.
+
+4. Now try to duplicate again using the **same** identifier.
+
+**Expect:** a message telling you the identifier is not usable. No second copy.
+
+### TC-ADMIN-02c — put people on a course
+1. **Kurse** → on a card, **Personen**.
+
+**Expect:** two panels — **Teilnehmende** and **Trainer im Kurs**.
+
+2. In **Teilnehmende**, pick somebody from the dropdown and **Hinzufügen**.
+
+**Expect:** they appear in the list below, and the **Teilnehmende** figure on
+that course's card goes up by one when you go back to **Kurse**.
+
+3. Sign in as that learner.
+
+**Expect:** the course is now in their **Kurse** without them having requested
+it.
+
+4. Back as admin, **Entfernen** them, then add them again.
+
+**Expect:** both work. Removing and re-adding the same person must not fail —
+this was broken and is now fixed, so a failure here is a real regression.
+
+5. In **Trainer im Kurs**, add a trainer. Under a learner, use **Trainer
+   zuweisen** to give that learner a mentor.
+
+**Expect:** both appear immediately. A learner may have several trainers.
+
+> **A course with nothing published refuses enrolment on purpose.** If you pick
+> a course whose version is still *Entwurf*, you get *"Dieser Kurs hat noch
+> keine veröffentlichte Version…"*. That is correct behaviour, not a bug:
+> enrolling against unpublished content would show the learner an empty course.
+
 ### TC-ADMIN-03 — course content editor
 1. Open a course → work through its stages, tasks and localisations.
 
@@ -340,31 +400,51 @@ Do not write test cases against these; they do not exist.
 - **No admin screen for Arena content.** Hunt scenarios are seeded through SQL
   (`supabase/seed_arena_scenarios.sql`), not authored in the UI. There is no
   admin page to create, edit or retire a hunt, and no admin page to define badges
-  or XP rules.
+  or XP rules. The database side landed on 2026-07-22 — the tables, the HTML
+  column and the commands all exist and are tested — but **nothing calls them
+  yet**.
 - **No trainer Arena screen.** A trainer meets Arena only inside a submission
   review, through the *Fehlerjagd — Abgleich* panel. There is no separate hunt
-  overview.
+  overview, and **no Arena entry in the trainer or admin navigation**. Do not
+  report either as missing.
+- **The two new task locks have no words on screen.** A course task can now be
+  gated on an Arena hunt, and on the previous task's pre-task question. The
+  database produces both lock reasons correctly, but the learner UI does not
+  render them yet, so such a task appears locked with no explanation. Nothing in
+  the seeded data is gated this way, so you should not meet it — if you do, it
+  is expected, not a bug.
+- **No pre-task question on screen.** "Jetzt beantworten / Später beantworten"
+  does not exist in the UI yet.
+- **Course form fields.** Cover image, the two motivational videos and course
+  duration have database columns but **no input anywhere**. The course editor
+  cannot set them.
+- **No task modal.** Tasks are still edited in the existing content studio, not
+  in the modal the redesign calls for.
 - **Group (cohort) administration.** There are no `/admin/groups` pages at all —
   the section was removed from the product and from the navigation. Do not test
   creating, editing or listing groups, and do not report the absence of a
   "Gruppen" navigation item as a bug. Groups still exist in the data and appear
   as a **column** on the trainer queue and the admin progress board.
-- **Adding or removing group members by hand.** Membership is created only by
-  approving a course request.
-- **Assigning a trainer to a group through the UI.**
+  A group is now created automatically, named **Standard**, the first time an
+  admin enrols somebody on a course that has none.
 - **Legal content.** `/de/legal` and `/de/privacy` still need real company
   details; the pages exist, the text is placeholder.
+
+**No longer in this list** — these were built on 2026-07-22 and now have test
+cases above: adding and removing course members by hand (TC-ADMIN-02c),
+assigning a trainer to a course and to a learner (TC-ADMIN-02c), and duplicating
+a course (TC-ADMIN-02b).
 
 ---
 
 ## 10. Database
 
-The whole schema is in the repository: **62 migrations** in
+The whole schema is in the repository: **74 migrations** in
 `supabase/migrations/` plus five seed files in `supabase/`.
 
-**The ledger is in sync as of 2026-07-22.** All 62 repository migrations are
+**The ledger is in sync as of 2026-07-22.** All 74 repository migrations are
 recorded as applied on the development database, and no recorded version lacks a
-file. A production `supabase db push` runs all 62 in order and produces the same
+file. A production `supabase db push` runs all 74 in order and produces the same
 schema. Nothing to work around.
 
 It was not always so, and the repair is worth knowing about if you see it again:
