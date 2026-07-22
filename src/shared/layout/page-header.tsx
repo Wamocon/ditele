@@ -14,6 +14,13 @@ export interface PageHeaderProps {
   breadcrumbs?: Breadcrumb[];
   actions?: ReactNode;
   className?: string;
+  /**
+   * Accessible name for the breadcrumb landmark. The German default matches the
+   * old hardcoding, so pages that do not pass it are unchanged; pass
+   * `common.breadcrumbNav` to have a screen reader announce it in the user's
+   * own language.
+   */
+  breadcrumbNavLabel?: string;
 }
 
 export function PageHeader({
@@ -22,11 +29,12 @@ export function PageHeader({
   breadcrumbs,
   actions,
   className,
+  breadcrumbNavLabel = "Brotkrümelnavigation",
 }: PageHeaderProps) {
   return (
     <div className={cn("mb-6 flex flex-col gap-3 lg:mb-8", className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav aria-label="Brotkrümelnavigation">
+        <nav aria-label={breadcrumbNavLabel}>
           <ol className="flex flex-wrap items-center gap-1.5 text-[13px] text-(--color-fg-muted)">
             {breadcrumbs.map((c, i) => (
               <li key={`${c.label}-${i}`} className="flex items-center gap-1.5">

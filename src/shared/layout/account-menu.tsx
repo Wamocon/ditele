@@ -21,6 +21,8 @@ export interface AccountMenuProps {
   role: UiRole;
   displayName: string;
   email?: string | undefined;
+  /** Accessible name for the trigger and the menu. German default matches the old hardcoding. */
+  accountMenuLabel?: string | undefined;
 }
 
 /**
@@ -29,7 +31,13 @@ export interface AccountMenuProps {
  * Before this existed the avatar was a plain `<span>`: there was no way to sign
  * out, reach your profile, or change language anywhere in the application.
  */
-export function AccountMenu({ locale, role, displayName, email }: AccountMenuProps) {
+export function AccountMenu({
+  locale,
+  role,
+  displayName,
+  email,
+  accountMenuLabel = "Kontomenü",
+}: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -75,7 +83,7 @@ export function AccountMenu({ locale, role, displayName, email }: AccountMenuPro
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`Konto: ${displayName}`}
+        aria-label={`${accountMenuLabel}: ${displayName}`}
         className={cn(
           // 44px on mobile per MASTER_PLAN §6.5, relaxing to the header's 36px
           // rhythm from lg up. Matches ThemeToggle and NotificationBell.
@@ -90,7 +98,7 @@ export function AccountMenu({ locale, role, displayName, email }: AccountMenuPro
       {open && (
         <div
           role="menu"
-          aria-label="Kontomenü"
+          aria-label={accountMenuLabel}
           className={cn(
             "animate-scale-in absolute right-0 top-[calc(100%+8px)] z-50 w-60 origin-top-right",
             "overflow-hidden rounded-(--radius-lg) border border-(--color-border)",

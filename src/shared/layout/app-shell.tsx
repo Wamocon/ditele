@@ -61,6 +61,37 @@ async function footerNavLabelFor(locale: string): Promise<string> {
   return common.footerNav ?? "Fußzeilennavigation";
 }
 
+/**
+ * The header chrome the guest actually reads, plus the two landmark names a
+ * screen reader announces. Same reason as the nav labels: AppHeader is a client
+ * component, so these have to be resolved server-side and passed down. The
+ * sign-in button in particular was hardcoded German and showed "Anmelden" on
+ * every English and Russian page.
+ */
+async function headerChromeFor(locale: string) {
+  const active = isLocale(locale) ? locale : defaultLocale;
+  const messages = await getMessages(active);
+  const common = messages.common as Record<string, string | undefined>;
+  return {
+    signInLabel: common.signIn ?? "Anmelden",
+    brandHomeLabel: common.brandHome ?? "DiTeLe — zur Startseite",
+    mainNavLabel: common.mainNav ?? "Hauptnavigation",
+    accountMenuLabel: common.accountMenu ?? "Kontomenü",
+    languageLabel: common.chooseLanguage ?? "Sprache wählen",
+    languageNounLabel: common.language ?? "Sprache",
+    toLightLabel: common.themeToLight ?? "Zu hellem Design wechseln",
+    toDarkLabel: common.themeToDark ?? "Zu dunklem Design wechseln",
+    moreNavLabel: common.moreNav ?? "Weitere Navigation",
+    closeLabel: common.close ?? "Schließen",
+    notificationsLabel: common.notifications ?? "Benachrichtigungen",
+    // {count} is substituted by the bell, which is the only caller that knows it.
+    notificationsUnreadLabel:
+      common.notificationsUnread ?? "Benachrichtigungen, {count} ungelesen",
+  };
+}
+
+export type HeaderChrome = Awaited<ReturnType<typeof headerChromeFor>>;
+
 export async function AppShell({ locale, role, displayName, email, unreadCount, children, bleed = false }: AppShellProps) {
   const items = await localiseNav(locale, role ? navForRole(role) : PUBLIC_NAV);
   const moreLabel = await moreLabelFor(locale);
@@ -68,10 +99,11 @@ export async function AppShell({ locale, role, displayName, email, unreadCount, 
   // its own localised copy rather than reusing `items`.
   const footerItems = await localiseNav(locale, PUBLIC_NAV);
   const footerNavLabel = await footerNavLabelFor(locale);
+  const chrome = await headerChromeFor(locale);
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <AppHeader locale={locale} role={role} items={items} moreLabel={moreLabel} displayName={displayName} email={email} unreadCount={unreadCount} />
+      <AppHeader locale={locale} role={role} items={items} moreLabel={moreLabel} displayName={displayName} email={email} unreadCount={unreadCount} {...chrome} />
 
       <main
         id="main"
@@ -85,7 +117,17 @@ export async function AppShell({ locale, role, displayName, email, unreadCount, 
       </main>
 
       <AppFooter locale={locale} items={footerItems} navLabel={footerNavLabel} />
-      {role && <MobileTabBar locale={locale} role={role} items={items} moreLabel={moreLabel} />}
+      {role && (
+        <MobileTabBar
+          locale={locale}
+          role={role}
+          items={items}
+          moreLabel={moreLabel}
+          mainNavLabel={chrome.mainNavLabel}
+          moreNavLabel={chrome.moreNavLabel}
+          closeLabel={chrome.closeLabel}
+        />
+      )}
     </div>
   );
 }

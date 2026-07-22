@@ -91,7 +91,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
         </Section>
 
         <Section title={t.sectionAppearance} description={t.appearanceHint}>
-          <ThemeToggle />
+          {/* This toggle is outside the header, so it does not get the labels
+              AppShell passes down — it has to resolve them itself, or a screen
+              reader announces German here on /en and /ru. */}
+          <ThemeToggle
+            toLightLabel={messages.common.themeToLight}
+            toDarkLabel={messages.common.themeToDark}
+          />
         </Section>
 
         <Section title={t.sectionNotifications} description={t.notificationsHint}>

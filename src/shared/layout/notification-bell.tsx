@@ -15,14 +15,21 @@ import { cn } from "@/shared/ui";
 export function NotificationBell({
   locale,
   unread = 0,
+  // German defaults match the old hardcoding, so any caller that has not been
+  // updated renders exactly as before. AppShell passes the localised strings.
+  notificationsLabel = "Benachrichtigungen",
+  notificationsUnreadLabel = "Benachrichtigungen, {count} ungelesen",
 }: {
   locale: string;
   unread?: number;
+  notificationsLabel?: string | undefined;
+  /** Carries a `{count}` placeholder; substituted here, the only place that knows it. */
+  notificationsUnreadLabel?: string | undefined;
 }) {
   const label =
     unread > 0
-      ? `Benachrichtigungen, ${unread} ungelesen`
-      : "Benachrichtigungen";
+      ? notificationsUnreadLabel.replace("{count}", String(unread))
+      : notificationsLabel;
 
   return (
     <Link

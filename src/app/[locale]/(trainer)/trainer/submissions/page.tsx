@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/shared/layout";
-import { DataTable, EmptyState, ErrorState, StatusBadge, type Column } from "@/shared/ui";
+import { DataTable, EmptyState, ErrorState, StatusBadge, statusLabel, type Column } from "@/shared/ui";
 import { requireRole } from "@/shared/auth/guard";
 import {
   asSubmissionState,
@@ -151,9 +151,14 @@ export default async function Page({
             value: state ?? "",
             options: [
               { value: "", label: t("trainer.queue.allStates") },
+              // `statusLabel`, not `t("status.<state>")`: the catalogue keys are
+              // camelCase (`revisionRequired`) but these values are the database
+              // enums (`revision_required`), so the lookup missed and the filter
+              // offered a raw "revision_required" to the trainer. statusLabel is
+              // the one mapping that is keyed by the enum itself.
               ...OPEN_SUBMISSION_STATES.map((value) => ({
                 value,
-                label: t(`status.${value}`) === `status.${value}` ? value : t(`status.${value}`),
+                label: statusLabel(value, locale),
               })),
             ],
           },

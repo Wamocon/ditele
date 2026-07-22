@@ -27,6 +27,20 @@ export interface AppHeaderProps {
   items?: NavItem[] | undefined;
   /** Translated "Mehr" label for the desktop overflow menu. */
   moreLabel?: string | undefined;
+  /** Translated "Anmelden" label for the guest sign-in button. */
+  signInLabel?: string | undefined;
+  /** Accessible name for the wordmark's go-home link. */
+  brandHomeLabel?: string | undefined;
+  /** Accessible name for the desktop nav landmark. */
+  mainNavLabel?: string | undefined;
+  /** Accessible names for the header controls, resolved in AppShell. */
+  accountMenuLabel?: string | undefined;
+  languageLabel?: string | undefined;
+  languageNounLabel?: string | undefined;
+  notificationsLabel?: string | undefined;
+  notificationsUnreadLabel?: string | undefined;
+  toLightLabel?: string | undefined;
+  toDarkLabel?: string | undefined;
 }
 
 export function AppHeader({
@@ -37,6 +51,18 @@ export function AppHeader({
   unreadCount,
   items: navItems,
   moreLabel,
+  // German defaults keep every existing caller rendering exactly as before;
+  // AppShell passes the locale-resolved strings.
+  signInLabel = "Anmelden",
+  brandHomeLabel = "DiTeLe — zur Startseite",
+  mainNavLabel = "Hauptnavigation",
+  accountMenuLabel,
+  languageLabel,
+  languageNounLabel,
+  notificationsLabel,
+  notificationsUnreadLabel,
+  toLightLabel,
+  toDarkLabel,
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
@@ -79,7 +105,7 @@ export function AppHeader({
              every route, so the hit area is padded out to the mandatory 44px on
              mobile without changing how the logo looks. */
           className="flex min-h-11 shrink-0 items-center lg:min-h-0"
-          aria-label="DiTeLe — zur Startseite"
+          aria-label={brandHomeLabel}
         >
           <Image
             src="/logo.svg"
@@ -105,7 +131,7 @@ export function AppHeader({
         </Link>
 
         {/* Desktop nav — hidden below lg, where the tab bar takes over. */}
-        <nav className="hidden lg:block" aria-label="Hauptnavigation">
+        <nav className="hidden lg:block" aria-label={mainNavLabel}>
           <ul className="flex items-center gap-1">
             {items.map((item) => {
               const href = `/${locale}${item.path}`;
@@ -145,16 +171,26 @@ export function AppHeader({
 
         <div className="flex shrink-0 items-center gap-1">
           {role === "student" && (
-            <NotificationBell locale={locale} unread={unreadCount ?? 0} />
+            <NotificationBell
+              locale={locale}
+              unread={unreadCount ?? 0}
+              notificationsLabel={notificationsLabel}
+              notificationsUnreadLabel={notificationsUnreadLabel}
+            />
           )}
-          <LocaleSwitcher locale={locale} />
-          <ThemeToggle />
+          <LocaleSwitcher
+            locale={locale}
+            languageLabel={languageLabel}
+            languageNounLabel={languageNounLabel}
+          />
+          <ThemeToggle toLightLabel={toLightLabel} toDarkLabel={toDarkLabel} />
           {role ? (
             <AccountMenu
               locale={locale}
               role={role}
               displayName={displayName ?? "Konto"}
               email={email}
+              accountMenuLabel={accountMenuLabel}
             />
           ) : (
             /* h-11 = the mandatory 44px mobile touch target (MASTER_PLAN §6.5).
@@ -164,7 +200,7 @@ export function AppHeader({
               href={`/${locale}/login`}
               className="flex h-11 items-center rounded-(--radius-md) bg-(--color-brand) px-3 text-[13px] font-semibold text-(--color-brand-fg) hover:bg-(--color-brand-hover) lg:h-9"
             >
-              Anmelden
+              {signInLabel}
             </Link>
           )}
         </div>

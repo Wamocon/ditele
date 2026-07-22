@@ -17,6 +17,9 @@ export function MobileTabBar({
   role,
   items,
   moreLabel = "Mehr",
+  mainNavLabel = "Hauptnavigation",
+  moreNavLabel = "Weitere Navigation",
+  closeLabel = "Schließen",
 }: {
   locale: string;
   role: UiRole;
@@ -24,6 +27,10 @@ export function MobileTabBar({
   items?: NavItem[] | undefined;
   /** Translated sheet label; the German default matches the old hardcoding. */
   moreLabel?: string | undefined;
+  /** Landmark and control names. German defaults match the old hardcoding. */
+  mainNavLabel?: string | undefined;
+  moreNavLabel?: string | undefined;
+  closeLabel?: string | undefined;
 }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -45,7 +52,7 @@ export function MobileTabBar({
   return (
     <>
       <nav
-        aria-label="Hauptnavigation"
+        aria-label={mainNavLabel}
         className={cn(
           "fixed inset-x-0 bottom-0 z-40 border-t border-(--color-border) bg-(--color-bg) lg:hidden",
           "pb-[env(safe-area-inset-bottom)]"
@@ -101,14 +108,14 @@ export function MobileTabBar({
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
-            aria-label="Schließen"
+            aria-label={closeLabel}
             onClick={() => setMoreOpen(false)}
             className="absolute inset-0 animate-fade-in bg-(--color-overlay)"
           />
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Weitere Navigation"
+            aria-label={moreNavLabel}
             className="absolute inset-x-0 bottom-0 animate-slide-up rounded-t-(--radius-xl) bg-(--color-bg) pb-[env(safe-area-inset-bottom)]"
           >
             <div className="flex items-center justify-between border-b border-(--color-border) px-4 py-3">
@@ -116,7 +123,7 @@ export function MobileTabBar({
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
-                aria-label="Schließen"
+                aria-label={closeLabel}
                 className="flex size-11 items-center justify-center rounded-(--radius-md) text-(--color-fg-muted)"
               >
                 <X className="size-5" />

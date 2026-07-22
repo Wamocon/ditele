@@ -23,7 +23,18 @@
     "unavailable": "Unavailable",
     "previewOnly": "Preview only",
     "notConfigured": "Not configured",
-    "saved": "Saved just now"
+    "saved": "Saved just now",
+    "brandHome": "DiTeLe — go to start page",
+    "mainNav": "Main navigation",
+    "accountMenu": "Account menu",
+    "chooseLanguage": "Choose language",
+    "moreNav": "More navigation",
+    "breadcrumbNav": "Breadcrumb navigation",
+    "close": "Close",
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications, {count} unread",
+    "themeToLight": "Switch to light theme",
+    "themeToDark": "Switch to dark theme"
   },
   "roles": {
     "guest": "Guest",
@@ -61,7 +72,8 @@
     "reports": "Reports",
     "integrations": "Integrations",
     "settings": "Settings",
-    "more": "More"
+    "more": "More",
+    "arena": "Arena"
   },
   "home": {
     "title": "Learn software testing by doing it.",

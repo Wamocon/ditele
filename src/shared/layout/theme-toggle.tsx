@@ -24,7 +24,15 @@ const getSnapshot = (): Theme =>
 /** The server has no DOM; render the light icon and let the client correct it. */
 const getServerSnapshot = (): Theme => "light";
 
-export function ThemeToggle() {
+export function ThemeToggle({
+  // German defaults match the old hardcoding; AppShell passes the localised
+  // strings, so a screen reader no longer announces German on /en and /ru.
+  toLightLabel = "Zu hellem Design wechseln",
+  toDarkLabel = "Zu dunklem Design wechseln",
+}: {
+  toLightLabel?: string | undefined;
+  toDarkLabel?: string | undefined;
+} = {}) {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const toggle = useCallback(() => {
@@ -42,7 +50,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      aria-label={theme === "dark" ? "Zu hellem Design wechseln" : "Zu dunklem Design wechseln"}
+      aria-label={theme === "dark" ? toLightLabel : toDarkLabel}
       /* size-11 = 44×44, the mandatory mobile touch target (MASTER_PLAN §6.5).
          The icon stays 16px; only the hit area grows. From lg up it relaxes to
          the header's 36px rhythm, where the pointer is a mouse. */

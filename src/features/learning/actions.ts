@@ -32,6 +32,7 @@ export async function startAttemptAction(input: {
 }): Promise<Result<StartedAttempt>> {
   await requireStudent(input.locale);
   const result = await startAttempt({
+    locale: input.locale,
     taskId: input.taskId,
     enrollmentId: input.enrollmentId,
   });
@@ -53,6 +54,7 @@ export async function saveDraftAction(input: {
   // No revalidatePath here: autosave fires every 20s and re-rendering the whole
   // route under the user's cursor would be worse than useless.
   return saveAttemptDraft({
+    locale: input.locale,
     attemptId: input.attemptId,
     answerText: input.answerText,
     selectedOptionIds: input.selectedOptionIds,
@@ -74,6 +76,7 @@ export async function submitAttemptAction(input: {
 }): Promise<Result<SubmittedAttempt>> {
   await requireStudent(input.locale);
   const result = await submitAttempt({
+    locale: input.locale,
     attemptId: input.attemptId,
     answerText: input.answerText,
     selectedOptionIds: input.selectedOptionIds,

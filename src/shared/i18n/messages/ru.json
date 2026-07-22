@@ -23,7 +23,18 @@
     "unavailable": "Недоступно",
     "previewOnly": "Только предпросмотр",
     "notConfigured": "Не настроено",
-    "saved": "Только что сохранено"
+    "saved": "Только что сохранено",
+    "brandHome": "DiTeLe — на главную страницу",
+    "mainNav": "Основная навигация",
+    "accountMenu": "Меню аккаунта",
+    "chooseLanguage": "Выбрать язык",
+    "moreNav": "Дополнительная навигация",
+    "breadcrumbNav": "Навигационная цепочка",
+    "close": "Закрыть",
+    "notifications": "Уведомления",
+    "notificationsUnread": "Уведомления, непрочитанных: {count}",
+    "themeToLight": "Переключить на светлую тему",
+    "themeToDark": "Переключить на тёмную тему"
   },
   "roles": {
     "guest": "Гость",
@@ -61,7 +72,8 @@
     "reports": "Отчёты",
     "integrations": "Интеграции",
     "settings": "Настройки",
-    "more": "Ещё"
+    "more": "Ещё",
+    "arena": "Арена"
   },
   "home": {
     "title": "Тестирование ПО изучают на практике.",

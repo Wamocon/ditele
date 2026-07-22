@@ -24,7 +24,18 @@ const SHORT: Record<Locale, string> = { de: "DE", en: "EN", ru: "RU" };
  * language they are in without opening a menu. The trigger shows the current
  * locale so that state is visible at a glance.
  */
-export function LocaleSwitcher({ locale }: { locale: string }) {
+export function LocaleSwitcher({
+  locale,
+  // German default matches the old hardcoding; AppShell passes the localised one.
+  languageLabel = "Sprache wählen",
+  languageNounLabel = "Sprache",
+}: {
+  locale: string;
+  /** "Choose language" — the menu's accessible name. */
+  languageLabel?: string | undefined;
+  /** "Language" — prefixes the trigger's name with the current locale. */
+  languageNounLabel?: string | undefined;
+}) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -69,7 +80,7 @@ export function LocaleSwitcher({ locale }: { locale: string }) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`Sprache: ${LABEL[current]}`}
+        aria-label={`${languageNounLabel}: ${LABEL[current]}`}
         className={cn(
           // 44px on mobile per MASTER_PLAN §6.5, relaxing to the header's 36px
           // rhythm from lg up. Matches ThemeToggle and NotificationBell.
@@ -85,7 +96,7 @@ export function LocaleSwitcher({ locale }: { locale: string }) {
       {open && (
         <div
           role="menu"
-          aria-label="Sprache wählen"
+          aria-label={languageLabel}
           className={cn(
             "animate-scale-in absolute right-0 top-[calc(100%+8px)] z-50 w-44 origin-top-right",
             "overflow-hidden rounded-(--radius-lg) border border-(--color-border)",
