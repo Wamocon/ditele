@@ -77,7 +77,22 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(
     draft?.selectedOptionIds ?? []
   );
-  const [defect, setDefect] = useState<DefectReport>(draft?.defect ?? EMPTY_DEFECT);
+  /**
+   * The affected address is no longer asked for, so it is filled from the task's
+   * own test environment here — at the source, not just on the way out.
+   *
+   * That matters because `sourceUri` does not only become the evidence record:
+   * it is stored in the draft, rendered in the trainer's ticket view, and
+   * counted by `REQUIRED_FIELDS` in the Arena's ticket matching. Setting it only
+   * at submit time would have left all three of those looking at an empty
+   * string and reporting the address as missing on every report.
+   */
+  const [defect, setDefect] = useState<DefectReport>(() => {
+    const base = draft?.defect ?? EMPTY_DEFECT;
+    return base.sourceUri.trim().length > 0 || !task.targetUrl
+      ? base
+      : { ...base, sourceUri: task.targetUrl };
+  });
   const [revealedHintIds, setRevealedHintIds] = useState<string[]>(draft?.usedHintIds ?? []);
 
   const [activeTab, setActiveTab] = useState<"task" | "answer">("task");
@@ -274,11 +289,13 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
       locale,
       taskId: task.id,
       attemptId: attempt.id,
-      answerText: isPractice ? formatDefectReport(defect, answerText, s) : answerText,
+      answerText: isPractice ? formatDefectReport(defect, s) : answerText,
       selectedOptionIds,
       expectedVersion: attemptVersionRef.current,
+      // Filled from `task.targetUrl` when the report was created; see the
+      // `defect` state above.
       evidence: isPractice
-        ? { title: defect.summary, sourceUri: defect.sourceUri }
+        ? { title: defect.summary, sourceUri: defect.sourceUri || (task.targetUrl ?? "") }
         : null,
     });
 
@@ -439,21 +456,31 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
         </section>
       )}
 
-      <Field
-        label={s.answerLabel}
-        hint={s.answerHint}
-        error={showErrors && !isPractice && answerText.trim().length === 0 ? s.validationAnswer : ""}
-        required={!isPractice}
-      >
-        <Textarea
-          rows={isPractice ? 4 : 10}
-          value={answerText}
-          disabled={!canEdit}
-          placeholder={s.answerPlaceholder}
-          onChange={(event) => edit(() => setAnswerText(event.target.value))}
-          onBlur={flushIfDirty}
-        />
-      </Field>
+      {/* Not on a practice task. "Approach and results" sat underneath a defect
+          report that already asks for the steps taken, what was expected, what
+          happened and any extra description — a fifth free-text box for the same
+          account of the same work. It was optional, so most of the time it was
+          an empty field the learner had to scroll past to reach Submit.
+
+          It stays for every other task kind, where this box IS the answer and
+          removing it would leave nothing to answer with. */}
+      {!isPractice && (
+        <Field
+          label={s.answerLabel}
+          hint={s.answerHint}
+          error={showErrors && answerText.trim().length === 0 ? s.validationAnswer : ""}
+          required
+        >
+          <Textarea
+            rows={10}
+            value={answerText}
+            disabled={!canEdit}
+            placeholder={s.answerPlaceholder}
+            onChange={(event) => edit(() => setAnswerText(event.target.value))}
+            onBlur={flushIfDirty}
+          />
+        </Field>
+      )}
 
       {formError && (
         <p role="alert" className="text-[13px] leading-5 text-(--color-danger)">

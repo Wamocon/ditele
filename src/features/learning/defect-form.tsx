@@ -96,39 +96,30 @@ export function DefectForm({
         />
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={strings.defectSeverity}>
-          <Select
-            value={value.severity}
-            onChange={(event) => {
-              set("severity", event.target.value as DefectReport["severity"]);
-              onBlur();
-            }}
-            disabled={disabled}
-          >
-            <option value="low">{strings.defectSeverityLow}</option>
-            <option value="medium">{strings.defectSeverityMedium}</option>
-            <option value="high">{strings.defectSeverityHigh}</option>
-            <option value="critical">{strings.defectSeverityCritical}</option>
-          </Select>
-        </Field>
-
-        <Field
-          label={strings.defectUrl}
-          hint={strings.defectUrlHint}
-          error={missing(value.sourceUri)}
-          required
+      {/* "Affected address" used to sit here, required, next to the severity.
+          It asked the learner to copy the address of the very environment the
+          page has already embedded beside the form — `task.targetUrl`, which is
+          what makes a task a practice task in the first place. Typing it back in
+          taught nothing and was the field most likely to be got wrong, because
+          `create_external_task_evidence` refuses anything that is not
+          `^https://`. The workspace now sends `targetUrl` as the evidence URI,
+          so the evidence a trainer needs is unchanged and correct by
+          construction. */}
+      <Field label={strings.defectSeverity}>
+        <Select
+          value={value.severity}
+          onChange={(event) => {
+            set("severity", event.target.value as DefectReport["severity"]);
+            onBlur();
+          }}
+          disabled={disabled}
         >
-          <Input
-            type="url"
-            inputMode="url"
-            value={value.sourceUri}
-            onChange={(event) => set("sourceUri", event.target.value)}
-            onBlur={onBlur}
-            disabled={disabled}
-          />
-        </Field>
-      </div>
+          <option value="low">{strings.defectSeverityLow}</option>
+          <option value="medium">{strings.defectSeverityMedium}</option>
+          <option value="high">{strings.defectSeverityHigh}</option>
+          <option value="critical">{strings.defectSeverityCritical}</option>
+        </Select>
+      </Field>
 
       <Field label={strings.defectDescriptionField} hint={strings.defectDescriptionFieldHint}>
         <Textarea
@@ -234,11 +225,16 @@ export function DefectForm({
   );
 }
 
-/** True when every field a trainer needs in order to act on the report is filled. */
+/**
+ * True when every field a trainer needs in order to act on the report is filled.
+ *
+ * `sourceUri` is no longer among them: the learner is not asked for it, and the
+ * workspace fills it from the task's own test-environment address. Gating a
+ * submit on a field nobody can see would have made the button permanently dead.
+ */
 export function isDefectComplete(defect: DefectReport): boolean {
   return (
     defect.summary.trim().length > 0 &&
-    defect.sourceUri.trim().length > 0 &&
     defect.steps.trim().length > 0 &&
     defect.expected.trim().length > 0 &&
     defect.actual.trim().length > 0
@@ -253,7 +249,6 @@ export function isDefectComplete(defect: DefectReport): boolean {
  */
 export function formatDefectReport(
   defect: DefectReport,
-  answerText: string,
   strings: LearnStrings["task"]
 ): string {
   const severity = {
@@ -266,7 +261,6 @@ export function formatDefectReport(
   const lines = [
     `${strings.defectSummary}: ${defect.summary}`,
     `${strings.defectSeverity}: ${severity}`,
-    `${strings.defectUrl}: ${defect.sourceUri}`,
   ];
 
   // The header block carries only fields that were filled. An empty
@@ -305,8 +299,5 @@ export function formatDefectReport(
     defect.actual
   );
 
-  if (answerText.trim().length > 0) {
-    lines.push("", `${strings.answerLabel}:`, answerText.trim());
-  }
   return lines.join("\n");
 }
