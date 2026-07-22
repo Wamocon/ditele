@@ -3,6 +3,20 @@
 > **This is the file you use every time you open a chat.** Copy a prompt from §2, paste it, done.
 > §4 is the part that matters most: what to do when a chat runs out of tokens and dies.
 
+| You are starting… | Prompt | Order of operations |
+|---|---|---|
+| V3 foundation (WS-0) | §2.1 | §5 phase 1 |
+| V3 workstream (WS-1…6) | §2.2 | §5 phase 1 |
+| V3 integration (WS-7) | §2.3 | §5 phase 1 |
+| **Arena workstream (WS-8…12)** | **§2.4** | **§5 phase 2** |
+| **Arena integration & test (WS-13)** | **§2.5** | **§5 phase 2** |
+| A read-only status check | §2.6 | — |
+
+⛔ **Before pasting §2.4, check the dependency chain in `06_ARENA_WORKSTREAMS.md` §2.**
+The V3 build ran six chats in parallel. The Arena phase does not — it is a chain,
+and starting a workstream whose predecessor is still moving means building
+against a schema that is about to change.
+
 ---
 
 ## 1. The core idea
@@ -166,14 +180,181 @@ Commit after each numbered step. Update plan/status/WS-7.md as you go.
 
 ---
 
-### 2.4 The Coordinator prompt — for you, in a separate chat
+### 2.4 The Arena workstream prompt — WS-8 to WS-12, one chat each
 
-Use this when you want a read-only picture of where everything stands.
+> For the Bug Arena phase. Replace `<N>` with 8, 9, 10, 11 or 12.
+> **Same prompt for a fresh start and for resuming a dead chat** — the agent works out which it is from the status file.
+>
+> ⛔ **Check the dependency chain in `06_ARENA_WORKSTREAMS.md` §2 before you paste this.** Unlike the V3 build, these are not six parallel lanes. Starting WS-11 before WS-10 is `DONE` means building against a schema that is about to change.
 
 ```
-You are the coordinator for the DiTeLe V3 build. READ ONLY — do not edit code.
+You are WS-<N> on the DiTeLe Bug Arena phase.
+
+Read these first, in this order, completely:
+1. plan/05_BUG_ARENA_AND_GAMIFICATION.md  — the design. Section 5 lists four
+   SETTLED decisions. They are not open for re-litigation. If you think one is
+   wrong, say so and stop — do not quietly build something else.
+2. plan/06_ARENA_WORKSTREAMS.md  — sections 1 to 7, then the "WS-<N>" entry in
+   section 8. Ignore the other workstreams' entries.
+3. plan/04_PROMPTS_AND_HANDOFF.md  — sections 1, 3 and 4
+4. plan/status/RPC_CONTRACTS.md  — the real RPC signatures. Never guess one.
+5. plan/status/RELEASE.md  — what the shipped V3 app already does
+6. plan/status/WS-<N>.md  — IF IT EXISTS, a previous chat worked on this and
+   stopped. Read its "RESUME HERE" block and continue from exactly there. Do
+   NOT rebuild what is already marked done.
+
+Then run: git log --oneline -20
+
+⚠️ THIS PHASE MODIFIES A LIVE, SHIPPED APP. The V3 build started from an empty
+tree, so a mistake showed up as a blank page. Here a mistake shows up as a
+feature that used to work and now silently does not. Regression is the main
+risk in this phase, not unfinished screens.
+
+Rules that override everything else:
+- ONLY create or edit files inside your ownership tree, listed in
+  06_ARENA_WORKSTREAMS.md section 4. Note the ⚠️ rows: some trees are
+  RE-ASSIGNED from a finished V3 workstream, and that re-assignment is narrow.
+  Read exactly what you own before writing anything.
+- If you need something in a file you do not own: append a row to
+  plan/status/ISSUES.md, work around it locally, and move on. Never edit it.
+- MIGRATIONS: use ONLY your date block from section 4 (WS-8 = 20260722*,
+  WS-10 = 20260724*, WS-11 = 20260725*, WS-12 = 20260726*). Migration order is
+  semantic — two chats picking the same timestamp is the worst merge conflict
+  in this repo.
+- Migrations are forward-only and idempotent: "create table if not exists",
+  "drop policy if exists" before "create policy", and never a destructive alter
+  without checking the data first. This runs against a live database.
+- Never "git add ." or "git add -A". Stage your own paths explicitly.
+- Never git checkout a branch, reset --hard, stash, rebase, or force-push.
+- No new npm dependencies, ever. The design was written to need none.
+- Never hardcode a UI string. ⚠️ THE i18n CONTRACT CHANGED AFTER WS-7 — read
+  scripts/check-i18n.mjs before you write a single key:
+    * GERMAN IS THE SOURCE OF TRUTH. New interface strings go in de.json.
+    * en.json / ru.json are OPTIONAL per key — a missing key falls back to
+      German at runtime, by design. That is a WARN, not a failure.
+    * i18n:check FAILS on a key that exists in en/ru but NOT in de (stale key),
+      and FAILS on an empty-string translation. So do NOT add blank
+      placeholders to en.json or ru.json "to satisfy the check" — that is
+      exactly what breaks it.
+    * INTERFACE speaks de+en+ru. COURSE MATERIAL is GERMAN ONLY:
+      CONTENT_LOCALES === ["de"] in src/features/content/model.ts. Anything a
+      learner reads as course content — task text, hunt scenario descriptions,
+      instructions — is German, not a three-locale jsonb.
+- Never hardcode a colour. Use the tokens in globals.css.
+- Every route needs loading.tsx, error.tsx, and an empty state.
+- 44px touch targets, works at 375px, works in dark mode, honours
+  prefers-reduced-motion. WS-7 fixed all of these once. Do not reintroduce them.
+
+Gates before EVERY commit:
+  npm run typecheck && npm run lint && npm run i18n:check
+  node scripts/smoke.mjs
+  npm run db:lint          # if you touched supabase/migrations/
+Full `npm run verify` before you declare the workstream DONE.
+
+Checkpoint rules, follow them strictly:
+- Commit after EVERY completed unit. Not at the end.
+- Update plan/status/WS-<N>.md after EVERY file, including the RESUME HERE
+  block at the top.
+- If you feel your context filling up, STOP building and spend what is left on
+  the handoff: commit what works, then write a precise RESUME HERE block.
+
+Your dev server command — the port and dist dir are yours alone, copy exactly:
+  NEXT_DIST_DIR=.next-ws<N> DITELE_APP_ORIGIN=http://127.0.0.1:31<NN> npm run dev -- --port 31<NN>
+  (WS-8 → 3108, WS-9 → 3109, WS-10 → 3110, WS-11 → 3111, WS-12 → 3112)
+
+Build in the order given in your section 8 entry.
+
+IF YOU ARE WS-8: your first job is NOT the schema. It is the single vertical
+slice in 06_ARENA_WORKSTREAMS.md section 3 — one locked task, one hunt, one
+planted bug, one badge, round-tripping in a real browser. Hardcode whatever you
+must. It proves the design before four other chats build on it. Only once it
+round-trips do you start the real schema work.
+
+Start now.
+```
+
+---
+
+### 2.5 The Arena Integration & Test prompt — WS-13, run last, alone
+
+```
+You are WS-13 (Integration & Test) on the DiTeLe Bug Arena phase.
+
+Read:
+1. plan/05_BUG_ARENA_AND_GAMIFICATION.md  — the design, especially section 5
+   (the settled decisions) and section 6 (the two risks)
+2. plan/06_ARENA_WORKSTREAMS.md  — sections 1 to 7 and the WS-13 entry in
+   section 8
+3. plan/04_PROMPTS_AND_HANDOFF.md  — sections 1, 3, 4
+4. EVERY plan/status/WS-8.md through WS-12.md  — what each built, deferred, or
+   left as a stub
+5. plan/status/ISSUES.md  — everything the five chats reported
+6. plan/status/RELEASE.md  — what the V3 app shipped, so you know what must
+   still work
+7. plan/status/WS-13.md  — IF IT EXISTS, resume from its RESUME HERE block
+
+Then: git log --oneline -40
+
+You are the only workstream allowed to edit any file, and only to fix things.
+Your migration block is 20260727*.
+
+Work through the WS-13 entry in section 8 in order. Two things matter more than
+the rest:
+
+FIRST — REGRESSION. This phase modified four load-bearing pieces of a shipped
+app: learner_snapshot_task_lock_reasons (security definer, feeds RLS),
+task_schedules, defect-form.tsx, and nav-config.ts. Walk every V3 route as
+student, trainer and admin, and confirm nothing that used to work is broken.
+A new feature that works while an old one silently died is a failed release.
+
+SECOND — VERIFY THE TWO DESIGNED-IN RISKS, do not assume them:
+  1. Trainer load. Time a real review using the ground-truth panel WS-10 built.
+     If it is not dramatically faster than reading a report cold, then decision
+     D2 did not deliver what it was chosen for. Say so in the release file.
+  2. Relative fairness. Seed two learners enrolled about 3 weeks apart. Every
+     screen must show each of them their OWN day-N, and no screen may rank one
+     above the other on absolute XP. The whole point of relative scheduling is
+     that the person who enrolled first does not automatically win.
+
+Then the full journey, as a real user, in a real browser — not a unit test:
+  enrol → locked task → follow the unlock link → play the hunt → find a real
+  bug → correctly ignore a decoy → file the ticket with a screenshot → trainer
+  reviews → requests a revision → student resubmits → trainer accepts → task
+  unlocks → XP lands → badge fires → admin sees the progress row
+
+Hard stops, every one must be green:
+- npm run verify
+- npm run db:lint
+- node scripts/smoke.mjs
+- grep -r "service_role" .next/static/   must return NOTHING
+- every new route at 375px, no horizontal scroll
+- every new route in dark mode, no invisible text
+- prefers-reduced-motion respected by every celebration animation
+
+The consistency pass is the one people skip. Five chats built this. Your job is
+to make it look like one team did.
+
+Finish by writing plan/status/RELEASE-ARENA.md: what shipped, what did not,
+known bugs, and the next session's list. Be honest about gaps. A hidden gap is
+worse than a listed one.
+
+Commit after each numbered step. Update plan/status/WS-13.md as you go.
+```
+
+---
+
+### 2.6 The Coordinator prompt — for you, in a separate chat
+
+Use this when you want a read-only picture of where everything stands. Works for
+either phase.
+
+```
+You are the coordinator for the DiTeLe build. READ ONLY — do not edit code.
 
 Read plan/status/BOARD.md, every plan/status/WS-*.md, and plan/status/ISSUES.md.
+If plan/06_ARENA_WORKSTREAMS.md exists, read its section 2 (the dependency
+chain) — the Arena phase is a CHAIN, not parallel lanes, so "what can start
+next" has a different answer there than it did for the V3 build.
 Then run: git log --oneline -40
 
 Report back:
@@ -181,8 +362,14 @@ Report back:
 2. Which routes are still stubs
 3. Every open item in ISSUES.md and who needs to act on it
 4. Anything two chats appear to have both built
-5. What I should start next, and with which prompt from
+5. For the Arena phase only: whether the predecessor of each unstarted
+   workstream is genuinely DONE, or only claimed DONE. Starting a chat whose
+   dependency is still moving is the main way this phase goes wrong.
+6. What I should start next, and with which prompt from
    plan/04_PROMPTS_AND_HANDOFF.md
+
+Flag anything in BOARD.md that contradicts the git log. A stale board is how a
+dead chat goes unnoticed.
 ```
 
 ---
@@ -329,6 +516,8 @@ The last two sections are the valuable ones. Anyone can read the code to see whi
 
 ## 5. Order of operations
 
+### Phase 1 — the V3 build (WS-0 → WS-7) · ✅ complete
+
 ```
 1.  Pause OneDrive, or move the repo out of it            ← you, once
 2.  Start the infrastructure work (domain, TLS)           ← parallel, separate person
@@ -337,12 +526,41 @@ The last two sections are the valuable ones. Anyone can read the code to see whi
 4.  Verify the Wave 0a gate yourself                      ← you, 02_WORKSTREAMS §6.9
 5.  Open your Wave-1 chats with the §2.2 prompt           ← however many you are running
 6.  Update plan/status/BOARD.md as you assign each one    ← 10 seconds each
-7.  Check ISSUES.md and the board periodically            ← §2.4 coordinator prompt
+7.  Check ISSUES.md and the board periodically            ← §2.6 coordinator prompt
 8.  Re-launch any chat that dies, same prompt             ← §4
 9.  When all Wave-1 workstreams are DONE: §2.3 prompt     ← WS-7
 10. Read plan/status/RELEASE.md                           ← the honest final state
 11. Then P1, then go-live from 01_LAUNCH_READINESS.md
 ```
+
+### Phase 2 — the Bug Arena (WS-8 → WS-13)
+
+⛔ **This one is a chain, not parallel lanes.** At most two chats run at once,
+and only during Wave B. See `06_ARENA_WORKSTREAMS.md` §2.
+
+```
+1.  Fix plan/status/BOARD.md                              ← it still says WS-0..7
+                                                             NOT STARTED. They are DONE.
+2.  Decide the three open items in 05_… §5 "Still open"   ← you: pause behaviour,
+                                                             nav slot, WS-0 exception
+3.  Open ONE chat with the §2.4 prompt, N=8               ← WS-8, blocks everything
+4.  ⛔ WS-8 builds the ONE VERTICAL SLICE first           ← 06_… §3. Do not let it
+                                                             skip to the schema.
+5.  Verify the Wave-A gate yourself, in a browser         ← you, 06_… §6.
+                                                             The last box — log in as
+                                                             all three roles — is the
+                                                             one people skip.
+6.  Open WS-9 and WS-10 with the §2.4 prompt              ← these two may run together
+7.  When BOTH are DONE: WS-11, alone                      ← §2.4, N=11
+8.  When WS-11 is DONE: WS-12, alone                      ← §2.4, N=12
+9.  Update BOARD.md at every handover                     ← 10 seconds each
+10. When WS-12 is DONE: §2.5 prompt                       ← WS-13, last, alone
+11. Read plan/status/RELEASE-ARENA.md                     ← the honest final state
+```
+
+The step people get wrong is 5. WS-8 modifies a `security definer` function that
+feeds RLS, and four later chats build on whatever it produced. A bad gate here is
+not a bug — it is four workstreams of rework.
 
 ---
 

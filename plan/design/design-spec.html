@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DiTeLe — Design System v4</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   This page is built out of the same tokens it documents. If something here
+   looks right, the app can look right. Nothing external loads.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+
+:root {
+  /* Brand */
+  --color-brand:         #BB2734;
+  --color-brand-hover:   #A11F2B;
+  --color-brand-active:  #8A1B24;
+  --color-brand-soft:    #FDECEE;
+  --color-brand-fg:      #FFFFFF;
+  --color-ink:           #243036;
+
+  /* Surfaces */
+  --color-bg:            #FFFFFF;
+  --color-surface:       #F7F8FA;
+  --color-surface-2:     #EFF1F4;
+  --color-overlay:       rgb(36 48 54 / .48);
+
+  /* Text */
+  --color-fg:            #243036;
+  --color-fg-muted:      #5C6878;
+  --color-fg-subtle:     #68727F;   /* raised from #A7AEB8 — 2.24:1 was a hard AA fail */
+
+  /* Lines */
+  --color-border:        #E2E5EA;
+  --color-border-strong: #C8CCD3;
+
+  /* Semantic */
+  --color-success: #16794B; --color-success-soft: #EAF8F1;
+  --color-warning: #A95D05; --color-warning-soft: #FFF5DF;
+  --color-danger:  #B42331; --color-danger-soft:  #FFF0F1;
+  --color-info:    #175EC8; --color-info-soft:    #EAF2FF;
+  --color-focus:   #175EC8;
+
+  /* Glass */
+  --glass-bg:        color-mix(in srgb, var(--color-bg) 72%, transparent);
+  --glass-border:    color-mix(in srgb, var(--color-fg) 8%, transparent);
+  --glass-highlight: color-mix(in srgb, #FFFFFF 65%, transparent);
+  --glass-shadow:    0 8px 32px rgb(36 48 54 / .10);
+  --glass-blur:      16px;
+  --glass-saturate:  180%;
+
+  /* Radius */
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --radius-xl: 20px;
+
+  /* Elevation */
+  --shadow-sm:    0 1px 2px rgb(36 48 54 / .06);
+  --shadow-md:    0 4px 16px rgb(36 48 54 / .08);
+  --shadow-lg:    0 12px 32px rgb(36 48 54 / .12);
+  --shadow-brand: 0 6px 20px rgb(187 39 52 / .24);
+
+  /* Motion */
+  --duration-fast: 120ms; --duration-base: 200ms;
+  --duration-slow: 320ms; --duration-slower: 520ms;
+  --ease-out:      cubic-bezier(.16, 1, .3, 1);
+  --ease-in-out:   cubic-bezier(.65, 0, .35, 1);
+  --ease-emphasis: cubic-bezier(.2, 0, 0, 1);
+  --ease-spring:   cubic-bezier(.34, 1.56, .64, 1);
+
+  /* Layout */
+  --header-height: 64px;
+  --content-max:   1160px;
+
+  /* Type — Rosario/Raleway if the reader happens to have them, else a
+     humanist stack. Never a serif: both real faces are sans. */
+  --font-heading: "Rosario", Candara, "Segoe UI", ui-sans-serif, sans-serif;
+  --font-body:    "Raleway", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono:    ui-monospace, "Cascadia Mono", "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #151C21; --color-surface: #1C252C; --color-surface-2: #26313A;
+    --color-overlay: rgb(0 0 0 / .62);
+    --color-fg: #EDF2F5; --color-fg-muted: #A7B2BC; --color-fg-subtle: #828F9A;
+    --color-border: #313D47; --color-border-strong: #46545F;
+    --color-brand: #E85D68; --color-brand-hover: #EE6C77; --color-brand-active: #DE4F5A;
+    --color-brand-soft: #3A1B1F; --color-ink: #EDF2F5;
+    --color-brand-fg: #1A1013;  /* I-027: dark ink on the lightened red — 5.50:1 */
+    --color-success: #4FBF8A; --color-success-soft: #14311F;
+    --color-warning: #E5A445; --color-warning-soft: #3D2E14;
+    --color-danger:  #FF7C87; --color-danger-soft:  #40191E;
+    --color-info:    #75A8F5; --color-info-soft:    #172A44;
+    --color-focus:   #75A8F5;
+    --glass-bg:        color-mix(in srgb, var(--color-bg) 66%, transparent);
+    --glass-border:    color-mix(in srgb, #FFFFFF 10%, transparent);
+    --glass-highlight: color-mix(in srgb, #FFFFFF 14%, transparent);
+    --glass-shadow:    0 8px 32px rgb(0 0 0 / .40);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / .32);
+    --shadow-md: 0 4px 16px rgb(0 0 0 / .36);
+    --shadow-lg: 0 12px 32px rgb(0 0 0 / .44);
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #151C21; --color-surface: #1C252C; --color-surface-2: #26313A;
+  --color-overlay: rgb(0 0 0 / .62);
+  --color-fg: #EDF2F5; --color-fg-muted: #A7B2BC; --color-fg-subtle: #828F9A;
+  --color-border: #313D47; --color-border-strong: #46545F;
+  --color-brand: #E85D68; --color-brand-hover: #EE6C77; --color-brand-active: #DE4F5A;
+  --color-brand-soft: #3A1B1F; --color-ink: #EDF2F5;
+  --color-brand-fg: #1A1013;  /* I-027: dark ink on the lightened red — 5.50:1 */
+  --color-success: #4FBF8A; --color-success-soft: #14311F;
+  --color-warning: #E5A445; --color-warning-soft: #3D2E14;
+  --color-danger:  #FF7C87; --color-danger-soft:  #40191E;
+  --color-info:    #75A8F5; --color-info-soft:    #172A44;
+  --color-focus:   #75A8F5;
+  --glass-bg:        color-mix(in srgb, var(--color-bg) 66%, transparent);
+  --glass-border:    color-mix(in srgb, #FFFFFF 10%, transparent);
+  --glass-highlight: color-mix(in srgb, #FFFFFF 14%, transparent);
+  --glass-shadow:    0 8px 32px rgb(0 0 0 / .40);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / .32);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / .36);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / .44);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  font-size: 15px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-heading); text-wrap: balance; line-height: 1.15; }
+code, pre, .mono { font-family: var(--font-mono); font-variant-ligatures: none; }
+a { color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── The glass recipe, exactly as it ships ──────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+}
+@supports not (backdrop-filter: blur(1px)) { .glass { background: var(--color-bg); } }
+
+/* ── Page chrome ────────────────────────────────────────────────────────── */
+.progress {
+  position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 60;
+  background: var(--color-brand); transform-origin: 0 50%; transform: scaleX(0);
+}
+@supports (animation-timeline: scroll()) {
+  .progress {
+    animation: grow linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+@keyframes grow { to { transform: scaleX(1); } }
+
+.topbar {
+  position: sticky; top: 0; z-index: 50; height: var(--header-height);
+  border-width: 0 0 1px 0;
+  display: flex; align-items: center; gap: 20px;
+  padding: 0 24px;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.01em; }
+.dots { display: flex; gap: 4px; }
+.dots i { width: 7px; height: 7px; border-radius: 999px; display: block; }
+.dots i:nth-child(1) { background: var(--color-brand); }
+.dots i:nth-child(2) { background: var(--color-brand); }
+.dots i:nth-child(3) { background: var(--color-ink); }
+.topbar nav { display: none; gap: 2px; margin-left: 8px; }
+@media (min-width: 900px) { .topbar nav { display: flex; } }
+.topbar nav a {
+  padding: 8px 12px; border-radius: var(--radius-md); text-decoration: none;
+  font-size: 14px; font-weight: 600; color: var(--color-fg-muted);
+  transition: color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+.topbar nav a:hover { color: var(--color-fg); background: var(--color-surface); }
+.spacer { margin-left: auto; }
+
+.iconbtn {
+  width: 36px; height: 36px; display: grid; place-items: center;
+  border: 1px solid transparent; border-radius: var(--radius-md);
+  background: transparent; color: var(--color-fg-muted); cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.iconbtn:hover { background: var(--color-surface); color: var(--color-fg); }
+
+/* ── Shell ──────────────────────────────────────────────────────────────── */
+.wrap {
+  max-width: var(--content-max); margin: 0 auto; padding: 0 24px;
+  display: grid; grid-template-columns: 1fr; gap: 48px;
+}
+@media (min-width: 1040px) { .wrap { grid-template-columns: 208px 1fr; } }
+
+.rail { display: none; }
+@media (min-width: 1040px) {
+  .rail {
+    display: block; position: sticky; top: calc(var(--header-height) + 32px);
+    align-self: start; padding-top: 48px;
+  }
+}
+.rail ol { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 2px; counter-reset: s; }
+.rail a {
+  display: flex; gap: 10px; padding: 6px 10px; border-radius: var(--radius-sm);
+  text-decoration: none; font-size: 13.5px; color: var(--color-fg-muted);
+  transition: color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+.rail a::before {
+  counter-increment: s; content: counter(s, decimal-leading-zero);
+  font-family: var(--font-mono); font-size: 11px; color: var(--color-fg-subtle);
+  padding-top: 2px;
+}
+.rail a:hover { color: var(--color-fg); background: var(--color-surface); }
+
+main { padding: 48px 0 96px; min-width: 0; }
+
+/* ── Type ───────────────────────────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--color-fg-subtle);
+}
+.lede { font-size: 18px; color: var(--color-fg-muted); max-width: 62ch; }
+h1 { font-size: clamp(34px, 5vw, 46px); font-weight: 700; letter-spacing: -.022em; }
+h2 { font-size: 25px; font-weight: 700; letter-spacing: -.016em; }
+h3 { font-size: 17px; font-weight: 700; letter-spacing: -.008em; }
+p  { max-width: 68ch; }
+section { padding-top: 56px; scroll-margin-top: calc(var(--header-height) + 24px); }
+.sechead { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.muted { color: var(--color-fg-muted); }
+.rule { height: 1px; background: var(--color-border); border: 0; }
+
+/* ── Panels ─────────────────────────────────────────────────────────────── */
+.panel {
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  background: var(--color-bg); box-shadow: var(--shadow-sm); overflow: hidden;
+}
+.panel-h {
+  padding: 11px 16px; border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--color-fg-muted);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.panel-b { padding: 20px; }
+.grid { display: grid; gap: 14px; }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); }
+.g4 { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* ── Code ───────────────────────────────────────────────────────────────── */
+pre {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); padding: 14px 16px; overflow-x: auto;
+  font-size: 12.5px; line-height: 1.65;
+}
+pre .c { color: var(--color-fg-subtle); }
+pre .k { color: var(--color-brand); }
+pre .v { color: var(--color-info); }
+code:not(pre code) {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 5px; padding: .1em .38em; font-size: .88em;
+}
+
+/* ── Swatches ───────────────────────────────────────────────────────────── */
+.sw { display: flex; flex-direction: column; gap: 7px; }
+.sw .chip {
+  height: 54px; border-radius: var(--radius-md); border: 1px solid var(--color-border);
+}
+.sw b { font-size: 12.5px; font-weight: 600; }
+.sw span { font-family: var(--font-mono); font-size: 11px; color: var(--color-fg-muted); }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 18px; border-radius: var(--radius-md);
+  font-family: inherit; font-size: 15px; font-weight: 600; white-space: nowrap;
+  border: 1px solid transparent; cursor: pointer;
+  transition: background var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out),
+              color var(--duration-base) var(--ease-out);
+}
+.btn:active { transform: scale(.97); }
+.btn.sm { height: 36px; padding: 0 13px; font-size: 13px; border-radius: var(--radius-sm); }
+.btn-primary   { background: var(--color-brand); color: var(--color-brand-fg); box-shadow: var(--shadow-sm); }
+.btn-primary:hover   { background: var(--color-brand-hover); box-shadow: var(--shadow-brand); }
+.btn-secondary { background: var(--color-surface-2); color: var(--color-fg); }
+.btn-secondary:hover { background: var(--color-border); }
+.btn-outline   { border-color: var(--color-border-strong); color: var(--color-fg); background: transparent; }
+.btn-outline:hover   { background: var(--color-surface); }
+.btn-ghost     { color: var(--color-fg); background: transparent; }
+.btn-ghost:hover     { background: var(--color-surface); }
+.btn-danger    { background: var(--color-danger); color: #fff; box-shadow: var(--shadow-sm); }
+.btn-danger:hover    { filter: brightness(1.1); }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+
+/* ── Badges ─────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; line-height: 1.5;
+}
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+.b-live { background: var(--color-success-soft); color: var(--color-success); }
+.b-draft{ background: var(--color-warning-soft); color: var(--color-warning); }
+.b-arch { background: var(--color-surface-2);    color: var(--color-fg-muted); }
+.b-err  { background: var(--color-danger-soft);  color: var(--color-danger); }
+.b-info { background: var(--color-info-soft);    color: var(--color-info); }
+
+/* ── Fields ─────────────────────────────────────────────────────────────── */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 600; }
+.input {
+  height: 44px; padding: 0 13px; width: 100%;
+  border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
+  background: var(--color-bg); color: var(--color-fg);
+  font-family: inherit; font-size: 15px;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+.input::placeholder { color: var(--color-fg-subtle); }
+.input:hover { border-color: var(--color-fg-subtle); }
+.input:focus {
+  outline: none; border-color: var(--color-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus) 18%, transparent);
+}
+.hint { font-size: 12.5px; color: var(--color-fg-muted); }
+
+/* ── Table ──────────────────────────────────────────────────────────────── */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+thead th {
+  text-align: left; padding: 10px 16px; white-space: nowrap;
+  border-bottom: 1px solid var(--color-border); background: var(--color-surface);
+  font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--color-fg-muted); font-weight: 700;
+}
+tbody td { padding: 13px 16px; border-bottom: 1px solid var(--color-border); }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr { transition: background var(--duration-fast) var(--ease-out); }
+tbody tr:hover { background: var(--color-surface); }
+.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--color-fg-muted); white-space: nowrap; }
+.title-cell { font-weight: 600; }
+
+/* ── Account menu (native popover) ──────────────────────────────────────── */
+.avatar {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 3px 8px 3px 3px; border-radius: 999px;
+  border: 1px solid var(--color-border); background: transparent; cursor: pointer;
+  color: var(--color-fg-muted);
+  transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+.avatar:hover { background: var(--color-surface); border-color: var(--color-border-strong); }
+.avatar i {
+  width: 30px; height: 30px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--color-brand); color: var(--color-brand-fg);
+  font-size: 12px; font-weight: 700; font-style: normal;
+}
+.avatar svg { transition: transform var(--duration-base) var(--ease-out); }
+.avatar[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+#acct {
+  margin: 0; padding: 6px; inset: auto; border-radius: var(--radius-lg);
+  width: 258px; position: fixed; top: 58px; right: 20px;
+  color: var(--color-fg);
+}
+#acct:popover-open { animation: pop var(--duration-base) var(--ease-out) both; }
+@keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(.97); } }
+.menu-head { padding: 9px 11px 11px; border-bottom: 1px solid var(--color-border); margin-bottom: 6px; }
+.menu-head b { display: block; font-size: 14px; }
+.menu-head span { font-size: 12.5px; color: var(--color-fg-muted); }
+.mi {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 11px; border: 0; border-radius: var(--radius-md);
+  background: transparent; color: inherit; cursor: pointer;
+  font-family: inherit; font-size: 14px; text-align: left; text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.mi:hover { background: var(--color-surface); }
+.mi.danger { color: var(--color-danger); }
+.mi.danger:hover { background: var(--color-danger-soft); }
+.mi-sep { height: 1px; background: var(--color-border); margin: 6px 0; }
+
+/* ── Reveal ─────────────────────────────────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(10px); }
+.reveal.in {
+  opacity: 1; transform: none;
+  transition: opacity var(--duration-slow) var(--ease-out),
+              transform var(--duration-slow) var(--ease-out);
+}
+.stagger > * { animation: rise var(--duration-slow) var(--ease-out) both; }
+.stagger > *:nth-child(1) { animation-delay: 0ms }
+.stagger > *:nth-child(2) { animation-delay: 40ms }
+.stagger > *:nth-child(3) { animation-delay: 80ms }
+.stagger > *:nth-child(4) { animation-delay: 120ms }
+.stagger > *:nth-child(5) { animation-delay: 160ms }
+.stagger > *:nth-child(n+6) { animation-delay: 200ms }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+
+.shimmer {
+  height: 13px; border-radius: 5px;
+  background: linear-gradient(90deg, var(--color-surface-2) 25%, var(--color-surface) 50%, var(--color-surface-2) 75%);
+  background-size: 200% 100%; animation: sh 1.6s infinite linear;
+}
+@keyframes sh { from { background-position: -200% 0 } to { background-position: 200% 0 } }
+
+/* ── Verdict list ───────────────────────────────────────────────────────── */
+.verdict { display: flex; flex-direction: column; }
+.verdict > div {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--color-border); font-size: 14px;
+}
+.verdict > div:last-child { border-bottom: 0; }
+.tag {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em;
+  padding: 2px 7px; border-radius: 4px; text-transform: uppercase; font-weight: 600;
+}
+.t-yes { background: var(--color-success-soft); color: var(--color-success); }
+.t-no  { background: var(--color-surface-2);    color: var(--color-fg-subtle); }
+.t-cut { background: var(--color-danger-soft);  color: var(--color-danger); }
+
+/* ── Do / Don't ─────────────────────────────────────────────────────────── */
+.dd { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.dd > div { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.dd h4 {
+  padding: 8px 14px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+  font-family: var(--font-mono); font-weight: 600;
+}
+.dd .ok  h4 { background: var(--color-success-soft); color: var(--color-success); }
+.dd .no  h4 { background: var(--color-danger-soft);  color: var(--color-danger); }
+.dd .body { padding: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+  .progress { animation: none; transform: scaleX(0); }
+}
+</style>
+</head>
+<body>
+
+<div class="progress" aria-hidden="true"></div>
+
+<header class="topbar glass">
+  <span class="brand">
+    <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    DiTeLe
+  </span>
+  <nav>
+    <a href="#bugs">Bugs</a>
+    <a href="#colour">Colour</a>
+    <a href="#glass">Glass</a>
+    <a href="#motion">Motion</a>
+    <a href="#components">Components</a>
+  </nav>
+  <span class="spacer"></span>
+  <button class="iconbtn" id="themeBtn" aria-label="Toggle colour theme" title="Toggle theme">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+    </svg>
+  </button>
+  <button class="avatar" popovertarget="acct" aria-haspopup="menu" aria-expanded="false" id="acctBtn">
+    <i>YB</i>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+</header>
+
+<div class="glass" popover id="acct" role="menu" aria-label="Account">
+  <div class="menu-head">
+    <b>Yash Bhesaniya</b>
+    <span>yash.bhesaniya@wamocon.com</span>
+  </div>
+  <a class="mi" href="#components" role="menuitem">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+    Profil
+  </a>
+  <a class="mi" href="#components" role="menuitem">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+    Einstellungen
+  </a>
+  <a class="mi" href="#colour" role="menuitem">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h12M9 3v2M11 17H5M7 9l4 8M14 21l4-10 4 10M15.5 18h5"/></svg>
+    Sprache — Deutsch
+  </a>
+  <div class="mi-sep" role="separator"></div>
+  <button class="mi danger" role="menuitem">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+    Abmelden
+  </button>
+</div>
+
+<div class="wrap">
+  <aside class="rail" aria-label="Contents">
+    <ol>
+      <li><a href="#bugs">Root causes</a></li>
+      <li><a href="#colour">Colour</a></li>
+      <li><a href="#type">Typography</a></li>
+      <li><a href="#glass">Glass &amp; depth</a></li>
+      <li><a href="#motion">Motion</a></li>
+      <li><a href="#components">Components</a></li>
+      <li><a href="#account">Account menu</a></li>
+      <li><a href="#states">States</a></li>
+      <li><a href="#a11y">Accessibility</a></li>
+    </ol>
+  </aside>
+
+  <main>
+    <p class="eyebrow">DiTeLe · WAMOCON Academy</p>
+    <h1 style="margin:8px 0 14px">Design System v4</h1>
+    <p class="lede">
+      The system was already specified and it was good. It never reached the browser.
+      Two bugs made 761 utility classes and both webfonts silently do nothing. This page
+      is built from the same tokens the app uses, so everything you see here is what the
+      app looks like once they are fixed.
+    </p>
+
+    <!-- ══ 1 ══ -->
+    <section id="bugs">
+      <div class="sechead">
+        <p class="eyebrow">01 — Root causes</p>
+        <h2>Two bugs, both invisible</h2>
+      </div>
+      <div class="stack">
+        <p class="muted">
+          Neither produced a warning, an error, or a failed build. Tailwind accepted the
+          input and emitted CSS the browser then discarded.
+        </p>
+
+        <div class="panel">
+          <div class="panel-h"><span>Bug 1 — Tailwind v4 variable syntax</span><span>761 sites · 104 files</span></div>
+          <div class="panel-b stack">
+            <p class="muted">Tailwind v4 changed the arbitrary-CSS-variable shorthand from square to round brackets. Compiled through this project's own <code>@tailwindcss/postcss@4.3.3</code>:</p>
+<pre><span class="c">/* text-[--color-fg-muted] — the v3 form still in the codebase */</span>
+.text-\[--color-fg-muted\] { <span class="k">color</span>: --color-fg-muted; }      <span class="c">/* invalid → discarded */</span>
+
+<span class="c">/* text-(--color-fg-muted) — the v4 form */</span>
+.text-\(--color-fg-muted\) { <span class="k">color</span>: <span class="v">var(--color-fg-muted)</span>; }  <span class="c">/* correct */</span></pre>
+            <div class="verdict">
+              <div><span>378 × <code>text-</code></span><span class="muted">no text hierarchy</span><span class="tag t-cut">dead</span></div>
+              <div><span>151 × <code>bg-</code></span><span class="muted">surfaces have no fill</span><span class="tag t-cut">dead</span></div>
+              <div><span>105 × <code>rounded-</code></span><span class="muted">square corners everywhere</span><span class="tag t-cut">dead</span></div>
+              <div><span>79 × <code>border-</code></span><span class="muted">survived via the global <code>*</code> rule</span><span class="tag t-no">masked</span></div>
+              <div><span>18 × <code>duration-</code> / <code>ease-</code></span><span class="muted">no transitions at all</span><span class="tag t-cut">dead</span></div>
+              <div><span>11 × <code>shadow-</code></span><span class="muted">zero elevation</span><span class="tag t-cut">dead</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><span>Bug 2 — circular font variables</span><span>globals.css · 2 lines</span></div>
+          <div class="panel-b stack">
+            <p class="muted">
+              <code>@theme</code> emits <code>--font-heading: var(--font-heading)</code> into <code>:root</code>.
+              next/font sets the real value on a class on the same element. Specificity ties,
+              <code>:root</code> comes later, so it wins — and a self-referential custom property
+              is invalid at computed-value time.
+            </p>
+<pre>.rosario_…_variable { <span class="k">--font-heading</span>: <span class="v">"Rosario", "Rosario Fallback"</span>; }  <span class="c">/* byte 4717  */</span>
+:root, :host        { <span class="k">--font-heading</span>: var(--font-heading); }        <span class="c">/* byte 15897 ← wins */</span></pre>
+            <p class="muted">
+              Headings fall through to <code>Georgia, serif</code>; body falls through to
+              <code>system-ui</code>. Rosario and Raleway have never rendered. Both are humanist
+              <em>sans</em> faces, so the serif fallback is also a category error.
+            </p>
+<pre><span class="c">/* the fix — inline resolves at use sites, no :root declaration is emitted */</span>
+<span class="k">@theme inline</span> {
+  --font-heading: var(--font-heading);
+  --font-body:    var(--font-body);
+}</pre>
+          </div>
+        </div>
+
+        <div class="panel" style="border-color: var(--color-brand)">
+          <div class="panel-h" style="background: var(--color-brand-soft); color: var(--color-brand); border-color: var(--color-brand)">The rule</div>
+          <div class="panel-b">
+            <p><code>-(--token)</code> for every design token. Never <code>-[--token]</code>. Never a raw hex outside <code>globals.css</code>. WS-D0 lands an ESLint rule that fails the build on the old form.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 2 ══ -->
+    <section id="colour">
+      <div class="sechead">
+        <p class="eyebrow">02 — Colour</p>
+        <h2>Tokens</h2>
+      </div>
+      <p class="muted" style="margin-bottom:18px">
+        Unchanged and already good. Toggle the theme in the header — every swatch below is
+        live. The neutrals carry a cool navy bias derived from <code>#243036</code>, which is
+        why they read as chosen rather than as default grey.
+      </p>
+
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-h">Brand &amp; ink</div>
+        <div class="panel-b grid g4">
+          <div class="sw"><div class="chip" style="background:var(--color-brand)"></div><b>brand</b><span>--color-brand</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-brand-hover)"></div><b>brand-hover</b><span>--color-brand-hover</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-brand-soft)"></div><b>brand-soft</b><span>--color-brand-soft</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-ink)"></div><b>ink</b><span>--color-ink</span></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-h"><span>Surfaces &amp; text</span><span>nesting stops at surface-2</span></div>
+        <div class="panel-b grid g4">
+          <div class="sw"><div class="chip" style="background:var(--color-bg)"></div><b>bg</b><span>page + cards</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-surface)"></div><b>surface</b><span>inset only</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-surface-2)"></div><b>surface-2</b><span>deepest inset</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-border)"></div><b>border</b><span>hairlines</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-fg)"></div><b>fg</b><span>body text</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-fg-muted)"></div><b>fg-muted</b><span>secondary text</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-fg-subtle)"></div><b>fg-subtle</b><span>disabled only</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-focus)"></div><b>focus</b><span>new — focus ring</span></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-h">Semantic</div>
+        <div class="panel-b grid g4">
+          <div class="sw"><div class="chip" style="background:var(--color-success)"></div><b>success</b><span>--color-success</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-warning)"></div><b>warning</b><span>--color-warning</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-danger)"></div><b>danger</b><span>--color-danger</span></div>
+          <div class="sw"><div class="chip" style="background:var(--color-info)"></div><b>info</b><span>--color-info</span></div>
+        </div>
+      </div>
+
+      <div class="dd">
+        <div class="ok">
+          <h4>Do — light mode</h4>
+          <div class="body" style="background:var(--color-bg)">
+            <div class="panel" style="box-shadow:none">
+              <div class="panel-b">
+                <b style="font-size:14px">Card on page ground</b>
+                <p class="hint" style="margin-top:4px">Separated by a hairline, not a fill.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="no">
+          <h4>Don't — surface on surface</h4>
+          <div class="body" style="background:var(--color-surface)">
+            <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px">
+              <b style="font-size:14px">Card fill matches ground</b>
+              <p class="hint" style="margin-top:4px">Muddy, no separation. This is most of light mode today.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 3 ══ -->
+    <section id="type">
+      <div class="sechead">
+        <p class="eyebrow">03 — Typography</p>
+        <h2>Rosario &amp; Raleway</h2>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><span>Scale</span><span>headings 1.15 · body 1.6</span></div>
+        <div class="panel-b stack">
+          <div><span class="eyebrow">h1 · 46/700/-.022em</span><h1 style="font-size:46px">Kurse verwalten</h1></div>
+          <hr class="rule">
+          <div><span class="eyebrow">h2 · 25/700/-.016em</span><h2>Inhalt und Versionen</h2></div>
+          <hr class="rule">
+          <div><span class="eyebrow">h3 · 17/700</span><h3>Modul 3 — Testentwurfsverfahren</h3></div>
+          <hr class="rule">
+          <div><span class="eyebrow">body · 15/400/1.6</span><p>Praktische Softwaretests mit Trainer-Review und nachweisbaren Ergebnissen. Umlaute prüfen: ä ö ü ß Ä Ö Ü.</p></div>
+          <hr class="rule">
+          <div><span class="eyebrow">muted · 15/400</span><p class="muted">Zuletzt aktualisiert vor 2 Tagen von Daniel W.</p></div>
+          <hr class="rule">
+          <div><span class="eyebrow">tabular-nums · required in every table</span>
+            <p class="mono" style="font-variant-numeric:tabular-nums;font-size:15px">1 038 · 47 % · 12:04 · 2026-07-21</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 4 ══ -->
+    <section id="glass">
+      <div class="sechead">
+        <p class="eyebrow">04 — Glass &amp; depth</p>
+        <h2>Glass chrome, flat data</h2>
+      </div>
+      <p class="muted" style="margin-bottom:18px">
+        The header above this text is the recipe, live. Scroll and watch content pass under it.
+        Depth comes from the relationship between floating glass and crisp opaque content —
+        not from shadows on everything.
+      </p>
+<pre style="margin-bottom:16px"><span class="k">.glass</span> {
+  background: <span class="v">var(--glass-bg)</span>;
+  backdrop-filter: blur(<span class="v">var(--glass-blur)</span>) saturate(<span class="v">var(--glass-saturate)</span>);
+  -webkit-backdrop-filter: blur(<span class="v">var(--glass-blur)</span>) saturate(<span class="v">var(--glass-saturate)</span>);
+  border: 1px solid <span class="v">var(--glass-border)</span>;
+  box-shadow: <span class="v">var(--glass-shadow)</span>, inset 0 1px 0 0 <span class="v">var(--glass-highlight)</span>;
+}
+<span class="c">/* Translucency is decoration. Legibility is not. */</span>
+<span class="k">@supports not</span> (backdrop-filter: blur(1px)) { .glass { background: <span class="v">var(--color-bg)</span>; } }</pre>
+
+      <div class="dd">
+        <div class="ok">
+          <h4>Glass — things that float</h4>
+          <div class="body">
+            <p class="hint">Header · account menu · dropdowns · modals + backdrop · mobile tab bar · toasts · "Mehr" sheet · command palette</p>
+          </div>
+        </div>
+        <div class="no">
+          <h4>Opaque — things that hold data</h4>
+          <div class="body">
+            <p class="hint">Tables · table rows · form fields · cards · KPI tiles · editors · anything containing a number or an input</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-h">Elevation scale</div>
+        <div class="panel-b grid g4">
+          <div class="sw"><div class="chip" style="box-shadow:var(--shadow-sm);background:var(--color-bg)"></div><b>sm</b><span>cards at rest</span></div>
+          <div class="sw"><div class="chip" style="box-shadow:var(--shadow-md);background:var(--color-bg)"></div><b>md</b><span>card hover</span></div>
+          <div class="sw"><div class="chip" style="box-shadow:var(--shadow-lg);background:var(--color-bg)"></div><b>lg</b><span>modals</span></div>
+          <div class="sw"><div class="chip" style="box-shadow:var(--shadow-brand);background:var(--color-brand)"></div><b>brand</b><span>primary hover</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 5 ══ -->
+    <section id="motion">
+      <div class="sechead">
+        <p class="eyebrow">05 — Motion</p>
+        <h2>Two tiers, one vocabulary</h2>
+      </div>
+      <p class="muted" style="margin-bottom:18px">
+        A technique allowed in one tier is a bug in the other. Motion that charms on visit one
+        is friction on visit fifty, and admins are on visit fifty.
+      </p>
+
+      <div class="grid g2" style="margin-bottom:16px">
+        <div class="panel">
+          <div class="panel-h" style="background:var(--color-brand-soft);color:var(--color-brand)">Showcase tier</div>
+          <div class="panel-b">
+            <p class="hint" style="margin-bottom:8px"><code>(public)</code> · <code>(auth)</code> — landing, catalog, about, faq, login</p>
+            <p class="muted" style="font-size:14px">Expressive. Scroll choreography, parallax, tilt, gradient text, magnetic CTA. Up to 520ms.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h" style="background:var(--color-info-soft);color:var(--color-info)">App tier</div>
+          <div class="panel-b">
+            <p class="hint" style="margin-bottom:8px"><code>(student)</code> · <code>(trainer)</code> · <code>(admin)</code></p>
+            <p class="muted" style="font-size:14px">Calm and fast. Nothing over 320ms. Nothing that moves under the pointer.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-h"><span>Your reference file, adjudicated</span><span>15 techniques</span></div>
+        <div class="panel-b">
+          <div class="verdict">
+            <div><span>Scroll reveal (IntersectionObserver)</span><span class="tag t-yes">showcase</span><span class="tag t-yes">app</span></div>
+            <div><span>Stagger grid</span><span class="tag t-yes">showcase</span><span class="tag t-yes">app</span></div>
+            <div><span>Scroll progress bar</span><span class="tag t-yes">showcase</span><span class="tag t-yes">app</span></div>
+            <div><span>Sticky nav elevation</span><span class="tag t-yes">showcase</span><span class="tag t-yes">app</span></div>
+            <div><span>Parallax scrolling</span><span class="tag t-yes">showcase</span><span class="tag t-no">app</span></div>
+            <div><span>3D hover / tilt cards</span><span class="tag t-yes">showcase</span><span class="tag t-no">app</span></div>
+            <div><span>Magnetic button</span><span class="tag t-yes">showcase</span><span class="tag t-no">app</span></div>
+            <div><span>Floating hero shapes</span><span class="tag t-yes">showcase</span><span class="tag t-no">app</span></div>
+            <div><span>Gradient text</span><span class="tag t-yes">showcase</span><span class="tag t-no">app</span></div>
+            <div><span>Line-by-line text reveal</span><span class="tag t-yes">showcase</span><span class="tag t-no">app</span></div>
+            <div><span>Loader overlay <span class="muted">— streaming SSR already covers this</span></span><span class="tag t-cut">cut</span><span class="tag t-cut">cut</span></div>
+            <div><span>Glitch text <span class="muted">— reads as data corruption</span></span><span class="tag t-cut">cut</span><span class="tag t-cut">cut</span></div>
+            <div><span>Scramble text <span class="muted">— same</span></span><span class="tag t-cut">cut</span><span class="tag t-cut">cut</span></div>
+            <div><span>Custom cursor <span class="muted">— breaks touch and a11y</span></span><span class="tag t-cut">cut</span><span class="tag t-cut">cut</span></div>
+            <div><span>Marquee <span class="muted">— WCAG 2.2.2 failure</span></span><span class="tag t-cut">cut</span><span class="tag t-cut">cut</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-h"><span>Live — scroll reveal + stagger</span><span>app tier: 8px · 320ms · once</span></div>
+        <div class="panel-b">
+          <div class="grid g3 stagger" id="demoGrid">
+            <div class="panel" style="box-shadow:none"><div class="panel-b"><b style="font-size:22px;font-variant-numeric:tabular-nums" data-count="42">0</b><p class="hint">Kurse</p></div></div>
+            <div class="panel" style="box-shadow:none"><div class="panel-b"><b style="font-size:22px;font-variant-numeric:tabular-nums" data-count="1038">0</b><p class="hint">Teilnehmer</p></div></div>
+            <div class="panel" style="box-shadow:none"><div class="panel-b"><b style="font-size:22px;font-variant-numeric:tabular-nums" data-count="17">0</b><p class="hint">Offene Reviews</p></div></div>
+          </div>
+          <p class="hint" style="margin-top:12px">Count-up runs once, on first view, and renders a static number under reduced motion.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h">Scroll-driven: native first, JS fallback</div>
+        <div class="panel-b">
+          <p class="muted" style="margin-bottom:12px;font-size:14px">Native scroll timelines run off the main thread and cannot jank. The bar at the very top of this page uses one.</p>
+<pre><span class="k">@supports</span> (animation-timeline: view()) {
+  .reveal-native {
+    animation: fade-in-up <span class="v">var(--duration-slow)</span> <span class="v">var(--ease-out)</span> both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 60%;
+  }
+}</pre>
+          <p class="hint" style="margin-top:12px"><strong>No animation libraries.</strong> No Framer Motion, no GSAP, no Lenis. CSS plus small React primitives. The dependency list stays frozen.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 6 ══ -->
+    <section id="components">
+      <div class="sechead">
+        <p class="eyebrow">06 — Components</p>
+        <h2>Primitives</h2>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-h"><span>Button</span><span>44px default · 36px desktop-only</span></div>
+        <div class="panel-b stack">
+          <div class="row">
+            <button class="btn btn-primary">Neuer Kurs</button>
+            <button class="btn btn-secondary">Duplizieren</button>
+            <button class="btn btn-outline">Abbrechen</button>
+            <button class="btn btn-ghost">Zurücksetzen</button>
+            <button class="btn btn-danger">Löschen</button>
+            <button class="btn btn-primary" disabled>Deaktiviert</button>
+          </div>
+          <div class="row">
+            <button class="btn btn-primary sm">Klein</button>
+            <button class="btn btn-outline sm">Klein</button>
+            <span class="hint">Size <code>sm</code> is 36px — desktop only, never in the tab bar or a mobile row.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-h">Status badge</div>
+        <div class="panel-b row">
+          <span class="badge b-live">Live</span>
+          <span class="badge b-draft">Entwurf</span>
+          <span class="badge b-arch">Archiviert</span>
+          <span class="badge b-err">Fehler</span>
+          <span class="badge b-info">In Prüfung</span>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-h"><span>Field</span><span>focus ring is --color-focus, not brand</span></div>
+        <div class="panel-b grid g2">
+          <div class="field">
+            <label for="f1">Kurstitel</label>
+            <input class="input" id="f1" placeholder="z. B. Testentwurfsverfahren">
+            <span class="hint">Erscheint im Katalog und auf dem Zertifikat.</span>
+          </div>
+          <div class="field">
+            <label for="f2">Suche</label>
+            <input class="input" id="f2" placeholder="Kurse durchsuchen…">
+            <span class="hint">Focus this to see the ring. Tab through everything on this page.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h"><span>Data table</span><span>opaque · tabular-nums · hairlines</span></div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Titel</th><th>Status</th><th>Sprache</th><th class="num">Aktualisiert</th></tr></thead>
+            <tbody>
+              <tr><td class="title-cell">Grundlagen des Softwaretestens</td><td><span class="badge b-live">Live</span></td><td class="muted">DE · EN</td><td class="num">vor 2 Tagen</td></tr>
+              <tr><td class="title-cell">Testentwurfsverfahren</td><td><span class="badge b-draft">Entwurf</span></td><td class="muted">DE</td><td class="num">vor 5 Tagen</td></tr>
+              <tr><td class="title-cell">Testmanagement &amp; Reporting</td><td><span class="badge b-live">Live</span></td><td class="muted">DE · EN</td><td class="num">vor 11 Tagen</td></tr>
+              <tr><td class="title-cell">Automatisierung mit Playwright</td><td><span class="badge b-arch">Archiviert</span></td><td class="muted">EN</td><td class="num">vor 3 Monaten</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel-h" style="border-bottom:0;border-top:1px solid var(--color-border);background:var(--color-bg)">
+          <span class="muted" style="text-transform:none;letter-spacing:0;font-family:var(--font-body);font-size:13px">1–4 von 42</span>
+          <span class="row" style="gap:6px">
+            <button class="btn btn-outline sm">Zurück</button>
+            <button class="btn btn-outline sm">Weiter</button>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 7 ══ -->
+    <section id="account">
+      <div class="sechead">
+        <p class="eyebrow">07 — Account menu</p>
+        <h2>The missing control</h2>
+      </div>
+      <div class="panel">
+        <div class="panel-b stack">
+          <p class="muted">
+            Today <code>app-header.tsx:99</code> renders the avatar as a <code>&lt;span&gt;</code> with a
+            <code>title</code> attribute. No menu, no profile link, and <strong>no way to sign out from
+            admin or trainer at all</strong> — <code>signOutAction</code> exists only on the student
+            profile page.
+          </p>
+          <p class="muted">Click the avatar in the header to see the target. It uses the native Popover API, so top-layer rendering and light-dismiss come for free.</p>
+          <div class="verdict">
+            <div><span>Trigger is a real <code>&lt;button&gt;</code> with <code>aria-haspopup</code> + <code>aria-expanded</code></span><span></span><span class="tag t-yes">required</span></div>
+            <div><span>Glass panel, <code>scale-in</code> from top-right origin, 200ms</span><span></span><span class="tag t-yes">required</span></div>
+            <div><span>Name + email header, Profil, Einstellungen, Sprache, Abmelden</span><span></span><span class="tag t-yes">required</span></div>
+            <div><span><kbd>Esc</kbd> closes and returns focus to the trigger</span><span></span><span class="tag t-yes">required</span></div>
+            <div><span>Up/Down move between items, focus trapped while open</span><span></span><span class="tag t-yes">required</span></div>
+            <div><span><code>signOutAction</code> moves to <code>src/shared/auth/actions.ts</code></span><span></span><span class="tag t-yes">required</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 8 ══ -->
+    <section id="states">
+      <div class="sechead">
+        <p class="eyebrow">08 — States</p>
+        <h2>Empty states are features</h2>
+      </div>
+      <div class="dd">
+        <div class="no">
+          <h4>Today</h4>
+          <div class="body" style="min-height:180px;display:grid;place-items:center">
+            <p class="muted">Keine Einträge gefunden.</p>
+          </div>
+        </div>
+        <div class="ok">
+          <h4>Required</h4>
+          <div class="body" style="min-height:180px;display:grid;place-items:center;text-align:center">
+            <div class="stack" style="gap:10px;align-items:center">
+              <div style="width:42px;height:42px;border-radius:var(--radius-lg);display:grid;place-items:center;background:var(--color-brand-soft);color:var(--color-brand)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16v14H4zM4 9h16M9 9v10"/></svg>
+              </div>
+              <b>Noch keine Kurse</b>
+              <p class="hint" style="max-width:34ch">Ein Kurs bündelt Module, Aufgaben und Zertifikate. Der erste ist in zwei Minuten angelegt.</p>
+              <button class="btn btn-primary sm">Ersten Kurs anlegen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-h">Loading — skeleton, shaped like the content it replaces</div>
+        <div class="panel-b stack" style="gap:11px">
+          <div class="shimmer" style="width:34%"></div>
+          <div class="shimmer" style="width:88%"></div>
+          <div class="shimmer" style="width:72%"></div>
+          <p class="hint">Never a spinner where a shape is knowable. Layout must not shift when real content lands.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 9 ══ -->
+    <section id="a11y">
+      <div class="sechead">
+        <p class="eyebrow">09 — Accessibility</p>
+        <h2>Non-negotiable</h2>
+      </div>
+      <div class="panel">
+        <div class="panel-b">
+          <div class="verdict">
+            <div><span>4.5:1 body, 3:1 large text and UI boundaries — <strong>in both themes</strong></span><span></span><span class="tag t-yes">gate</span></div>
+            <div><span><code>--color-fg-subtle</code> is disabled/placeholder only; it fails at body size</span><span></span><span class="tag t-yes">gate</span></div>
+            <div><span>Focus-visible everywhere, using <code>--color-focus</code> so it stays visible on brand buttons</span><span></span><span class="tag t-yes">gate</span></div>
+            <div><span>Touch targets ≥ 44px</span><span></span><span class="tag t-yes">gate</span></div>
+            <div><span>Glass passes contrast against its <em>worst-case</em> backdrop, not the average</span><span></span><span class="tag t-yes">gate</span></div>
+            <div><span>Every icon-only control has a translated <code>aria-label</code></span><span></span><span class="tag t-yes">gate</span></div>
+            <div><span><code>prefers-reduced-motion</code> honoured by every animation, CSS and JS alike</span><span></span><span class="tag t-yes">gate</span></div>
+            <div><span>Nav labels route through i18n — <code>nav-config.ts</code> currently hardcodes German</span><span></span><span class="tag t-yes">gate</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:22px">
+        DiTeLe Design System v4 · built from the app's own tokens · see
+        <code>plan/design/DESIGN-SYSTEM.md</code> and <code>plan/design/README.md</code>
+      </p>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* Theme toggle — mirrors the app's data-theme contract. */
+  document.getElementById("themeBtn").addEventListener("click", function () {
+    var root = document.documentElement;
+    var isDark = getComputedStyle(root).getPropertyValue("--color-bg").trim().toLowerCase() !== "#ffffff";
+    root.setAttribute("data-theme", isDark ? "light" : "dark");
+  });
+
+  /* aria-expanded on the popover trigger. */
+  var acct = document.getElementById("acct"), acctBtn = document.getElementById("acctBtn");
+  if (acct && acct.addEventListener) {
+    acct.addEventListener("toggle", function (e) {
+      acctBtn.setAttribute("aria-expanded", e.newState === "open" ? "true" : "false");
+    });
+  }
+
+  /* Scroll progress — fallback for browsers without scroll-driven animations. */
+  if (!CSS.supports("animation-timeline: scroll()") && !reduced) {
+    var bar = document.querySelector(".progress"), ticking = false;
+    function draw() {
+      var h = document.documentElement.scrollHeight - innerHeight;
+      bar.style.transform = "scaleX(" + (h > 0 ? scrollY / h : 0) + ")";
+      ticking = false;
+    }
+    addEventListener("scroll", function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(draw); }
+    }, { passive: true });
+    draw();
+  }
+
+  /* Scroll reveal — the app-tier <Reveal> primitive, in miniature. */
+  var targets = document.querySelectorAll("section");
+  if (reduced || !("IntersectionObserver" in window)) {
+    targets.forEach(function (t) { t.classList.add("in"); });
+  } else {
+    targets.forEach(function (t) { t.classList.add("reveal"); });
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.02 });
+    targets.forEach(function (t) { io.observe(t); });
+  }
+
+  /* Count-up — once, on first view, static under reduced motion. */
+  var nums = document.querySelectorAll("[data-count]");
+  nums.forEach(function (el) {
+    var target = parseInt(el.getAttribute("data-count"), 10);
+    if (reduced || !("IntersectionObserver" in window)) { el.textContent = target.toLocaleString("de-DE"); return; }
+    var seen = false;
+    var o = new IntersectionObserver(function (entries) {
+      if (!entries[0].isIntersecting || seen) return;
+      seen = true; o.disconnect();
+      var t0 = performance.now(), dur = 900;
+      (function step(now) {
+        var p = Math.min((now - t0) / dur, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toLocaleString("de-DE");
+        if (p < 1) requestAnimationFrame(step);
+      })(t0);
+    }, { threshold: 0.4 });
+    o.observe(el);
+  });
+})();
+</script>
+</body>
+</html>
