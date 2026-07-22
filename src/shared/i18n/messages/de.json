@@ -1494,6 +1494,7 @@
       "taskStartVideoHint": "Wird beim Öffnen der Aufgabe abgespielt.",
       "taskEndVideo": "Abschluss-Video",
       "taskEndVideoHint": "Wird nach dem Abschluss der Aufgabe abgespielt.",
+      "taskVideoInvalid": "Video-Links müssen mit http:// oder https:// beginnen. Für kein Video das Feld leer lassen.",
       "taskInstructions": "Anleitung",
       "taskInstructionsHint": "Einfaches HTML ist erlaubt.",
       "taskHints": "Hinweise",

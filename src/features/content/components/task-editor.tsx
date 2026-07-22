@@ -119,6 +119,18 @@ export function TaskEditor({
   };
 
   const save = () => {
+    // Videos are optional, but a non-empty link must be an http(s) URL — the
+    // database enforces the same rule (`tasks_media_urls_are_http`), so catch it
+    // here with a clear message instead of the generic "action failed" that the
+    // constraint violation would otherwise surface as.
+    const startVideo = startVideoUrl.trim();
+    const endVideo = endVideoUrl.trim();
+    const isHttpOrEmpty = (value: string) => value === "" || /^https?:\/\//i.test(value);
+    if (!isHttpOrEmpty(startVideo) || !isHttpOrEmpty(endVideo)) {
+      setState({ status: "error", message: s.taskVideoInvalid });
+      return;
+    }
+
     startTransition(async () => {
       const result = await saveTaskAction({
         locale,
@@ -127,8 +139,8 @@ export function TaskEditor({
         taskId: task.id,
         kind,
         targetUrl: targetUrl.trim() === "" ? null : targetUrl.trim(),
-        startVideoUrl: startVideoUrl.trim() === "" ? null : startVideoUrl.trim(),
-        endVideoUrl: endVideoUrl.trim() === "" ? null : endVideoUrl.trim(),
+        startVideoUrl: startVideo === "" ? null : startVideo,
+        endVideoUrl: endVideo === "" ? null : endVideo,
         requiredHuntScenarioId: requiredScenarioId === "" ? null : requiredScenarioId,
         // All three locales or nothing. A partly-filled question would be
         // refused by set_task_gate_question anyway — the same three-locale rule

@@ -1216,6 +1216,7 @@
       "taskStartVideoHint": "Plays when the learner opens the task.",
       "taskEndVideo": "End video",
       "taskEndVideoHint": "Plays after the learner finishes the task.",
+      "taskVideoInvalid": "Video links must start with http:// or https://. Leave a field empty for no video.",
       "taskInstructions": "Instructions",
       "taskInstructionsHint": "Simple HTML is allowed.",
       "taskHints": "Hints",
