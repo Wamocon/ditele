@@ -7,6 +7,14 @@ import { getPrincipal } from "@/shared/data/session";
 import { locales } from "@/shared/i18n/config";
 import { getTranslator } from "@/features/review/i18n";
 import { ProfileForm } from "@/features/review/profile-form";
+import { AvatarUpload } from "@/features/admin/avatar-upload";
+
+/** The avatars bucket is public, so the URL is derivable with no round trip. */
+function avatarUrl(objectKey: string | null): string | null {
+  if (!objectKey) return null;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return base ? `${base}/storage/v1/object/public/avatars/${objectKey}` : null;
+}
 
 export async function generateMetadata({
   params,
@@ -43,6 +51,25 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       <PageHeader title={t("trainer.profile.title")} description={t("trainer.profile.description")} />
 
       <div className="flex flex-col gap-6">
+        {/* A trainer had no way to set a photo at all — the admin profile has
+            had this component since the avatars bucket shipped, and the other
+            two roles were simply never given it. */}
+        <Card className="max-w-xl">
+          <AvatarUpload
+            userId={profile.data.userId}
+            displayName={profile.data.displayName}
+            publicUrl={avatarUrl(profile.data.avatarObjectKey)}
+            strings={{
+              change: t("trainer.profile.photoChange"),
+              remove: t("trainer.profile.photoRemove"),
+              hint: t("trainer.profile.photoHint"),
+              tooLarge: t("trainer.profile.photoTooLarge"),
+              wrongType: t("trainer.profile.photoWrongType"),
+              failed: t("trainer.profile.photoFailed"),
+            }}
+          />
+        </Card>
+
         <ProfileForm
           locale={locale}
           initial={{

@@ -1184,6 +1184,8 @@ export interface TrainerProfile {
   locale: string;
   timezone: string;
   rowVersion: number;
+  /** Null until the trainer uploads one; the bucket is public. */
+  avatarObjectKey: string | null;
 }
 
 export async function getTrainerProfile(userId: string): Promise<Result<TrainerProfile>> {
@@ -1191,7 +1193,7 @@ export async function getTrainerProfile(userId: string): Promise<Result<TrainerP
     const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id,display_name,locale,timezone,row_version")
+      .select("user_id,display_name,locale,timezone,row_version,avatar_object_key")
       .eq("user_id", userId)
       .maybeSingle();
     if (error) return err(mapReviewError(error));
@@ -1204,6 +1206,7 @@ export async function getTrainerProfile(userId: string): Promise<Result<TrainerP
       locale: data.locale,
       timezone: data.timezone,
       rowVersion: data.row_version,
+      avatarObjectKey: data.avatar_object_key,
     });
   } catch (cause) {
     return err(unexpected(cause));

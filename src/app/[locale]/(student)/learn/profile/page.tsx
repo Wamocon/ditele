@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import { PageHeader, ThemeToggle } from "@/shared/layout";
+import { PageHeader } from "@/shared/layout";
 import { Card, ErrorState } from "@/shared/ui";
 import { getMyProfile } from "@/shared/data/profile";
 import { listMyNotificationPreferences } from "@/shared/data/notifications";
 import { getWs3Messages } from "@/features/questions/i18n";
-import { initials } from "@/features/questions/format";
+import { AvatarUpload } from "@/features/admin/avatar-upload";
 import { AccountForm, PasswordForm, PreferenceForm, SignOutForm } from "./profile-forms";
 
 /**
@@ -12,6 +12,17 @@ import { AccountForm, PasswordForm, PreferenceForm, SignOutForm } from "./profil
  * `pg_timezone_names`, so this is a fixed shortlist of valid ones rather than a
  * free-text field. The learner's current value is added if it is not listed.
  */
+/**
+ * The avatars bucket is PUBLIC, so the URL is derivable and needs no round
+ * trip. Same derivation as the admin profile — kept identical on purpose, so
+ * the two screens cannot drift into showing different images for one key.
+ */
+function avatarUrl(objectKey: string | null): string | null {
+  if (!objectKey) return null;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return base ? `${base}/storage/v1/object/public/avatars/${objectKey}` : null;
+}
+
 const TIMEZONES = [
   "Europe/Berlin",
   "Europe/Vienna",
@@ -56,15 +67,24 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
 
       <div className="flex flex-col gap-6">
         <Section title={t.sectionAccount}>
-          <div className="mb-5 flex items-center gap-3">
-            <span
-              className="flex size-12 items-center justify-center rounded-full bg-(--color-brand-soft) text-[15px] font-semibold text-(--color-brand)"
-              aria-hidden
-            >
-              {initials(profile.display_name)}
-            </span>
-            <p className="text-[13px] leading-5 text-(--color-fg-muted)">{t.avatarNotice}</p>
-          </div>
+          {/* A learner used to see "Profile pictures are not available yet"
+              beside their initials. They were available: the public `avatars`
+              bucket, `profiles.avatar_object_key` and this very component all
+              shipped, and the ADMIN profile has been using them. Only the
+              learner and trainer screens were left with the placeholder. */}
+          <AvatarUpload
+            userId={profile.user_id}
+            displayName={profile.display_name}
+            publicUrl={avatarUrl(profile.avatar_object_key)}
+            strings={{
+              change: t.photoChange,
+              remove: t.photoRemove,
+              hint: t.photoHint,
+              tooLarge: t.photoTooLarge,
+              wrongType: t.photoWrongType,
+              failed: t.photoFailed,
+            }}
+          />
 
           <AccountForm
             locale={locale}
@@ -90,15 +110,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
           />
         </Section>
 
-        <Section title={t.sectionAppearance} description={t.appearanceHint}>
-          {/* This toggle is outside the header, so it does not get the labels
-              AppShell passes down — it has to resolve them itself, or a screen
-              reader announces German here on /en and /ru. */}
-          <ThemeToggle
-            toLightLabel={messages.common.themeToLight}
-            toDarkLabel={messages.common.themeToDark}
-          />
-        </Section>
+        {/* The "Appearance" section is gone. The theme toggle lives in the app
+            header on every screen, so this was a second control for the same
+            device-local setting — and the one in the header is the one people
+            actually use, because it is where they already are. Nothing was lost
+            with the section; only the duplicate. */}
 
         <Section title={t.sectionNotifications} description={t.notificationsHint}>
           {preferencesResult.ok ? (

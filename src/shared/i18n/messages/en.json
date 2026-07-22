@@ -485,9 +485,6 @@
       "saved": "Profile saved.",
       "errorNameRequired": "Please enter a display name.",
       "errorNameTooLong": "The display name is too long (160 characters maximum).",
-      "avatarNotice": "Profile pictures are not available yet — we show your initials.",
-      "sectionAppearance": "Appearance",
-      "appearanceHint": "This setting applies to this device only.",
       "sectionNotifications": "Notifications",
       "notificationsHint": "Choose what you want to hear about. Email and push are not active yet.",
       "channelInApp": "In the app",
@@ -519,7 +516,13 @@
         "de": "Deutsch",
         "en": "English",
         "ru": "Русский"
-      }
+      },
+      "photoChange": "Change photo",
+      "photoRemove": "Remove photo",
+      "photoHint": "JPG or PNG, 2 MB at most.",
+      "photoTooLarge": "The image is larger than 2 MB.",
+      "photoWrongType": "Please choose a JPG or PNG file.",
+      "photoFailed": "The photo could not be saved."
     },
     "enroll": {
       "title": "Request course",
@@ -824,7 +827,7 @@
     },
     "profile": {
       "title": "Profile",
-      "description": "Your details and appearance.",
+      "description": "Your details and your profile photo.",
       "displayName": "Display name",
       "displayNameHint": "This is how learners see you in answers and reviews.",
       "locale": "Language",
@@ -833,10 +836,15 @@
       "save": "Save",
       "saved": "Profile saved.",
       "nameRequired": "Please enter a display name.",
-      "appearance": "Appearance",
       "account": "Account",
       "role": "Role",
-      "email": "Email address"
+      "email": "Email address",
+      "photoChange": "Change photo",
+      "photoRemove": "Remove photo",
+      "photoHint": "JPG or PNG, 2 MB at most.",
+      "photoTooLarge": "The image is larger than 2 MB.",
+      "photoWrongType": "Please choose a JPG or PNG file.",
+      "photoFailed": "The photo could not be saved."
     },
     "hunt": {
       "title": "Bug hunt — comparison",

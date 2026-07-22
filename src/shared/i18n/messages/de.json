@@ -675,9 +675,6 @@
       "saved": "Profil gespeichert.",
       "errorNameRequired": "Bitte gib einen Anzeigenamen ein.",
       "errorNameTooLong": "Der Anzeigename ist zu lang (maximal 160 Zeichen).",
-      "avatarNotice": "Profilbilder sind noch nicht verfügbar — wir zeigen deine Initialen.",
-      "sectionAppearance": "Darstellung",
-      "appearanceHint": "Die Einstellung gilt nur auf diesem Gerät.",
       "sectionNotifications": "Benachrichtigungen",
       "notificationsHint": "Wähle, worüber du informiert werden möchtest. E-Mail und Push sind noch nicht aktiv.",
       "channelInApp": "In der App",
@@ -709,7 +706,13 @@
         "de": "Deutsch",
         "en": "English",
         "ru": "Русский"
-      }
+      },
+      "photoChange": "Foto ändern",
+      "photoRemove": "Foto entfernen",
+      "photoHint": "JPG oder PNG, höchstens 2 MB.",
+      "photoTooLarge": "Das Bild ist größer als 2 MB.",
+      "photoWrongType": "Bitte eine JPG- oder PNG-Datei wählen.",
+      "photoFailed": "Das Foto konnte nicht gespeichert werden."
     },
     "enroll": {
       "title": "Kurs anfragen",
@@ -1117,7 +1120,7 @@
     },
     "profile": {
       "title": "Profil",
-      "description": "Ihre Angaben und Darstellung.",
+      "description": "Ihre Angaben und Ihr Profilfoto.",
       "displayName": "Anzeigename",
       "displayNameHint": "So sehen Teilnehmer Sie in Antworten und Reviews.",
       "locale": "Sprache",
@@ -1126,10 +1129,15 @@
       "save": "Speichern",
       "saved": "Profil gespeichert.",
       "nameRequired": "Bitte geben Sie einen Anzeigenamen an.",
-      "appearance": "Darstellung",
       "account": "Konto",
       "role": "Rolle",
-      "email": "E-Mail-Adresse"
+      "email": "E-Mail-Adresse",
+      "photoChange": "Foto ändern",
+      "photoRemove": "Foto entfernen",
+      "photoHint": "JPG oder PNG, höchstens 2 MB.",
+      "photoTooLarge": "Das Bild ist größer als 2 MB.",
+      "photoWrongType": "Bitte eine JPG- oder PNG-Datei wählen.",
+      "photoFailed": "Das Foto konnte nicht gespeichert werden."
     },
     "hunt": {
       "title": "Fehlerjagd — Abgleich",
