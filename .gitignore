@@ -11,6 +11,12 @@
 .env
 .env.local
 .env.*.local
+# Deployment env files hold the service-role key, which bypasses every RLS
+# policy. `.env.local` was already ignored; `.env.vercel` was not, and is
+# exactly the file someone creates to paste into a dashboard.
+.env.vercel
+.env.vercel.*
+.env.production
 !.env.example
 /supabase/.temp/
 /supabase/.branches/
