@@ -1378,6 +1378,8 @@ export type Database = {
           summary: string
           title: string
           updated_at: string
+          completion_video_url: string | null
+          exam_video_url: string | null
         }
         Insert: {
           course_id: string
@@ -1391,6 +1393,8 @@ export type Database = {
           summary: string
           title: string
           updated_at?: string
+          completion_video_url?: string | null
+          exam_video_url?: string | null
         }
         Update: {
           course_id?: string
@@ -1404,6 +1408,8 @@ export type Database = {
           summary?: string
           title?: string
           updated_at?: string
+          completion_video_url?: string | null
+          exam_video_url?: string | null
         }
         Relationships: [
           {
@@ -1650,6 +1656,7 @@ export type Database = {
           source_system: string | null
           state: Database["public"]["Enums"]["record_state"]
           updated_at: string
+          hero_image_url: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -1665,6 +1672,7 @@ export type Database = {
           source_system?: string | null
           state?: Database["public"]["Enums"]["record_state"]
           updated_at?: string
+          hero_image_url?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -1680,6 +1688,7 @@ export type Database = {
           source_system?: string | null
           state?: Database["public"]["Enums"]["record_state"]
           updated_at?: string
+          hero_image_url?: string | null
         }
         Relationships: [
           {

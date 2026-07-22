@@ -1238,7 +1238,8 @@
       "previous": "Zurück",
       "next": "Weiter",
       "filterAll": "Alle",
-      "loadError": "Die Daten konnten nicht geladen werden."
+      "loadError": "Die Daten konnten nicht geladen werden.",
+      "close": "Schliessen"
     },
     "dashboard": {
       "title": "System-Übersicht",
@@ -1322,7 +1323,13 @@
       "errorSlug": "Diese Kennung ist bereits vergeben.",
       "errorTitleRequired": "Bitte geben Sie einen Titel ein.",
       "errorSummaryRequired": "Bitte geben Sie eine Kurzbeschreibung ein.",
-      "errorSlugFormat": "Nur Kleinbuchstaben, Ziffern und Bindestriche."
+      "errorSlugFormat": "Nur Kleinbuchstaben, Ziffern und Bindestriche.",
+      "sectionMedia": "Medien",
+      "heroImage": "Titelbild",
+      "heroImageHint": "Bild-URL, z. B. https://… oder /bilder/kurs.jpg. Erscheint auf der Kursseite.",
+      "examVideo": "Motivationsvideo nach bestandener Prüfung",
+      "completionVideo": "Motivationsvideo nach Abschluss des Kurses",
+      "videoHint": "Video-URL. Wird der lernenden Person nach dem jeweiligen Schritt gezeigt."
     },
     "course": {
       "title": "Kurs bearbeiten",
@@ -1400,7 +1407,12 @@
       "cancelTask": "Verwerfen",
       "unsavedWarning": "Es gibt ungespeicherte Änderungen.",
       "readOnly": "Nur Lesen",
-      "readOnlyDescription": "Veröffentlichte und archivierte Versionen sind unveränderlich. Legen Sie im Kurs eine neue Version an, um weiterzuarbeiten."
+      "readOnlyDescription": "Veröffentlichte und archivierte Versionen sind unveränderlich. Legen Sie im Kurs eine neue Version an, um weiterzuarbeiten.",
+      "taskRequiredHunt": "Vorausgesetzte Fehlerjagd",
+      "taskRequiredHuntHint": "Diese Aufgabe bleibt gesperrt, bis der Trainer eine Jagd zu diesem Szenario angenommen hat.",
+      "taskRequiredHuntNone": "Keine — Aufgabe ist sofort verfügbar",
+      "taskGateQuestion": "Frage vor der Aufgabe",
+      "taskGateQuestionHint": "Wird vor dieser Aufgabe gestellt. Die lernende Person darf sie überspringen — dann bleibt die NÄCHSTE Aufgabe gesperrt, bis sie beantwortet ist. Alle drei Sprachen ausfüllen oder alle leer lassen."
     },
     "lifecycle": {
       "title": "Veröffentlichung",

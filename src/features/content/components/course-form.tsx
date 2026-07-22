@@ -41,6 +41,12 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
   const [slugTouched, setSlugTouched] = useState(false);
   const [minutes, setMinutes] = useState("");
   const [defaultLocale, setDefaultLocale] = useState("de");
+  // Course media — §1.1. The columns shipped in Phase 1a and had no input on
+  // any screen until now, so a cover image or motivational video could only be
+  // set with SQL.
+  const [heroImageUrl, setHeroImageUrl] = useState("");
+  const [examVideoUrl, setExamVideoUrl] = useState("");
+  const [completionVideoUrl, setCompletionVideoUrl] = useState("");
 
   const effectiveSlug = slugTouched ? slug : slugify(titleDe);
 
@@ -58,6 +64,9 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
         slug: effectiveSlug,
         defaultLocale,
         estimatedMinutes: minutes.trim() === "" ? null : Number(minutes),
+        heroImageUrl,
+        examVideoUrl,
+        completionVideoUrl,
         titleDe,
         summaryDe,
         descriptionDe,
@@ -146,6 +155,48 @@ export function CourseForm({ locale, strings }: { locale: string; strings: Admin
             onChange={(event) => setDescriptionDe(event.target.value)}
           />
         </Field>
+      </Card>
+
+      {/**
+        * Course media — FEATURE_BUILD_PLAN §1.1.
+        *
+        * ⚠️ There is deliberately NO redirect-URL field. It appeared in the
+        * first mock-up and was explicitly dropped; adding one back because the
+        * mock-up shows it is the single easiest mistake to make on this form.
+        *
+        * The two videos are per-locale in the schema (`course_localizations`)
+        * because §1.1 marks them translated. Only the German row is written
+        * here, matching how the rest of this form treats course content —
+        * CONTENT_LOCALES === ["de"], and the studio has no locale tabs for
+        * media yet.
+        */}
+      <Card className="flex flex-col gap-4">
+        <CardTitle>{s.sectionMedia}</CardTitle>
+
+        <Field label={s.heroImage} hint={s.heroImageHint}>
+          <Input
+            value={heroImageUrl}
+            onChange={(event) => setHeroImageUrl(event.target.value)}
+            placeholder="https://…"
+          />
+        </Field>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={s.examVideo} hint={s.videoHint}>
+            <Input
+              value={examVideoUrl}
+              onChange={(event) => setExamVideoUrl(event.target.value)}
+              placeholder="https://…"
+            />
+          </Field>
+          <Field label={s.completionVideo} hint={s.videoHint}>
+            <Input
+              value={completionVideoUrl}
+              onChange={(event) => setCompletionVideoUrl(event.target.value)}
+              placeholder="https://…"
+            />
+          </Field>
+        </div>
       </Card>
 
 

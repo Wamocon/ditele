@@ -11,6 +11,7 @@ import {
   type ContentVersionSummary,
   type CourseLocalization,
   type RecordState,
+  type ScenarioOption,
   type SkillOption,
   type StudioStage,
   type StudioTask,
@@ -242,7 +243,8 @@ export async function getStudioWorkspace(
 
   const courseId = asString(version.course_id);
 
-  const [course, courseLocalizations, stages, tasks, skills, reviews] = await Promise.all([
+  const [course, courseLocalizations, stages, tasks, skills, scenarios, reviews] =
+    await Promise.all([
     supabase.from("courses").select("id, slug").eq("id", courseId).maybeSingle(),
     supabase
       .from("course_localizations")
@@ -255,10 +257,18 @@ export async function getStudioWorkspace(
       .order("position"),
     supabase
       .from("tasks")
-      .select("id, stage_id, position, task_kind, state, target_url, expected_minutes")
+      .select("id, stage_id, position, task_kind, state, target_url, expected_minutes, required_hunt_scenario_id")
       .eq("content_version_id", versionId)
       .order("position"),
     supabase.from("skills").select("id, code, labels").eq("state", "active").order("code"),
+    // Active Arena scenarios, for the task editor's gate picker. Only active
+    // ones: gating a task on a draft scenario would lock it against something
+    // no learner can be sent to.
+    supabase
+      .from("hunt_scenarios")
+      .select("id, code, title")
+      .eq("state", "active")
+      .order("code"),
     supabase
       .from("content_reviews")
       .select("decision, comment, created_at, expected_content_version_row_version")
@@ -272,8 +282,15 @@ export async function getStudioWorkspace(
   const stageIds = stageRows.map((row) => asString(row.id));
   const taskIds = taskRows.map((row) => asString(row.id));
 
-  const [stageLocalizations, taskLocalizations, hints, options, assessments, mappings] =
-    await Promise.all([
+  const [
+    stageLocalizations,
+    taskLocalizations,
+    hints,
+    options,
+    assessments,
+    mappings,
+    gateQuestions,
+  ] = await Promise.all([
       stageIds.length
         ? supabase
             .from("stage_localizations")
@@ -312,6 +329,12 @@ export async function getStudioWorkspace(
             .select("id, task_id, skill_id, mapping_version, weight_basis_points, evidence_required")
             .in("task_id", taskIds)
         : Promise.resolve({ data: [] as Row[] }),
+      taskIds.length
+        ? supabase
+            .from("task_gate_questions")
+            .select("task_id, question_translations")
+            .in("task_id", taskIds)
+        : Promise.resolve({ data: [] as Row[] }),
     ]);
 
   const optionRows = (options.data ?? []) as Row[];
@@ -329,12 +352,19 @@ export async function getStudioWorkspace(
   const hintRows = (hints.data ?? []) as Row[];
   const assessmentRows = (assessments.data ?? []) as Row[];
   const mappingRows = (mappings.data ?? []) as Row[];
+  const gateQuestionRows = (gateQuestions.data ?? []) as Row[];
 
   const buildTask = (row: Row): StudioTask => {
     const id = asString(row.id);
     const assessment = assessmentRows.find((entry) => entry.task_id === id);
+    const gate = gateQuestionRows.find((entry) => entry.task_id === id);
     return {
       id,
+      requiredHuntScenarioId: asNullableString(row.required_hunt_scenario_id),
+      gateQuestion:
+        gate && gate.question_translations && typeof gate.question_translations === "object"
+          ? (gate.question_translations as Record<string, string>)
+          : null,
       stageId: asString(row.stage_id),
       position: asNumber(row.position),
       kind: asString(row.task_kind),
@@ -435,6 +465,14 @@ export async function getStudioWorkspace(
         id: asString(row.id),
         code: asString(row.code),
         labels: asMap(row.labels),
+      })
+    ),
+    scenarios: ((scenarios.data ?? []) as Row[]).map(
+      (row): ScenarioOption => ({
+        id: asString(row.id),
+        code: asString(row.code),
+        // Course material — German, straight from the row.
+        title: asString(row.title),
       })
     ),
     latestReview: reviewRow
@@ -630,11 +668,23 @@ export interface CreateCourseInput {
   slug: string;
   defaultLocale: string;
   estimatedMinutes: number | null;
+  /**
+   * Course media, from FEATURE_BUILD_PLAN §1.1. The columns landed in Phase 1a
+   * (`20260728100000`) and had no input on any screen until now.
+   *
+   * `heroImageUrl` is on `courses` because a cover image is one image for the
+   * course. The two videos are on `course_localizations` because §1.1 marks
+   * them translated — the schema keeps a row per locale, even though the studio
+   * currently writes German only (CONTENT_LOCALES === ["de"]).
+   */
+  heroImageUrl: string | null;
   localizations: {
     locale: string;
     title: string;
     summary: string;
     descriptionHtml: string;
+    examVideoUrl?: string | null;
+    completionVideoUrl?: string | null;
   }[];
 }
 
@@ -651,6 +701,7 @@ export async function createCourse(
     slug: input.slug,
     default_locale: input.defaultLocale,
     estimated_minutes: input.estimatedMinutes,
+    hero_image_url: input.heroImageUrl,
     state: "draft",
   });
   if (courseError) return err(mapPostgrestError(courseError));
@@ -662,6 +713,8 @@ export async function createCourse(
       title: entry.title,
       summary: entry.summary,
       description_html: entry.descriptionHtml,
+      exam_video_url: entry.examVideoUrl ?? null,
+      completion_video_url: entry.completionVideoUrl ?? null,
       learning_outcomes: [],
     }))
   );
@@ -685,6 +738,8 @@ export async function updateCourseMeta(input: {
   slug: string;
   defaultLocale: string;
   estimatedMinutes: number | null;
+  /** Undefined leaves it alone; null clears it. */
+  heroImageUrl?: string | null;
 }): Promise<Result<true>> {
   const supabase = await createServerClient();
   return fromSupabase(async () => {
@@ -694,6 +749,10 @@ export async function updateCourseMeta(input: {
         slug: input.slug,
         default_locale: input.defaultLocale,
         estimated_minutes: input.estimatedMinutes,
+        // Spread so an absent key is genuinely absent: `hero_image_url:
+        // undefined` would be serialised as a null by PostgREST and wipe the
+        // column on every meta save that did not mention it.
+        ...(input.heroImageUrl === undefined ? {} : { hero_image_url: input.heroImageUrl }),
       })
       .eq("id", input.courseId);
     return { data: error ? null : (true as const), error };
@@ -858,7 +917,36 @@ export interface TaskWriteInput {
   kind: string;
   expectedMinutes: number | null;
   targetUrl: string | null;
+  /** The Arena gate (FEATURE_BUILD_PLAN §1.6). Optional so `createTask`'s
+   *  callers keep compiling; absent and null both mean "no gate". */
+  requiredHuntScenarioId?: string | null;
   localizations: { locale: string; title: string; instructionsHtml: string }[];
+}
+
+/**
+ * The pre-task question, through its command.
+ *
+ * RPC-only, unlike everything else this module writes: `task_gate_questions`
+ * carries no DML grant for `authenticated` (I-003), and
+ * `set_task_gate_question` additionally refuses a question that is not present
+ * in all three locales — the same rule the snapshot validator applies later, so
+ * a bad write is refused with a clear error instead of producing a snapshot
+ * that silently fails validation and empties the course (I-041).
+ *
+ * Passing null removes the question.
+ */
+export async function setTaskGateQuestion(
+  taskId: string,
+  translations: Record<string, string> | null
+): Promise<Result<true>> {
+  const supabase = await createServerClient();
+  return fromSupabase(async () => {
+    const { error } = await supabase.rpc("set_task_gate_question", {
+      p_task_id: taskId,
+      p_question_translations: translations,
+    });
+    return { data: error ? null : (true as const), error };
+  });
 }
 
 export async function createTask(input: {
@@ -904,6 +992,11 @@ export async function updateTask(input: TaskWriteInput): Promise<Result<true>> {
       expected_minutes: input.expectedMinutes,
       // Only a practical task carries a target; clearing it keeps the snapshot honest.
       target_url: input.kind === "practical" ? input.targetUrl : null,
+      // The Arena gate. A hunt task may not gate itself — the database refuses
+      // it (`tasks_hunt_does_not_gate_itself`) and a task that did would be
+      // unreachable forever — so it is cleared rather than sent for a hunt.
+      required_hunt_scenario_id:
+        input.kind === "hunt" ? null : (input.requiredHuntScenarioId ?? null),
     })
     .eq("id", input.taskId);
   if (error) return err(mapPostgrestError(error));

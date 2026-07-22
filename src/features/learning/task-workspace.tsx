@@ -410,20 +410,6 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
         </div>
       )}
 
-      {/**
-        * Before the assessment, because §1.6 asks it "before attempting" —
-        * and above everything the learner would otherwise start typing into,
-        * so it is met rather than scrolled past.
-        */}
-      {task.gateQuestion && (
-        <GateQuestionPanel
-          taskId={task.id}
-          locale={locale}
-          gate={task.gateQuestion}
-          strings={s}
-        />
-      )}
-
       {assessmentBlock}
 
       {isPractice && (
@@ -596,6 +582,29 @@ export function TaskWorkspace({ locale, task, attempt, draft, courseHref }: Task
                 </span>
               </a>
             </div>
+          )}
+
+          {/**
+            * The pre-task question — §1.6 asks it "before attempting".
+            *
+            * ⚠️ It lives in the MAIN column, not in the answer panel, and that
+            * is the whole point. The answer panel renders only once
+            * `attempt !== null`, so a question mounted there appeared *after*
+            * the learner pressed "Aufgabe starten" — exactly backwards, and
+            * invisible to the learner who has not started yet, which is every
+            * learner the question is for.
+            *
+            * Above the practice frame so it is met before the sandbox, and
+            * never disabled: skipping is a first-class choice, and the task
+            * stays fully usable either way.
+            */}
+          {task.gateQuestion && (
+            <GateQuestionPanel
+              taskId={task.id}
+              locale={locale}
+              gate={task.gateQuestion}
+              strings={s}
+            />
           )}
 
           {isPractice && task.targetUrl && <IframePanel src={task.targetUrl} strings={s} />}

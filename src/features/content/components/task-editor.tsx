@@ -9,6 +9,13 @@ import { CONTENT_LOCALES, TASK_KINDS, type SkillOption, type StudioTask } from "
 
 const BASIS_POINTS = 10000;
 
+/** Same mapping stage-card uses; kept local so this file has no new import. */
+function localeLabel(contentLocale: string, strings: AdminStrings): string {
+  if (contentLocale === "de") return strings.shared.localeDe;
+  if (contentLocale === "en") return strings.shared.localeEn;
+  return strings.shared.localeRu;
+}
+
 interface LocalizedDraft {
   title: string;
   instructionsHtml: string;
@@ -75,6 +82,12 @@ export interface TaskEditorProps {
   versionId: string;
   task: StudioTask;
   skills: SkillOption[];
+  /**
+   * Active Arena scenarios, for the gate picker. Defaulted to `[]` so the
+   * editor still renders where the caller has not fetched them — the picker
+   * then simply offers "no gate", which is the honest state.
+   */
+  scenarios?: { id: string; code: string; title: string }[];
   strings: AdminStrings;
   readOnly: boolean;
   onSaved: () => void;
@@ -86,6 +99,7 @@ export function TaskEditor({
   versionId,
   task,
   skills,
+  scenarios = [],
   strings,
   readOnly,
   onSaved,
@@ -104,6 +118,12 @@ export function TaskEditor({
   const [question, setQuestion] = useState(initial.question);
   const [selectionMode, setSelectionMode] = useState(initial.selectionMode);
   const [skillDrafts, setSkillDrafts] = useState<SkillDraft[]>(initial.skills);
+  // The two Phase 1c gates (§1.6). Both were reachable only by SQL until now.
+  const [requiredScenarioId, setRequiredScenarioId] = useState(task.requiredHuntScenarioId ?? "");
+  const [gateQuestion, setGateQuestion] = useState<Record<string, string>>({
+    ...emptyTranslations(),
+    ...(task.gateQuestion ?? {}),
+  });
 
   const percentTotal = skillDrafts.reduce((sum, skill) => sum + (skill.percent || 0), 0);
   const kindLabel: Record<string, string> = {
@@ -129,6 +149,21 @@ export function TaskEditor({
         kind,
         expectedMinutes: minutes.trim() === "" ? null : Number(minutes),
         targetUrl: targetUrl.trim() === "" ? null : targetUrl.trim(),
+        requiredHuntScenarioId: requiredScenarioId === "" ? null : requiredScenarioId,
+        // All three locales or nothing. A partly-filled question would be
+        // refused by set_task_gate_question anyway — the same three-locale rule
+        // the snapshot validator applies — so it is treated as "no question"
+        // rather than sent to fail.
+        gateQuestion: CONTENT_LOCALES.every(
+          (contentLocale) => (gateQuestion[contentLocale] ?? "").trim() !== ""
+        )
+          ? Object.fromEntries(
+              CONTENT_LOCALES.map((contentLocale) => [
+                contentLocale,
+                (gateQuestion[contentLocale] ?? "").trim(),
+              ])
+            )
+          : null,
         localizations: CONTENT_LOCALES.map((contentLocale) => ({
           locale: contentLocale,
           title: localizations[contentLocale]?.title ?? "",
@@ -197,6 +232,57 @@ export function TaskEditor({
           />
         </Field>
       )}
+
+      {/**
+        * ── The gate chain, §1.6 ──────────────────────────────────────────
+        *
+        * Two independent gates on the same task, and they are deliberately
+        * not one control:
+        *
+        *   the Arena gate   locks THIS task until a hunt of that scenario has
+        *                    been accepted;
+        *   the question     is asked before THIS task and locks the NEXT one
+        *                    until it is answered — a skipped question does
+        *                    not block the task it belongs to.
+        *
+        * Both can be set on one task and both can be outstanding at once,
+        * which is why the learner's row shows two sentences rather than one.
+        */}
+      {kind !== "hunt" && (
+        <Field label={s.taskRequiredHunt} hint={s.taskRequiredHuntHint}>
+          <Select
+            value={requiredScenarioId}
+            onChange={(event) => setRequiredScenarioId(event.target.value)}
+            disabled={readOnly}
+          >
+            <option value="">{s.taskRequiredHuntNone}</option>
+            {scenarios.map((scenario) => (
+              <option key={scenario.id} value={scenario.id}>
+                {scenario.title} ({scenario.code})
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+
+      <fieldset className="flex flex-col gap-2 rounded-(--radius-md) border border-(--color-border) p-3">
+        <legend className="px-1 text-[13px] font-semibold">{s.taskGateQuestion}</legend>
+        <p className="text-[13px] text-(--color-fg-muted)">{s.taskGateQuestionHint}</p>
+        {CONTENT_LOCALES.map((contentLocale) => (
+          <Field key={contentLocale} label={localeLabel(contentLocale, strings)}>
+            <Input
+              value={gateQuestion[contentLocale] ?? ""}
+              onChange={(event) =>
+                setGateQuestion((current) => ({
+                  ...current,
+                  [contentLocale]: event.target.value,
+                }))
+              }
+              disabled={readOnly}
+            />
+          </Field>
+        ))}
+      </fieldset>
 
       {/* ── localizations ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">

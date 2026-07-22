@@ -960,7 +960,8 @@
       "previous": "Previous",
       "next": "Next",
       "filterAll": "All",
-      "loadError": "The data could not be loaded."
+      "loadError": "The data could not be loaded.",
+      "close": "Close"
     },
     "dashboard": {
       "title": "System overview",
@@ -1044,7 +1045,13 @@
       "errorSlug": "This slug is already taken.",
       "errorTitleRequired": "Please enter a title.",
       "errorSummaryRequired": "Please enter a short description.",
-      "errorSlugFormat": "Only lower-case letters, digits and hyphens."
+      "errorSlugFormat": "Only lower-case letters, digits and hyphens.",
+      "sectionMedia": "Media",
+      "heroImage": "Cover image",
+      "heroImageHint": "Image URL, e.g. https://… or /images/course.jpg. Shown on the course page.",
+      "examVideo": "Motivational video after passing the exam",
+      "completionVideo": "Motivational video after completing the course",
+      "videoHint": "Video URL. Shown to the learner after that step."
     },
     "course": {
       "title": "Edit course",
@@ -1122,7 +1129,12 @@
       "cancelTask": "Discard",
       "unsavedWarning": "There are unsaved changes.",
       "readOnly": "Read only",
-      "readOnlyDescription": "Published and archived versions are immutable. Create a new version in the course to continue working."
+      "readOnlyDescription": "Published and archived versions are immutable. Create a new version in the course to continue working.",
+      "taskRequiredHunt": "Required bug hunt",
+      "taskRequiredHuntHint": "This task stays locked until a trainer has accepted a hunt of that scenario.",
+      "taskRequiredHuntNone": "None — task is available immediately",
+      "taskGateQuestion": "Question before the task",
+      "taskGateQuestionHint": "Asked before this task. The learner may skip it — the NEXT task then stays locked until it is answered. Fill in all three languages or leave all empty."
     },
     "lifecycle": {
       "title": "Publication",

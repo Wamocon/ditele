@@ -101,6 +101,7 @@ export function Studio({
                 stage={stage}
                 stageOrder={stageOrder}
                 skills={workspace.skills}
+                scenarios={workspace.scenarios ?? []}
                 strings={strings}
                 readOnly={readOnly}
               />

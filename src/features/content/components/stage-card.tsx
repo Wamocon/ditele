@@ -14,7 +14,7 @@ import {
 } from "../actions";
 import type { AdminStrings } from "../i18n";
 import { CONTENT_LOCALES, type SkillOption, type StudioStage } from "../model";
-import { TaskEditor } from "./task-editor";
+import { TaskEditorDialog } from "./task-editor-dialog";
 
 function localeLabel(locale: string, strings: AdminStrings): string {
   if (locale === "de") return strings.shared.localeDe;
@@ -40,6 +40,8 @@ export interface StageCardProps {
   stage: StudioStage;
   stageOrder: string[];
   skills: SkillOption[];
+  /** Active Arena scenarios, for the task editor's gate picker. */
+  scenarios?: { id: string; code: string; title: string }[];
   strings: AdminStrings;
   readOnly: boolean;
 }
@@ -51,6 +53,7 @@ export function StageCard({
   stage,
   stageOrder,
   skills,
+  scenarios = [],
   strings,
   readOnly,
 }: StageCardProps) {
@@ -392,16 +395,28 @@ export function StageCard({
                     </div>
                   )}
 
+                  {/**
+                    * §1.4 asks for a modal, explicitly not a page and not a
+                    * dropdown. It used to expand inline here, which pushed
+                    * every task below it down the list and left an author
+                    * scrolling past tasks they were not editing.
+                    *
+                    * Still mounted only while open: the editor holds a full
+                    * draft of the task in state, and mounting one per task
+                    * would build that draft for every row on every render.
+                    */}
                   {open && (
-                    <TaskEditor
+                    <TaskEditorDialog
+                      open={open}
                       locale={locale}
                       courseId={courseId}
                       versionId={versionId}
                       task={task}
                       skills={skills}
+                      scenarios={scenarios}
                       strings={strings}
                       readOnly={readOnly}
-                      onSaved={() => setOpenTaskId(null)}
+                      onClose={() => setOpenTaskId(null)}
                     />
                   )}
                 </li>

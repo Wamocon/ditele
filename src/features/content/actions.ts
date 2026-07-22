@@ -17,6 +17,7 @@ import {
   reorderStages,
   reorderTasks,
   setCourseState,
+  setTaskGateQuestion,
   setTaskAssessment,
   setTaskHints,
   setTaskSkills,
@@ -71,6 +72,15 @@ export interface CreateCourseFields {
   summaryEn: string;
   titleRu: string;
   summaryRu: string;
+  /**
+   * Course media — FEATURE_BUILD_PLAN §1.1. Optional so the existing callers
+   * and tests keep compiling; blank is normalised to null so an untouched field
+   * writes nothing rather than an empty string that would fail the protocol
+   * CHECK constraints added in 20260728100000.
+   */
+  heroImageUrl?: string;
+  examVideoUrl?: string;
+  completionVideoUrl?: string;
 }
 
 export async function createCourseAction(
@@ -78,12 +88,21 @@ export async function createCourseAction(
 ): Promise<ActionState & { courseId?: string; versionId?: string }> {
   await requireAdmin(fields.locale);
 
+  const blankToNull = (value: string | undefined) => {
+    const trimmed = (value ?? "").trim();
+    return trimmed === "" ? null : trimmed;
+  };
+
   const localizations = [
     {
       locale: "de",
       title: fields.titleDe,
       summary: fields.summaryDe,
       descriptionHtml: fields.descriptionDe,
+      // The two motivational videos (§1.1). Written on the German row only,
+      // matching how every other piece of course content is authored here.
+      examVideoUrl: blankToNull(fields.examVideoUrl),
+      completionVideoUrl: blankToNull(fields.completionVideoUrl),
     },
   ];
   // EN and RU are optional at creation but mandatory before review, so an empty
@@ -94,6 +113,10 @@ export async function createCourseAction(
       title: fields.titleEn,
       summary: fields.summaryEn,
       descriptionHtml: "",
+      // The videos are authored on the German row only; an EN/RU row that
+      // repeated the same URL would claim a translation that does not exist.
+      examVideoUrl: null,
+      completionVideoUrl: null,
     });
   }
   if (fields.titleRu.trim() || fields.summaryRu.trim()) {
@@ -102,6 +125,8 @@ export async function createCourseAction(
       title: fields.titleRu,
       summary: fields.summaryRu,
       descriptionHtml: "",
+      examVideoUrl: null,
+      completionVideoUrl: null,
     });
   }
 
@@ -109,6 +134,7 @@ export async function createCourseAction(
     slug: fields.slug,
     defaultLocale: fields.defaultLocale,
     estimatedMinutes: fields.estimatedMinutes,
+    heroImageUrl: blankToNull(fields.heroImageUrl),
     localizations,
   });
   if (!result.ok) return failed(result.error);
@@ -264,6 +290,15 @@ export interface SaveTaskFields {
   kind: string;
   expectedMinutes: number | null;
   targetUrl: string | null;
+  /** The Arena gate — null clears it. */
+  requiredHuntScenarioId: string | null;
+  /**
+   * The pre-task question, as a {locale: text} map, or null to remove it.
+   * Written through `set_task_gate_question` rather than a direct upsert
+   * because task_gate_questions is RPC-only (I-003) and the command also
+   * enforces the three-locale rule the snapshot validator will apply later.
+   */
+  gateQuestion: Record<string, string> | null;
   localizations: { locale: string; title: string; instructionsHtml: string }[];
   hints: { translations: Record<string, string> }[];
   skills: { skillId: string; weightBasisPoints: number; evidenceRequired: boolean }[];
@@ -282,9 +317,13 @@ export async function saveTaskAction(fields: SaveTaskFields): Promise<ActionStat
     kind: fields.kind,
     expectedMinutes: fields.expectedMinutes,
     targetUrl: fields.targetUrl,
+    requiredHuntScenarioId: fields.requiredHuntScenarioId,
     localizations: fields.localizations,
   });
   if (!updated.ok) return failed(updated.error);
+
+  const gate = await setTaskGateQuestion(fields.taskId, fields.gateQuestion);
+  if (!gate.ok) return failed(gate.error);
 
   const hints = await setTaskHints(fields.taskId, fields.hints);
   if (!hints.ok) return failed(hints.error);

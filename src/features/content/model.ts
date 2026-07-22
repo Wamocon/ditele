@@ -151,6 +151,25 @@ export interface StudioTask {
   options: TaskOption[];
   assessment: TaskAssessment | null;
   skills: TaskSkillMapping[];
+  /**
+   * The two Phase 1c gates (FEATURE_BUILD_PLAN §1.6). Both were reachable only
+   * by SQL until now: the columns, the snapshot keys, the validator and the
+   * lock reasons all shipped, and nothing in the studio could set either.
+   *
+   * `requiredHuntScenarioId` — the Arena gate: this task stays locked until the
+   *   learner has had a hunt of that scenario ACCEPTED.
+   * `gateQuestion` — the question asked before this task, which gates the NEXT
+   *   one rather than this one.
+   */
+  requiredHuntScenarioId: string | null;
+  gateQuestion: Record<string, string> | null;
+}
+
+/** An Arena scenario, as the task editor's gate picker needs it. */
+export interface ScenarioOption {
+  id: string;
+  code: string;
+  title: string;
 }
 
 export interface StudioStage {
@@ -187,6 +206,8 @@ export interface StudioWorkspace {
   courseLocalizations: CourseLocalization[];
   stages: StudioStage[];
   skills: SkillOption[];
+  /** Active Arena scenarios, for the task editor's gate picker (§1.6). */
+  scenarios?: ScenarioOption[];
   latestReview: LatestContentReview | null;
 }
 
