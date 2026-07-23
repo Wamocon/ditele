@@ -40,13 +40,22 @@ console.log("users:", Object.keys(id).length);
 
 // ── 2) Sample content (idempotent by course slug) ────────────────────
 const slug = "praxiskurs-softwaretester";
-await db.from("courses").delete().eq("slug", slug); // clean re-run
+// Reset previous demo activity so re-seeding is fully idempotent.
+const NIL = "00000000-0000-0000-0000-000000000000";
+for (const t of ["reviews", "submission_images", "submission_options", "submissions", "xp_ledger", "badge_awards", "task_feedback", "course_feedback"]) {
+  await db.from(t).delete().neq("id", NIL);
+}
+await db.from("courses").delete().eq("slug", slug);
+await db.from("arena_tasks").delete().neq("id", NIL);
+await db.from("badges").delete().neq("id", NIL);
 
 const courseId = randomUUID();
 must("course", (await db.from("courses").insert({
   id: courseId, slug, title: "Praxiskurs Softwaretester",
   description: "Softwaretesten lernt man durch Testen: echte Praxisaufgaben und Fehlerberichte.",
-  cover_image_url: null, intro_video_url: null, completion_video_url: null,
+  cover_image_url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200",
+  intro_video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  completion_video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
   state: "active", created_by: id["admin1@gmail.com"],
 }).select().single()).error);
 
@@ -66,7 +75,7 @@ must("arena_answer", (await db.from("arena_task_answer").insert([
 // Course tasks (task 2 attaches arena1; tasks 1 & 2 have a mandatory MCQ)
 const t1 = randomUUID(), t2 = randomUUID(), t3 = randomUUID();
 must("course_tasks", (await db.from("course_tasks").insert([
-  { id: t1, course_id: courseId, order_index: 1, title: "Was ist Softwaretesten?", description: "Lies die Einführung und beantworte die Frage.", hint: "Denk an das Ziel.", mcq_question: "Was ist ein Ziel des Softwaretestens?", arena_task_id: null, state: "active" },
+  { id: t1, course_id: courseId, order_index: 1, title: "Was ist Softwaretesten?", description: "Lies die Einführung und beantworte die Frage.", hint: "Denk an das Ziel.", mcq_question: "Was ist ein Ziel des Softwaretestens?", video_before_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", video_after_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", arena_task_id: null, state: "active" },
   { id: t2, course_id: courseId, order_index: 2, title: "Einen Fehlerbericht schreiben", description: "Bearbeite zuerst die Arena-Aufgabe, dann beantworte die Frage.", hint: "Struktur zählt.", mcq_question: "Welche Angabe gehört in einen Fehlerbericht?", arena_task_id: arena1, state: "active" },
   { id: t3, course_id: courseId, order_index: 3, title: "Testfälle entwerfen", description: "Entwirf Testfälle für ein Login.", hint: null, mcq_question: null, arena_task_id: null, state: "active" },
 ]).select()).error);

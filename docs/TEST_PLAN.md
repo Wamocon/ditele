@@ -8,6 +8,14 @@ Living document. Every feature of the new model (see `ditele_schema.md`) is list
 - Seeded content: course **"Praxiskurs Softwaretester"** (`/de`), 3 course tasks, 2 arena tasks, student1 & student2 enrolled, trainer1 assigned.
 - Re-seed anytime: `node --env-file=.env.local scripts/seed-clean.mjs`
 
+## Verification status (automated, 2026-07-23)
+- **Typecheck:** clean, 0 errors — `npm run typecheck`.
+- **Unlock logic:** unit-tested 6/6 — `npm run test` (`src/shared/data/unlock.test.ts`).
+- **Workflow + RLS + security:** 13/13 — `node --env-file=.env.local scripts/verify-workflow.mjs`. Proves submit → trainer queue → review → XP/badge, and that a student can never read an answer key.
+- **Rendering:** every page for all four roles renders real data with no runtime errors (checked on the dev server).
+- **Videos:** intro/completion/before/after render as YouTube embeds (CSP updated to allow them); the arena HTML window renders in a sandboxed iframe.
+- **Needs a click-through in YOUR browser:** the button-driven client actions (auto-save, Submit, Accept/Needs-revision, reorder, image upload). The headless capture browser can't hydrate to click them, but they render server-side and their data paths are proven by the workflow script above. Walk the ✓ items below in a real browser.
+
 ## Header / navigation map (must all work, per role)
 | Public | Student | Trainer | Admin |
 |---|---|---|---|

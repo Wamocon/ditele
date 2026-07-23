@@ -82,7 +82,7 @@ const securityHeaders = [
   //                     must not disagree. That disagreement is what I-049 was.
   {
     key: "Content-Security-Policy",
-    value: `frame-src 'self' ${frameSources}; frame-ancestors 'self';`,
+    value: `frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com ${frameSources}; frame-ancestors 'self';`,
   },
 ];
 
