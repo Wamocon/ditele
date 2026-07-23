@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createServerClient } from "@/shared/database/server";
-import { toUiRole, postAuthDestination, type UiRole } from "@/shared/auth/role";
+import { postAuthDestination, type UiRole } from "@/shared/auth/role";
 import { requirePrincipal } from "@/shared/auth/principal";
 import type { Principal } from "@/shared/auth/types";
 import { ok, err, type Result } from "./result";
@@ -19,16 +19,11 @@ export interface SessionPrincipal {
 export async function getPrincipal(): Promise<SessionPrincipal | null> {
   try {
     const principal = await requirePrincipal();
-    const supabase = await createServerClient();
-    const [{ data: userData }, { data: profile }] = await Promise.all([
-      supabase.auth.getUser(),
-      supabase.from("profiles").select("display_name").eq("user_id", principal.userId).maybeSingle(),
-    ]);
     return {
       principal,
-      uiRole: toUiRole(principal.roles),
-      email: userData.user?.email ?? null,
-      displayName: profile?.display_name ?? null,
+      uiRole: principal.role,
+      email: principal.email,
+      displayName: principal.displayName,
     };
   } catch {
     return null;
@@ -75,10 +70,9 @@ export async function register(args: {
   if (error) {
     return err({
       code: error.code ?? "AUTH",
-      message:
-        error.message.includes("already")
-          ? "Für diese E-Mail-Adresse existiert bereits ein Konto."
-          : "Registrierung fehlgeschlagen. Bitte prüfen Sie Ihre Eingaben.",
+      message: error.message.includes("already")
+        ? "Für diese E-Mail-Adresse existiert bereits ein Konto."
+        : "Registrierung fehlgeschlagen. Bitte prüfen Sie Ihre Eingaben.",
       retryable: true,
     });
   }

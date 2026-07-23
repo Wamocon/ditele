@@ -2,38 +2,63 @@ import type { Metadata } from "next";
 import { ChevronDown } from "lucide-react";
 
 import { PageHeader } from "@/shared/layout";
-import { getDict } from "../_lib/i18n";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const dict = getDict(locale);
-  return { title: `${dict.public.faq.title} · DiTeLe`, description: dict.public.faq.description };
+const TITLE = "Häufige Fragen";
+const DESCRIPTION = "Antworten auf die wichtigsten Fragen zu Kursen, Aufgaben, der Arena und dem Feedback.";
+
+export function generateMetadata(): Metadata {
+  return { title: `${TITLE} · DiTeLe`, description: DESCRIPTION };
 }
 
 export default async function FaqPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  const t = getDict(locale).public.faq;
+  await params;
 
-  const entries = [
-    { q: t.q1, a: t.a1 },
-    { q: t.q2, a: t.a2 },
-    { q: t.q3, a: t.a3 },
-    { q: t.q4, a: t.a4 },
-    { q: t.q5, a: t.a5 },
-    { q: t.q6, a: t.a6 },
-    { q: t.q7, a: t.a7 },
-    { q: t.q8, a: t.a8 },
-    { q: t.q9, a: t.a9 },
-    { q: t.q10, a: t.a10 },
+  const entries: { q: string; a: string }[] = [
+    {
+      q: "Was ist DiTeLe?",
+      a: "DiTeLe ist eine Lernplattform für Softwaretesten. Statt reiner Theorie lernst du durch echte Aufgaben und Bug-Hunts und bekommst Feedback von Trainerinnen und Trainern.",
+    },
+    {
+      q: "Wie bekomme ich Zugang zu einem Kurs?",
+      a: "Die Administration legt Kurse an und weist sie dir zu. Eine Selbst-Einschreibung gibt es nicht. Wenn du einen Kurs belegen möchtest, wende dich an deine Trainerin, deinen Trainer oder die Administration.",
+    },
+    {
+      q: "Wie ist ein Kurs aufgebaut?",
+      a: "Ein Kurs besteht aus einer Reihe von Kursaufgaben, die du der Reihe nach bearbeitest. Zu jeder Aufgabe gehören Videos, Hinweise und eine Pflichtfrage. Manche Aufgaben sind mit einem Bug-Hunt in der Arena verknüpft, der zuerst angenommen sein muss.",
+    },
+    {
+      q: "Was ist die Arena?",
+      a: "In der Arena findest du Bug-Hunts: Du bekommst eine HTML-Oberfläche und suchst darin Fehler. Die Arena ist eine eigene Kette — jeder angenommene Bug-Hunt schaltet den nächsten frei, unabhängig von den Kursaufgaben.",
+    },
+    {
+      q: "Wie reiche ich eine Aufgabe ein?",
+      a: "Du bearbeitest die Aufgabe (Freitext und Auswahlfrage, bei Bug-Hunts zusätzlich Screenshots mit Beschreibungen). Dein Entwurf wird laufend automatisch gespeichert. Mit dem Absenden geht deine Abgabe an die Trainer.",
+    },
+    {
+      q: "Wer bewertet meine Abgaben?",
+      a: "Die Trainerinnen und Trainer, die dem Kurs zugewiesen sind. Sie sehen deine Antwort und bei Bug-Hunts deine Screenshots, geben einen Kommentar und entscheiden „angenommen“ oder „Überarbeitung nötig“.",
+    },
+    {
+      q: "Was passiert nach dem Absenden?",
+      a: "Eine abgesendete Aufgabe ist schreibgeschützt. Bei „Überarbeitung nötig“ wird sie wieder zum Bearbeiten geöffnet. Direkt nach dem Absenden kannst du einmalig ein Emoji als kurzes Feedback geben — es bleibt für dich sichtbar und lässt sich nicht mehr ändern.",
+    },
+    {
+      q: "Was sind XP und Abzeichen?",
+      a: "Für angenommene Bug-Hunts in der Arena erhältst du Erfahrungspunkte (XP) und gegebenenfalls ein Abzeichen. Deine gesamten XP und deine Abzeichen siehst du in deinem Profil.",
+    },
+    {
+      q: "Wann ist ein Kurs abgeschlossen?",
+      a: "Sobald alle erforderlichen Aufgaben angenommen sind, gilt der Kurs als abgeschlossen. Danach spielt das Abschlussvideo, und du gibst eine Kursbewertung mit fünf Sternen und einem kurzen Text ab.",
+    },
+    {
+      q: "In welcher Sprache läuft DiTeLe?",
+      a: "Die Inhalte und die Oberfläche sind auf Deutsch.",
+    },
   ];
 
   return (
     <>
-      <PageHeader title={t.title} description={t.description} />
+      <PageHeader title={TITLE} description={DESCRIPTION} />
 
       {/*
         Native <details>: keyboard-operable, screen-reader-announced and

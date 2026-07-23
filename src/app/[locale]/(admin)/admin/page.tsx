@@ -1,16 +1,12 @@
 import type { Route } from "next";
 import Link from "next/link";
-import { BookOpen, ListChecks, Plus } from "lucide-react";
-import { PageHeader } from "@/shared/layout";
-import { Button, Card, CardTitle, ErrorState, StatusBadge, cn } from "@/shared/ui";
-import { requireRole } from "@/shared/auth/guard";
-import { getAdminDashboard } from "@/shared/data/content";
-import { adminStrings, format as interpolate, formatDate } from "@/features/content/i18n";
+import { Plus, BookOpen, Trophy, Users, MessageSquare, ChartColumn } from "lucide-react";
 
-/**
- * KPI tiles + content status + recent activity.
- * `StatTile` is a Wave 0b component that has not landed — this is the fallback.
- */
+import { PageHeader } from "@/shared/layout";
+import { Button, Card, CardTitle, ErrorState, cn } from "@/shared/ui";
+import { requireRole } from "@/shared/auth/guard";
+import { getAdminOverview } from "@/shared/data/admin";
+
 function Tile({ label, value, href }: { label: string; value: number; href?: Route }) {
   const body = (
     <>
@@ -31,14 +27,24 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const { locale } = await params;
   await requireRole(["admin"], locale);
 
-  const strings = adminStrings(locale);
-  const s = strings.dashboard;
-  const result = await getAdminDashboard();
+  const result = await getAdminOverview();
+
+  const header = (
+    <PageHeader
+      title="Übersicht"
+      description="Verwaltung von Kursen, Aufgaben, Benutzern und Fortschritt."
+      actions={
+        <Link href={`/${locale}/admin/courses/new` as Route}>
+          <Button iconLeft={<Plus className="size-4" aria-hidden />}>Kurs erstellen</Button>
+        </Link>
+      }
+    />
+  );
 
   if (!result.ok) {
     return (
       <>
-        <PageHeader title={s.title} description={s.subtitle} />
+        {header}
         <ErrorState message={result.error.message} />
       </>
     );
@@ -48,115 +54,49 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
 
   return (
     <>
-      <PageHeader
-        title={s.title}
-        description={s.subtitle}
-        actions={
-          <Link href={`/${locale}/admin/courses/new` as Route}>
-            <Button iconLeft={<Plus className="size-4" aria-hidden />}>{s.newCourse}</Button>
+      {header}
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Tile label="Kurse" value={data.courses} href={`/${locale}/admin/courses` as Route} />
+        <Tile label="Aktive Kurse" value={data.activeCourses} href={`/${locale}/admin/courses` as Route} />
+        <Tile label="Benutzer" value={data.users} href={`/${locale}/admin/users` as Route} />
+        <Tile label="Offene Einreichungen" value={data.openSubmissions} href={`/${locale}/admin/progress` as Route} />
+        <Tile label="Teilnehmer" value={data.students} href={`/${locale}/admin/users` as Route} />
+        <Tile label="Trainer" value={data.trainers} href={`/${locale}/admin/users` as Route} />
+        <Tile label="Arena-Aufgaben" value={data.arenaTasks} href={`/${locale}/admin/arena` as Route} />
+        <Tile label="Badges" value={data.badges} href={`/${locale}/admin/badges` as Route} />
+      </div>
+
+      <Card className="mt-6 flex flex-col gap-3">
+        <CardTitle>Verwaltung</CardTitle>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/${locale}/admin/courses` as Route}>
+            <Button size="sm" variant="outline" iconLeft={<BookOpen className="size-4" aria-hidden />}>
+              Kurse
+            </Button>
           </Link>
-        }
-      />
-
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <Tile label={s.users} value={data.users} />
-        <Tile label={s.courses} value={data.courses} href={`/${locale}/admin/courses` as Route} />
-        <Tile label={s.cohorts} value={data.activeCohorts} />
-        <Tile label={s.pendingReviews} value={data.pendingReviews} />
-        <Tile
-          label={s.openRequests}
-          value={data.openRequests}
-          href={`/${locale}/admin/applications` as Route}
-        />
-        {/* publishedCourses is already visible in the Inhaltsstatus card below. */}
-        <Tile
-          label={s.openIssues}
-          value={data.openIssues}
-          href={`/${locale}/admin/issues` as Route}
-        />
-      </div>
-
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card className="flex flex-col gap-3">
-          <div>
-            <CardTitle>{s.contentStatus}</CardTitle>
-            {/*
-              These four numbers count content VERSIONS, and the "Kurse" tile
-              above counts COURSES. A course carries one version per revision,
-              so the two do not reconcile — 12 courses showed here as
-              8 + 1 + 4 + 1 = 14, and every reader who added them up concluded
-              the dashboard was broken. It was not; it simply never said what it
-              was counting. Now it does, in the panel's own subtitle.
-            */}
-            <p className="mt-1 text-[13px] leading-5 text-(--color-fg-muted)">
-              {interpolate(s.contentStatusHint, {
-                versions: data.versionTotal,
-                courses: data.coursesWithVersions,
-              })}
-            </p>
-          </div>
-          {data.versionsByState.every((entry) => entry.count === 0) ? (
-            <p className="text-[13px] text-(--color-fg-muted)">{s.contentStatusEmpty}</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {data.versionsByState.map((entry) => (
-                <li key={entry.state} className="flex items-center justify-between gap-3">
-                  <StatusBadge state={entry.state} locale={locale} />
-                  <span className="tabular text-[18px] font-semibold">{entry.count}</span>
-                </li>
-              ))}
-              <li className="mt-1 flex items-center justify-between gap-3 border-t border-(--color-border) pt-2">
-                <span className="text-[13px] font-semibold">{s.contentStatusTotal}</span>
-                <span className="tabular text-[18px] font-semibold">{data.versionTotal}</span>
-              </li>
-            </ul>
-          )}
-
-          <div className="mt-1 flex flex-wrap gap-2">
-            <Link href={`/${locale}/admin/courses` as Route}>
-              <Button
-                size="sm"
-                variant="outline"
-                iconLeft={<BookOpen className="size-4" aria-hidden />}
-              >
-                {s.manageCourses}
-              </Button>
-            </Link>
-            <Link href={`/${locale}/admin/tasks` as Route}>
-              <Button
-                size="sm"
-                variant="outline"
-                iconLeft={<ListChecks className="size-4" aria-hidden />}
-              >
-                {s.taskInventory}
-              </Button>
-            </Link>
-          </div>
-        </Card>
-
-        <Card className="flex flex-col gap-3">
-          <CardTitle>{s.activity}</CardTitle>
-          {data.activityBlocked ? (
-            <p className="text-[13px] text-(--color-fg-muted)">{s.activityBlocked}</p>
-          ) : data.activity.length === 0 ? (
-            <p className="text-[13px] text-(--color-fg-muted)">{s.activityEmpty}</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {data.activity.map((event) => (
-                <li
-                  key={event.id}
-                  className="flex flex-wrap items-baseline justify-between gap-2 border-b border-(--color-border) pb-2 last:border-0 last:pb-0"
-                >
-                  <span className="text-[13px] font-medium">{event.eventType}</span>
-                  <span className="text-[13px] text-(--color-fg-muted)">
-                    {event.actorRole} · {formatDate(event.occurredAt, locale)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
+          <Link href={`/${locale}/admin/arena` as Route}>
+            <Button size="sm" variant="outline" iconLeft={<Trophy className="size-4" aria-hidden />}>
+              Arena
+            </Button>
+          </Link>
+          <Link href={`/${locale}/admin/users` as Route}>
+            <Button size="sm" variant="outline" iconLeft={<Users className="size-4" aria-hidden />}>
+              Benutzer
+            </Button>
+          </Link>
+          <Link href={`/${locale}/admin/feedback` as Route}>
+            <Button size="sm" variant="outline" iconLeft={<MessageSquare className="size-4" aria-hidden />}>
+              Feedback
+            </Button>
+          </Link>
+          <Link href={`/${locale}/admin/progress` as Route}>
+            <Button size="sm" variant="outline" iconLeft={<ChartColumn className="size-4" aria-hidden />}>
+              Fortschritt
+            </Button>
+          </Link>
+        </div>
+      </Card>
     </>
   );
 }

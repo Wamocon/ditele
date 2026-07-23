@@ -1,4 +1,4 @@
-export { requirePermission, hasPermission, hasRole, canAccessCohort } from "./authorization";
+export { hasRole, isAdmin, isTrainer, isStudent, isStaff } from "./authorization";
 export { requirePrincipal } from "./principal";
 export type {
   AppRole,

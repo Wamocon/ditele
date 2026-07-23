@@ -1,6 +1,6 @@
 import { Skeleton, SkeletonCard } from "@/shared/ui";
 
-/** Same shape as the dashboard: four tiles, a queue list, then cohort cards. */
+/** Same shape as the dashboard: the two stat tiles above the course cards. */
 export default function Loading() {
   return (
     <div className="flex flex-col gap-8">

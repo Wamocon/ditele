@@ -1,713 +1,920 @@
 import "server-only";
 
-import { z } from "zod";
-// Pure, client-safe helpers (no server imports) — the same normaliser the Arena
-// hub uses, so the two screens cannot disagree about what a lock reason is.
-import { toLockReasons } from "@/features/arena/model";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { createServerClient } from "@/shared/database/server";
-import { uiStrings } from "@/shared/i18n/ui-strings";
-import { fromSupabase, err, ok, type Result } from "./result";
+import type { Database, Enums } from "@/shared/database/database.types";
 import {
-  getMyLearningCourse as rpcGetMyLearningCourse,
-  getMyLearningTask as rpcGetMyLearningTask,
-  listMyLearningCourses as rpcListMyLearningCourses,
-  pickLocale,
-  type LocalizedText,
-} from "./rpc";
-import {
-  DefectReportSchema,
-  EMPTY_DEFECT,
-  type AttemptState,
-  type DefectReport,
-  type DraftState,
-  type LearningCourseDetail,
-  type LearningCourseSummary,
-  type LearningTask,
-  type SavedDraft,
-  type StartedAttempt,
-  type SubmittedAttempt,
-  type TaskWorkspace,
-} from "@/features/learning/model";
+  computeArenaUnlocks,
+  computeCourseUnlocks,
+  isCourseComplete,
+  type CourseLockReason,
+  type CourseTaskLite,
+} from "./unlock";
+import { err, ok, type Result } from "./result";
 
 /**
- * The types and the pure helpers live in `@/features/learning/model` because
- * this module is `server-only` and the workspace is a Client Component. They are
- * re-exported here so a caller only ever needs one import.
- */
-export * from "@/features/learning/model";
-
-/**
- * WS-2 owns this file. Everything the student learning screens read or write
- * goes through here — no page ever calls Supabase directly (MASTER_PLAN §13.1).
+ * Student read layer for the clean schema (see ditele_schema.md).
  *
- * Measured against the live database on 2026-07-21 as `learner@ditele.local`;
- * every shape below is a real payload, not a guess. The findings that are not
- * in RPC_CONTRACTS.md are recorded in plan/status/WS-2.md and ISSUES.md I-008…010.
- *
- * Three things that will bite anyone editing this file:
- *  1. `get_my_learning_task` returns `{de,en,ru}` objects and takes no locale,
- *     while `get_my_learning_course` resolves via `p_locale`. Two families.
- *  2. A stale `p_expected_draft_version` does not error — it HANGS and poisons
- *     the PostgREST pool for ~30s (ISSUES.md I-009). Always carry the
- *     `draft_version` the previous save returned.
- *  3. `submit_attempt` needs an evidence ref for tasks with `evidence_required`.
- *     `create_external_task_evidence` produces an acceptable one (I-008).
+ * Every function reads through `createServerClient()`, so RLS scopes the rows to
+ * the signed-in actor. The `(student)` layout admits trainer + admin too, so we
+ * never lean on "RLS returns only my row" — a trainer previewing the learner
+ * area would then see everyone. Instead every query filters on the current uid
+ * explicitly and the answer-key tables (`course_task_answer`, `arena_task_answer`)
+ * and `course_task_options.is_correct` are never queried at all: students must
+ * not see the key, and here we simply do not ask for it.
  */
 
-/* ── Schemas ─────────────────────────────────────────────────────────────── */
+type Supa = SupabaseClient<Database>;
+type SubmissionState = Enums<"submission_state">;
 
-const Localized = z.record(z.string(), z.string().nullable()).nullish();
-
-/** The RPCs return nulls for absent ids; normalise them all to `null`. */
-const uuid = z.string().nullish().transform((v) => v ?? null);
-const int = z.number().nullish().transform((v) => v ?? 0);
-const text = z.string().nullish().transform((v) => v ?? "");
-
-const CourseSummaryRow = z.object({
-  enrollment_id: z.string(),
-  enrollment_state: text,
-  course_id: z.string(),
-  cohort_id: uuid,
-  cohort_state: text,
-  content_version_id: uuid,
-  content_version_state: text,
-  version_number: int,
-  title: text,
-  progression_mode: text,
-  completed_activities: int,
-  total_activities: int,
-  next_task_id: uuid,
-  next_task_title: text,
-  next_task_state: text,
-});
-
-const ActivityRow = z.object({
-  id: z.string(),
-  title: text,
-  description: text,
-  position: int,
-  state: text,
-  /**
-   * 🚨 **This was `z.array(z.string())`, and it took the course page down for
-   * every learner who had a locked task.**
-   *
-   * `app_private.learner_snapshot_task_lock_reasons` returns OBJECTS —
-   * `{code, required_task_id, required_task_kind, required_task_title}` — and
-   * has since WS-8 enriched it for G8. A `z.string()` element therefore fails
-   * to parse, the whole activity row fails with it, and the two screens
-   * degraded in different and equally bad ways: `/learn/courses/[id]` rendered
-   * "Etwas ist schiefgelaufen", and `/learn/tasks` rendered **"Keine
-   * Aufgaben"** — a confident empty state, for a learner with three tasks.
-   *
-   * ⚠️ **It was not the Arena phase that broke this. The Arena phase switched
-   * it on.** The RPC has always returned objects; `public.prerequisites` had
-   * zero rows before WS-8, and every seeded schedule was already open, so no
-   * learner had ever had a lock reason and the mismatch had never once been
-   * evaluated. It went unseen through the whole Arena phase for the same
-   * reason: every browser check ran as `learner@ditele.local`, the one learner
-   * who had completed the hunt and therefore had nothing locked.
-   *
-   * Parsed permissively on purpose. `toLockReasons` accepts both shapes, so a
-   * future migration that simplifies the return cannot break this again.
-   */
-  lock_reasons: z.array(z.unknown()).nullish().transform((v) => toLockReasons(v ?? [])),
-  available_from: z.string().nullish().transform((v) => v ?? null),
-  due_at: z.string().nullish().transform((v) => v ?? null),
-  expected_minutes: int,
-  // §6.2: added to the projection by 20260803100000. Optional for the same
-  // reason `media` is on the task row — an older projection never sent it, and a
-  // required field would fail the parse and blank the whole course. `text`
-  // normalises a missing value to "", which the UI reads as a course task.
-  task_kind: text,
-});
-
-const StageRow = z.object({
-  id: z.string(),
-  title: text,
-  description: text,
-  position: int,
-  activities: z.array(ActivityRow).nullish().transform((v) => v ?? []),
-});
-
-const CourseDetailRow = z.object({
-  course_id: z.string(),
-  title: text,
-  summary: text,
-  cohort_id: uuid,
-  cohort_name: text,
-  cohort_state: text,
-  enrollment_id: uuid,
-  enrollment_state: text,
-  content_version_id: uuid,
-  content_version_state: text,
-  version_number: int,
-  progression_mode: text,
-  completed_activities: int,
-  total_activities: int,
-  stages: z.array(StageRow).nullish().transform((v) => v ?? []),
-});
-
-const OptionRow = z.object({ id: z.string(), label: Localized });
-
-const AssessmentRow = z.object({
-  id: z.string(),
-  question: Localized,
-  selection_mode: text,
-  options: z.array(OptionRow).nullish().transform((v) => v ?? []),
-});
-
-const HintRow = z.object({ id: z.string(), content: Localized });
-
-const TaskRow = z.object({
-  id: z.string(),
-  stage_id: uuid,
-  cohort_id: uuid,
-  course_id: uuid,
-  enrollment_id: uuid,
-  title: Localized,
-  instructions: Localized,
-  access: text,
-  target_url: z.string().nullish().transform((v) => v ?? null),
-  // Added by migration 20260721160000. Older published snapshots were frozen
-  // without it, so it must stay optional — a missing key means "no media".
-  media: z
-    .object({
-      video_url: z.string().nullish().transform((v) => v ?? null),
-      intro_video_url: z.string().nullish().transform((v) => v ?? null),
-      document_url: z.string().nullish().transform((v) => v ?? null),
-    })
-    .nullish()
-    .transform((v) => v ?? null),
-  activated_at: z.string().nullish().transform((v) => v ?? null),
-  cohort_state: text,
-  version_number: int,
-  content_version_id: uuid,
-  content_version_state: text,
-  assessment: AssessmentRow.nullish().transform((v) => v ?? null),
-  // Added by 20260801100000. Optional for the same reason `media` is: the key
-  // is absent from anything the older projection returned, and a required field
-  // would blank the whole task screen rather than one panel.
-  gate_question: z
-    .object({
-      id: z.string(),
-      question: Localized,
-      state: text,
-      answer_text: z.string().nullish().transform((v) => v ?? ""),
-    })
-    .nullish()
-    .transform((v) => v ?? null),
-  // ⚠️ Came back as a single object on the seeded task, which has exactly one
-  // hint. Accept both so a multi-hint course does not need a code change.
-  hint: z.union([HintRow, z.array(HintRow)]).nullish().transform((v) => v ?? null),
-});
-
-const AttemptRow = z.object({
-  id: z.string(),
-  sequence_number: int,
-  state: text,
-  row_version: int,
-  elapsed_seconds: int,
-  hint_used: z.boolean().nullish().transform((v) => v ?? false),
-  started_at: z.string().nullish().transform((v) => v ?? null),
-  submitted_at: z.string().nullish().transform((v) => v ?? null),
-});
-
-const DraftRow = z.object({
-  answer_text: text,
-  selected_option_ids: z.array(z.string()).nullish().transform((v) => v ?? []),
-  evidence_draft: z.unknown().nullish(),
-  row_version: int,
-  updated_at: z.string().nullish().transform((v) => v ?? null),
-});
-
-const StartAttemptRow = z.object({
-  attempt_id: z.string(),
-  attempt_state: text,
-  attempt_row_version: int,
-});
-
-const SaveDraftRow = z.object({
-  draft_version: int,
-  attempt_version: int,
-  elapsed_seconds: int,
-  hint_used: z.boolean().nullish().transform((v) => v ?? false),
-  updated_at: z.string().nullish().transform((v) => v ?? null),
-});
-
-const EvidenceRow = z.object({ id: z.string() });
-
-const SubmissionRow = z.object({
-  id: z.string(),
-  state: text,
-  latest_version_number: int,
-  row_version: int,
-});
-
-/* ── Reads ───────────────────────────────────────────────────────────────── */
-
-/**
- * `what` names the shape for the server log; it never reaches the screen.
- *
- * It used to: the message read `Die Daten für „Kursdetail“ haben ein
- * unerwartetes Format.` and rendered verbatim inside the error boundary, so a
- * learner on /en or /ru hit a German sentence built from an internal row name.
- * The user-facing half now comes from `learn.shared.loadError`.
- */
-function parse<T>(schema: z.ZodType<T>, value: unknown, what: string, locale: string): Result<T> {
-  const parsed = schema.safeParse(value);
-  if (!parsed.success) {
-    console.error(`[learning] unexpected shape for "${what}"`, parsed.error.issues);
-    return err({
-      code: "SHAPE",
-      message: uiStrings(locale).learnShared.loadError,
-      retryable: false,
-    });
+async function scope(): Promise<Result<{ supabase: Supa; uid: string }>> {
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    return err({ code: "AUTH", message: "Nicht angemeldet.", retryable: false });
   }
-  return ok(parsed.data);
+  return ok({ supabase, uid: data.user.id });
 }
 
-export async function listMyLearningCourses(
-  locale: string
-): Promise<Result<LearningCourseSummary[]>> {
-  const result = await rpcListMyLearningCourses(locale);
-  if (!result.ok) return result;
+/* ── unlock context ──────────────────────────────────────────────────── */
 
-  const parsed = parse(z.array(CourseSummaryRow), result.data, "Meine Kurse", locale);
-  if (!parsed.ok) return parsed;
-
-  return ok(
-    parsed.data.map((row) => ({
-      enrollmentId: row.enrollment_id,
-      enrollmentState: row.enrollment_state,
-      courseId: row.course_id,
-      cohortId: row.cohort_id,
-      cohortState: row.cohort_state,
-      contentVersionState: row.content_version_state,
-      versionNumber: row.version_number,
-      title: row.title,
-      completedActivities: row.completed_activities,
-      totalActivities: row.total_activities,
-      nextTaskId: row.next_task_id,
-      nextTaskTitle: row.next_task_title,
-      nextTaskState: row.next_task_state,
-    }))
-  );
+async function fetchCourseSubmissionStates(
+  supabase: Supa,
+  uid: string,
+): Promise<Map<string, SubmissionState>> {
+  const { data } = await supabase
+    .from("submissions")
+    .select("course_task_id, state")
+    .eq("student_id", uid)
+    .eq("task_kind", "course");
+  const map = new Map<string, SubmissionState>();
+  for (const row of data ?? []) {
+    if (row.course_task_id) map.set(row.course_task_id, row.state);
+  }
+  return map;
 }
 
-export async function getMyLearningCourse(
-  courseId: string,
-  locale: string
-): Promise<Result<LearningCourseDetail>> {
-  const result = await rpcGetMyLearningCourse(courseId, locale);
-  if (!result.ok) return result;
-
-  const parsed = parse(CourseDetailRow, result.data, "Kursdetail", locale);
-  if (!parsed.ok) return parsed;
-  const row = parsed.data;
-
-  return ok({
-    courseId: row.course_id,
-    title: row.title,
-    summary: row.summary,
-    cohortName: row.cohort_name,
-    cohortState: row.cohort_state,
-    enrollmentState: row.enrollment_state,
-    contentVersionState: row.content_version_state,
-    versionNumber: row.version_number,
-    completedActivities: row.completed_activities,
-    totalActivities: row.total_activities,
-    stages: [...row.stages]
-      .sort((a, b) => a.position - b.position)
-      .map((stage) => ({
-        id: stage.id,
-        title: stage.title,
-        description: stage.description,
-        position: stage.position,
-        activities: [...stage.activities]
-          .sort((a, b) => a.position - b.position)
-          .map((activity) => ({
-            id: activity.id,
-            title: activity.title,
-            description: activity.description,
-            position: activity.position,
-            state: activity.state,
-            taskKind: activity.task_kind,
-            lockReasons: activity.lock_reasons,
-            availableFrom: activity.available_from,
-            dueAt: activity.due_at,
-            expectedMinutes: activity.expected_minutes,
-            locked: activity.lock_reasons.length > 0,
-          })),
-      })),
-  });
+async function fetchAcceptedArenaSet(supabase: Supa, uid: string): Promise<Set<string>> {
+  const { data } = await supabase
+    .from("submissions")
+    .select("arena_task_id")
+    .eq("student_id", uid)
+    .eq("task_kind", "arena")
+    .eq("state", "accepted");
+  const set = new Set<string>();
+  for (const row of data ?? []) {
+    if (row.arena_task_id) set.add(row.arena_task_id);
+  }
+  return set;
 }
 
-function toLocalized(value: unknown): LocalizedText {
-  if (!value || typeof value !== "object") return {};
-  const out: Record<string, string> = {};
-  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof raw === "string") out[key] = raw;
+/** A course task counts toward the chain gate once it has ever been submitted. */
+function submittedSetFrom(states: Map<string, SubmissionState>): Set<string> {
+  const set = new Set<string>();
+  for (const [id, state] of states) {
+    if (state !== "in_progress") set.add(id);
+  }
+  return set;
+}
+
+/* ── view models ─────────────────────────────────────────────────────── */
+
+export interface EarnedBadge {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string | null;
+  awardedAt: string;
+}
+
+export interface DashboardCourse {
+  enrollmentId: string;
+  courseId: string;
+  slug: string;
+  title: string;
+  description: string;
+  coverImageUrl: string | null;
+  totalTasks: number;
+  acceptedTasks: number;
+  completed: boolean;
+}
+
+export interface NextTaskRef {
+  id: string;
+  title: string;
+  courseId: string;
+  courseTitle: string;
+}
+
+export interface StudentDashboard {
+  courses: DashboardCourse[];
+  totalXp: number;
+  badges: EarnedBadge[];
+  nextTask: NextTaskRef | null;
+}
+
+export interface CourseSummary {
+  enrollmentId: string;
+  courseId: string;
+  slug: string;
+  title: string;
+  description: string;
+  coverImageUrl: string | null;
+  totalTasks: number;
+  acceptedTasks: number;
+  completed: boolean;
+}
+
+export interface CourseTaskListItem {
+  id: string;
+  orderIndex: number;
+  title: string;
+  description: string;
+  hasQuestion: boolean;
+  hasArena: boolean;
+  unlocked: boolean;
+  lockReason: CourseLockReason;
+  submissionState: SubmissionState | null;
+}
+
+export interface CourseDetail {
+  course: {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    coverImageUrl: string | null;
+    introVideoUrl: string | null;
+  };
+  tasks: CourseTaskListItem[];
+}
+
+export interface FlatTask {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  orderIndex: number;
+  title: string;
+  unlocked: boolean;
+  lockReason: CourseLockReason;
+  submissionState: SubmissionState | null;
+}
+
+export interface CourseTaskOption {
+  id: string;
+  label: string;
+}
+
+export interface CourseTaskWorkspaceData {
+  task: {
+    id: string;
+    courseId: string;
+    title: string;
+    description: string;
+    hint: string | null;
+    videoBeforeUrl: string | null;
+    videoAfterUrl: string | null;
+    mcqQuestion: string | null;
+  };
+  options: CourseTaskOption[];
+  submission: {
+    id: string;
+    state: SubmissionState;
+    responseText: string;
+    selectedOptionIds: string[];
+    submittedAt: string | null;
+  } | null;
+  emoji: string | null;
+  locked: boolean;
+  lockReason: CourseLockReason;
+}
+
+export interface ArenaListItem {
+  id: string;
+  orderIndex: number;
+  title: string;
+  description: string;
+  xpReward: number;
+  rewardBadge: { id: string; name: string; imageUrl: string | null } | null;
+  unlocked: boolean;
+  blockingArenaTaskId: string | null;
+  submissionState: SubmissionState | null;
+}
+
+export interface ArenaOverview {
+  tasks: ArenaListItem[];
+  totalXp: number;
+  badges: EarnedBadge[];
+}
+
+export interface ArenaImage {
+  id: string;
+  url: string | null;
+  caption: string;
+}
+
+export interface ArenaTaskWorkspaceData {
+  task: {
+    id: string;
+    orderIndex: number;
+    title: string;
+    description: string;
+    htmlWindow: string;
+    hint: string | null;
+  };
+  submission: {
+    id: string;
+    state: SubmissionState;
+    responseText: string;
+    submittedAt: string | null;
+  } | null;
+  images: ArenaImage[];
+  locked: boolean;
+  blockingArenaTaskId: string | null;
+}
+
+export interface EmojiFeedback {
+  emoji: string;
+  taskTitle: string;
+  courseTitle: string;
+  createdAt: string;
+}
+
+export interface StudentProfile {
+  displayName: string;
+  avatarUrl: string | null;
+  totalXp: number;
+  badges: EarnedBadge[];
+  feedback: EmojiFeedback[];
+}
+
+export interface CourseCompletion {
+  complete: boolean;
+  completionVideoUrl: string | null;
+  hasReview: boolean;
+}
+
+/* ── shared fetch pieces ─────────────────────────────────────────────── */
+
+interface EnrolledCourse {
+  enrollmentId: string;
+  enrollmentState: Enums<"enrollment_state">;
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  coverImageUrl: string | null;
+}
+
+/** Active courses the student is enrolled in, with the enrollment row. */
+async function fetchEnrolledCourses(supabase: Supa, uid: string): Promise<EnrolledCourse[]> {
+  const { data: enrollments } = await supabase
+    .from("enrollments")
+    .select("id, course_id, state")
+    .eq("student_id", uid);
+  const rows = enrollments ?? [];
+  if (rows.length === 0) return [];
+
+  const courseIds = rows.map((r) => r.course_id);
+  const { data: courses } = await supabase
+    .from("courses")
+    .select("id, slug, title, description, cover_image_url, state")
+    .in("id", courseIds)
+    .eq("state", "active");
+  const byId = new Map((courses ?? []).map((c) => [c.id, c]));
+
+  const out: EnrolledCourse[] = [];
+  for (const e of rows) {
+    const c = byId.get(e.course_id);
+    if (!c) continue; // course inactive/archived -> hidden from the learner
+    out.push({
+      enrollmentId: e.id,
+      enrollmentState: e.state,
+      id: c.id,
+      slug: c.slug,
+      title: c.title,
+      description: c.description,
+      coverImageUrl: c.cover_image_url,
+    });
   }
   return out;
 }
 
-export async function getMyLearningTask(
-  taskId: string,
-  locale: string
-): Promise<Result<LearningTask>> {
-  const result = await rpcGetMyLearningTask(taskId);
-  if (!result.ok) return result;
-
-  const parsed = parse(TaskRow, result.data, "Aufgabe", locale);
-  if (!parsed.ok) return parsed;
-  const row = parsed.data;
-
-  const hintRows = row.hint === null ? [] : Array.isArray(row.hint) ? row.hint : [row.hint];
-
-  return ok({
-    id: row.id,
-    courseId: row.course_id,
-    cohortId: row.cohort_id,
-    enrollmentId: row.enrollment_id,
-    title: pickLocale(toLocalized(row.title), locale),
-    instructions: pickLocale(toLocalized(row.instructions), locale),
-    access: row.access,
-    targetUrl: row.target_url,
-    videoUrl: row.media?.video_url ?? null,
-    introVideoUrl: row.media?.intro_video_url ?? null,
-    documentUrl: row.media?.document_url ?? null,
-    cohortState: row.cohort_state,
-    assessment: row.assessment
-      ? {
-          id: row.assessment.id,
-          question: pickLocale(toLocalized(row.assessment.question), locale),
-          multiple: row.assessment.selection_mode !== "single",
-          options: row.assessment.options.map((option) => ({
-            id: option.id,
-            label: pickLocale(toLocalized(option.label), locale),
-          })),
-        }
-      : null,
-    hints: hintRows.map((hint) => ({
-      id: hint.id,
-      content: pickLocale(toLocalized(hint.content), locale),
-    })),
-    gateQuestion: row.gate_question
-      ? {
-          id: row.gate_question.id,
-          question: pickLocale(toLocalized(row.gate_question.question), locale),
-          // Anything the database has not taught us about is treated as
-          // unanswered, which is the safe direction: it shows the question
-          // rather than hiding it behind a state nobody recognises.
-          state:
-            row.gate_question.state === "answered"
-              ? "answered"
-              : row.gate_question.state === "skipped"
-                ? "skipped"
-                : "unanswered",
-          answerText: row.gate_question.answer_text,
-        }
-      : null,
-  });
-}
-
-/**
- * The attempt and its draft. Both tables ARE readable by the owning student —
- * measured, despite `tasks`/`stages` being invisible under the same session.
- * Returns the newest attempt for the task, or nulls when none has been started.
- */
-export async function getAttemptForTask(
-  taskId: string,
-  locale: string
-): Promise<Result<{ attempt: AttemptState | null; draft: DraftState | null }>> {
-  const supabase = await createServerClient();
-
-  const attemptResult = await fromSupabase<unknown[]>(async () => {
-    const { data, error } = await supabase
-      .from("attempts")
-      .select("id, sequence_number, state, row_version, elapsed_seconds, hint_used, started_at, submitted_at")
-      .eq("task_id", taskId)
-      .order("sequence_number", { ascending: false })
-      .limit(1);
-    return { data: data as unknown[] | null, error };
-  });
-  if (!attemptResult.ok) return attemptResult;
-
-  const attemptRow = attemptResult.data[0];
-  if (!attemptRow) return ok({ attempt: null, draft: null });
-
-  const parsedAttempt = parse(AttemptRow, attemptRow, "Versuch", locale);
-  if (!parsedAttempt.ok) return parsedAttempt;
-  const a = parsedAttempt.data;
-
-  const attempt: AttemptState = {
-    id: a.id,
-    sequenceNumber: a.sequence_number,
-    state: a.state,
-    rowVersion: a.row_version,
-    elapsedSeconds: a.elapsed_seconds,
-    hintUsed: a.hint_used,
-    submittedAt: a.submitted_at,
-  };
-
-  const [draftResult, hintResult] = await Promise.all([
-    fromSupabase<unknown[]>(async () => {
-      const { data, error } = await supabase
-        .from("attempt_drafts")
-        .select("answer_text, selected_option_ids, evidence_draft, row_version, updated_at")
-        .eq("attempt_id", a.id)
-        .limit(1);
-      return { data: data as unknown[] | null, error };
-    }),
-    fromSupabase<unknown[]>(async () => {
-      const { data, error } = await supabase
-        .from("attempt_hint_usage")
-        .select("hint_id")
-        .eq("attempt_id", a.id);
-      return { data: data as unknown[] | null, error };
-    }),
-  ]);
-  if (!draftResult.ok) return draftResult;
-
-  const usedHintIds = hintResult.ok
-    ? hintResult.data
-        .map((row) => (row as { hint_id?: unknown }).hint_id)
-        .filter((id): id is string => typeof id === "string")
-    : [];
-
-  const draftRow = draftResult.data[0];
-  if (!draftRow) {
-    return ok({
-      attempt,
-      draft: { answerText: "", selectedOptionIds: [], defect: EMPTY_DEFECT, usedHintIds, version: 0, updatedAt: null },
-    });
-  }
-
-  const parsedDraft = parse(DraftRow, draftRow, "Entwurf", locale);
-  if (!parsedDraft.ok) return parsedDraft;
-  const d = parsedDraft.data;
-
-  // `evidence_draft` is jsonb. We store exactly one structured defect report in
-  // it so the DefectForm round-trips; anything else we ignore rather than crash.
-  const firstEvidence = Array.isArray(d.evidence_draft) ? d.evidence_draft[0] : d.evidence_draft;
-  const defect = DefectReportSchema.safeParse(firstEvidence);
-
-  return ok({
-    attempt,
-    draft: {
-      answerText: d.answer_text,
-      selectedOptionIds: d.selected_option_ids,
-      defect: defect.success ? defect.data : EMPTY_DEFECT,
-      usedHintIds,
-      version: d.row_version,
-      updatedAt: d.updated_at,
-    },
-  });
-}
-
-/** One call for the whole workspace route. */
-export async function getTaskWorkspace(
-  taskId: string,
-  locale: string
-): Promise<Result<TaskWorkspace>> {
-  const [taskResult, attemptResult] = await Promise.all([
-    getMyLearningTask(taskId, locale),
-    getAttemptForTask(taskId, locale),
-  ]);
-  if (!taskResult.ok) return taskResult;
-  if (!attemptResult.ok) return attemptResult;
-
-  return ok({
-    task: taskResult.data,
-    attempt: attemptResult.data.attempt,
-    draft: attemptResult.data.draft,
-  });
-}
-
-/* ── Writes ──────────────────────────────────────────────────────────────── */
-
-async function rpcCall<T>(name: string, args: Record<string, unknown>): Promise<Result<T>> {
-  const supabase = await createServerClient();
-  return fromSupabase<T>(async () => {
-    const { data, error } = await supabase.rpc(name as never, args as never);
-    return { data: data as T | null, error };
-  });
-}
-
-const firstRow = <T>(value: unknown): unknown => (Array.isArray(value) ? (value as T[])[0] : value);
-
-export async function startAttempt(args: {
-  locale: string;
-  taskId: string;
-  enrollmentId: string;
-}): Promise<Result<StartedAttempt>> {
-  // Idempotent per task: replaying it returns the existing attempt instead of
-  // creating a second one. This is the server half of "double-submit blocked".
-  const result = await rpcCall<unknown>("start_attempt", {
-    p_task_id: args.taskId,
-    p_enrollment_id: args.enrollmentId,
-    p_correlation_id: crypto.randomUUID(),
-    p_idempotency_key: `start:${args.taskId}:${args.enrollmentId}`,
-  });
-  if (!result.ok) return result;
-
-  const parsed = parse(StartAttemptRow, firstRow(result.data), "Versuch starten", args.locale);
-  if (!parsed.ok) return parsed;
-
-  return ok({
-    attemptId: parsed.data.attempt_id,
-    state: parsed.data.attempt_state,
-    rowVersion: parsed.data.attempt_row_version,
-  });
-}
-
-/**
- * The autosave call, and the reason a draft survives a reload.
- *
- * ⚠️ `expectedDraftVersion` must be current. A stale value does not return a
- * conflict — it hangs and takes the PostgREST pool with it (ISSUES.md I-009).
- * Callers carry forward the `draftVersion` this returns.
- *
- * Passing a hint id in `usedHintIds` is what writes the `attempt_hint_usage`
- * row, so hint usage is recorded *before* the hint is revealed (WF-2).
- */
-export async function saveAttemptDraft(args: {
-  locale: string;
-  attemptId: string;
-  answerText: string;
-  selectedOptionIds: string[];
-  usedHintIds: string[];
-  defect: DefectReport | null;
-  elapsedSeconds: number;
-  expectedDraftVersion: number;
-}): Promise<Result<SavedDraft>> {
-  const result = await rpcCall<unknown>("save_attempt_draft", {
-    p_attempt_id: args.attemptId,
-    p_answer_text: args.answerText,
-    p_selected_option_ids: args.selectedOptionIds,
-    p_used_hint_ids: args.usedHintIds,
-    p_evidence_draft: args.defect ? [args.defect] : [],
-    p_elapsed_seconds: args.elapsedSeconds,
-    p_expected_draft_version: args.expectedDraftVersion,
-  });
-  if (!result.ok) return result;
-
-  const parsed = parse(SaveDraftRow, firstRow(result.data), "Entwurf speichern", args.locale);
-  if (!parsed.ok) return parsed;
-
-  return ok({
-    draftVersion: parsed.data.draft_version,
-    attemptVersion: parsed.data.attempt_version,
-    updatedAt: parsed.data.updated_at,
-  });
-}
-
-/**
- * Registers the defect report as external evidence and returns its id.
- *
- * The RPC wants a sha256 of the referenced content. For a link-only defect
- * report there is no downloaded body to hash, so we hash the source URI itself —
- * a stable identity for "this learner reported this address". Documented here
- * because it is a deliberate choice, not an oversight (RPC_CONTRACTS.md §8).
- */
-async function createExternalEvidence(args: {
-  locale: string;
-  attemptId: string;
+interface CourseTaskRow {
+  id: string;
+  course_id: string;
+  order_index: number;
   title: string;
-  sourceUri: string;
-}): Promise<Result<string>> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(args.sourceUri));
-  const sha256 = Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-
-  const result = await rpcCall<unknown>("create_external_task_evidence", {
-    p_attempt_id: args.attemptId,
-    p_title: args.title,
-    p_source_uri: args.sourceUri,
-    p_sha256_hex: sha256,
-    p_idempotency_key: `evidence:${args.attemptId}:${sha256}`,
-  });
-  if (!result.ok) return result;
-
-  const parsed = parse(EvidenceRow, firstRow(result.data), "Evidenz", args.locale);
-  if (!parsed.ok) return parsed;
-  return ok(parsed.data.id);
+  description: string;
+  mcq_question: string | null;
+  arena_task_id: string | null;
 }
 
-/**
- * Submit for review. For a practice task the defect report is registered as
- * evidence first — tasks with `evidence_required` reject a submission without
- * one (`22023 verified evidence is required for this task`, ISSUES.md I-008).
- */
-export async function submitAttempt(args: {
-  locale: string;
-  attemptId: string;
-  answerText: string;
-  selectedOptionIds: string[];
-  expectedVersion: number;
-  evidence: { title: string; sourceUri: string } | null;
-}): Promise<Result<SubmittedAttempt>> {
-  const evidenceRefs: string[] = [];
-  if (args.evidence && args.evidence.sourceUri.trim().length > 0) {
-    const evidence = await createExternalEvidence({
-      locale: args.locale,
-      attemptId: args.attemptId,
-      title: args.evidence.title.trim() || args.evidence.sourceUri,
-      sourceUri: args.evidence.sourceUri.trim(),
+async function fetchActiveCourseTasks(
+  supabase: Supa,
+  courseIds: string[],
+): Promise<CourseTaskRow[]> {
+  if (courseIds.length === 0) return [];
+  const { data } = await supabase
+    .from("course_tasks")
+    .select("id, course_id, order_index, title, description, mcq_question, arena_task_id")
+    .in("course_id", courseIds)
+    .eq("state", "active")
+    .order("order_index", { ascending: true });
+  return data ?? [];
+}
+
+async function fetchEarnedBadges(supabase: Supa, uid: string): Promise<EarnedBadge[]> {
+  const { data: awards } = await supabase
+    .from("badge_awards")
+    .select("id, badge_id, awarded_at")
+    .eq("student_id", uid)
+    .order("awarded_at", { ascending: false });
+  const rows = awards ?? [];
+  if (rows.length === 0) return [];
+
+  const badgeIds = rows.map((r) => r.badge_id);
+  const { data: badges } = await supabase
+    .from("badges")
+    .select("id, name, description, image_url")
+    .in("id", badgeIds);
+  const byId = new Map((badges ?? []).map((b) => [b.id, b]));
+
+  const out: EarnedBadge[] = [];
+  for (const a of rows) {
+    const b = byId.get(a.badge_id);
+    if (!b) continue;
+    out.push({
+      id: b.id,
+      name: b.name,
+      description: b.description,
+      imageUrl: b.image_url,
+      awardedAt: a.awarded_at,
     });
-    if (!evidence.ok) {
-      /**
-       * 🚨 **Do not let this surface as the generic evidence error.**
-       *
-       * `create_external_task_evidence` requires the source URI to match
-       * `^https://` — HTTP is refused, and so is a root-relative path. The
-       * defect form prefills `sourceUri` with the sandbox URL, so on any
-       * deployment that is not served over HTTPS **every hunt report fails to
-       * submit**, and `task-workspace.tsx` mapped the resulting `22023` to
-       * "Für diese Aufgabe ist ein Fehlerbericht mit Adresse erforderlich.
-       * Bitte fülle den Fehlerbericht vollständig aus."
-       *
-       * That message tells a learner to fill in a field that is already
-       * filled, on the one screen where they cannot possibly diagnose it. It
-       * cost this workstream an hour, with the answer visible only by calling
-       * the RPC by hand and reading `invalid external evidence payload`.
-       *
-       * A distinct code lets the workspace say what is actually wrong. The
-       * underlying HTTPS requirement is not relaxed — an evidence URI that
-       * anyone may later open deserves it — and `NEXT_PUBLIC_SUPABASE_URL`
-       * being plain HTTP on a LAN address is already `RELEASE.md` §6 launch
-       * blocker 1.
-       */
-      const isUriRejection =
-        evidence.error.code === "22023" &&
-        /external evidence payload/i.test(evidence.error.message ?? "");
-      if (isUriRejection) {
-        // The CODE is the contract; the workspace owns the wording, so no UI
-        // string leaks into the data layer.
-        return err({
-          code: "EVIDENCE_URI",
-          message: evidence.error.message,
-          retryable: false,
-        });
-      }
-      return evidence;
-    }
-    evidenceRefs.push(evidence.data);
+  }
+  return out;
+}
+
+async function fetchTotalXp(supabase: Supa, uid: string): Promise<number> {
+  const { data } = await supabase.from("xp_ledger").select("amount").eq("student_id", uid);
+  return (data ?? []).reduce((sum, row) => sum + (row.amount ?? 0), 0);
+}
+
+/** The whole flat task list across the student's active courses, unlock-resolved. */
+async function buildFlatTasks(supabase: Supa, uid: string): Promise<FlatTask[]> {
+  const courses = await fetchEnrolledCourses(supabase, uid);
+  if (courses.length === 0) return [];
+  const courseTitle = new Map(courses.map((c) => [c.id, c.title]));
+
+  const tasks = await fetchActiveCourseTasks(
+    supabase,
+    courses.map((c) => c.id),
+  );
+  const submissionStates = await fetchCourseSubmissionStates(supabase, uid);
+  const acceptedArena = await fetchAcceptedArenaSet(supabase, uid);
+  const submitted = submittedSetFrom(submissionStates);
+
+  // group by course, in course_tasks.order, then compute per-course unlocks
+  const byCourse = new Map<string, CourseTaskRow[]>();
+  for (const t of tasks) {
+    const list = byCourse.get(t.course_id) ?? [];
+    list.push(t);
+    byCourse.set(t.course_id, list);
   }
 
-  const result = await rpcCall<unknown>("submit_attempt", {
-    p_attempt_id: args.attemptId,
-    p_answer_text: args.answerText,
-    p_selected_option_ids: args.selectedOptionIds,
-    p_evidence_refs: evidenceRefs,
-    p_expected_version: args.expectedVersion,
-    p_correlation_id: crypto.randomUUID(),
-    p_idempotency_key: `submit:${args.attemptId}:${args.expectedVersion}`,
-  });
-  if (!result.ok) return result;
+  const flat: FlatTask[] = [];
+  for (const course of courses) {
+    const list = byCourse.get(course.id) ?? [];
+    const lite: CourseTaskLite[] = list.map((t) => ({
+      id: t.id,
+      order_index: t.order_index,
+      mcq_question: t.mcq_question,
+      arena_task_id: t.arena_task_id,
+    }));
+    const unlocks = computeCourseUnlocks(lite, submitted, acceptedArena);
+    for (const t of list) {
+      const u = unlocks.get(t.id);
+      flat.push({
+        id: t.id,
+        courseId: t.course_id,
+        courseTitle: courseTitle.get(t.course_id) ?? "",
+        orderIndex: t.order_index,
+        title: t.title,
+        unlocked: u?.unlocked ?? false,
+        lockReason: u?.reason ?? null,
+        submissionState: submissionStates.get(t.id) ?? null,
+      });
+    }
+  }
+  return flat;
+}
 
-  const parsed = parse(SubmissionRow, firstRow(result.data), "Abgabe", args.locale);
-  if (!parsed.ok) return parsed;
-  return ok({ submissionId: parsed.data.id, state: parsed.data.state });
+/* ── public reads ────────────────────────────────────────────────────── */
+
+export async function getStudentDashboard(): Promise<Result<StudentDashboard>> {
+  const s = await scope();
+  if (!s.ok) return s;
+  const { supabase, uid } = s.data;
+
+  const courses = await fetchEnrolledCourses(supabase, uid);
+  const tasks = await fetchActiveCourseTasks(
+    supabase,
+    courses.map((c) => c.id),
+  );
+  const submissionStates = await fetchCourseSubmissionStates(supabase, uid);
+  const [totalXp, badges] = await Promise.all([
+    fetchTotalXp(supabase, uid),
+    fetchEarnedBadges(supabase, uid),
+  ]);
+
+  const totalByCourse = new Map<string, number>();
+  const acceptedByCourse = new Map<string, number>();
+  for (const t of tasks) {
+    totalByCourse.set(t.course_id, (totalByCourse.get(t.course_id) ?? 0) + 1);
+    if (submissionStates.get(t.id) === "accepted") {
+      acceptedByCourse.set(t.course_id, (acceptedByCourse.get(t.course_id) ?? 0) + 1);
+    }
+  }
+
+  const dashboardCourses: DashboardCourse[] = courses.map((c) => {
+    const total = totalByCourse.get(c.id) ?? 0;
+    const accepted = acceptedByCourse.get(c.id) ?? 0;
+    return {
+      enrollmentId: c.enrollmentId,
+      courseId: c.id,
+      slug: c.slug,
+      title: c.title,
+      description: c.description,
+      coverImageUrl: c.coverImageUrl,
+      totalTasks: total,
+      acceptedTasks: accepted,
+      completed: total > 0 && accepted === total,
+    };
+  });
+
+  const flat = await buildFlatTasks(supabase, uid);
+  const next = flat.find(
+    (t) =>
+      t.unlocked &&
+      (t.submissionState === null ||
+        t.submissionState === "in_progress" ||
+        t.submissionState === "needs_revision"),
+  );
+  const nextTask: NextTaskRef | null = next
+    ? { id: next.id, title: next.title, courseId: next.courseId, courseTitle: next.courseTitle }
+    : null;
+
+  return ok({ courses: dashboardCourses, totalXp, badges, nextTask });
+}
+
+export async function listMyCourses(): Promise<Result<CourseSummary[]>> {
+  const s = await scope();
+  if (!s.ok) return s;
+  const { supabase, uid } = s.data;
+
+  const courses = await fetchEnrolledCourses(supabase, uid);
+  const tasks = await fetchActiveCourseTasks(
+    supabase,
+    courses.map((c) => c.id),
+  );
+  const submissionStates = await fetchCourseSubmissionStates(supabase, uid);
+
+  const totalByCourse = new Map<string, number>();
+  const acceptedByCourse = new Map<string, number>();
+  for (const t of tasks) {
+    totalByCourse.set(t.course_id, (totalByCourse.get(t.course_id) ?? 0) + 1);
+    if (submissionStates.get(t.id) === "accepted") {
+      acceptedByCourse.set(t.course_id, (acceptedByCourse.get(t.course_id) ?? 0) + 1);
+    }
+  }
+
+  const out: CourseSummary[] = courses.map((c) => {
+    const total = totalByCourse.get(c.id) ?? 0;
+    const accepted = acceptedByCourse.get(c.id) ?? 0;
+    return {
+      enrollmentId: c.enrollmentId,
+      courseId: c.id,
+      slug: c.slug,
+      title: c.title,
+      description: c.description,
+      coverImageUrl: c.coverImageUrl,
+      totalTasks: total,
+      acceptedTasks: accepted,
+      completed: (total > 0 && accepted === total) || c.enrollmentState === "completed",
+    };
+  });
+  return ok(out);
+}
+
+export async function getMyCourse(courseId: string): Promise<Result<CourseDetail>> {
+  const s = await scope();
+  if (!s.ok) return s;
+  const { supabase, uid } = s.data;
+
+  const { data: course, error: courseError } = await supabase
+    .from("courses")
+    .select("id, slug, title, description, cover_image_url, intro_video_url, state")
+    .eq("id", courseId)
+    .maybeSingle();
+  if (courseError) {
+    return err({ code: courseError.code, message: "Kurs konnte nicht geladen werden.", retryable: true });
+  }
+  if (!course) {
+    return err({ code: "PGRST116", message: "Kurs nicht gefunden.", retryable: false });
+  }
+
+  const rows = await fetchActiveCourseTasks(supabase, [courseId]);
+  const submissionStates = await fetchCourseSubmissionStates(supabase, uid);
+  const acceptedArena = await fetchAcceptedArenaSet(supabase, uid);
+  const submitted = submittedSetFrom(submissionStates);
+
+  const lite: CourseTaskLite[] = rows.map((t) => ({
+    id: t.id,
+    order_index: t.order_index,
+    mcq_question: t.mcq_question,
+    arena_task_id: t.arena_task_id,
+  }));
+  const unlocks = computeCourseUnlocks(lite, submitted, acceptedArena);
+
+  const tasks: CourseTaskListItem[] = rows.map((t) => {
+    const u = unlocks.get(t.id);
+    return {
+      id: t.id,
+      orderIndex: t.order_index,
+      title: t.title,
+      description: t.description,
+      hasQuestion: t.mcq_question !== null && t.mcq_question !== "",
+      hasArena: t.arena_task_id !== null,
+      unlocked: u?.unlocked ?? false,
+      lockReason: u?.reason ?? null,
+      submissionState: submissionStates.get(t.id) ?? null,
+    };
+  });
+
+  return ok({
+    course: {
+      id: course.id,
+      slug: course.slug,
+      title: course.title,
+      description: course.description,
+      coverImageUrl: course.cover_image_url,
+      introVideoUrl: course.intro_video_url,
+    },
+    tasks,
+  });
+}
+
+export async function listMyTasks(): Promise<Result<FlatTask[]>> {
+  const s = await scope();
+  if (!s.ok) return s;
+  const { supabase, uid } = s.data;
+  return ok(await buildFlatTasks(supabase, uid));
+}
+
+export async function getMyCourseTask(
+  taskId: string,
+): Promise<Result<CourseTaskWorkspaceData>> {
+  const s = await scope();
+  if (!s.ok) return s;
+  const { supabase, uid } = s.data;
+
+  const { data: task, error: taskError } = await supabase
+    .from("course_tasks")
+    .select(
+      "id, course_id, order_index, title, description, hint, video_before_url, video_after_url, mcq_question, arena_task_id, state",
+    )
+    .eq("id", taskId)
+    .maybeSingle();
+  if (taskError) {
+    return err({ code: taskError.code, message: "Aufgabe konnte nicht geladen werden.", retryable: true });
+  }
+  if (!task || task.state !== "active") {
+    return err({ code: "PGRST116", message: "Aufgabe nicht gefunden.", retryable: false });
+  }
+
+  // MCQ options — label only. `is_correct` is not a column here; the key lives
+  // in course_task_answer, which students have no RLS policy to read.
+  const { data: optionRows } = await supabase
+    .from("course_task_options")
+    .select("id, label")
+    .eq("course_task_id", taskId)
+    .order("order_index", { ascending: true });
+  const options: CourseTaskOption[] = (optionRows ?? []).map((o) => ({ id: o.id, label: o.label }));
+
+  // unlock state for this task inside its course
+  const siblings = await fetchActiveCourseTasks(supabase, [task.course_id]);
+  const submissionStates = await fetchCourseSubmissionStates(supabase, uid);
+  const acceptedArena = await fetchAcceptedArenaSet(supabase, uid);
+  const submitted = submittedSetFrom(submissionStates);
+  const unlocks = computeCourseUnlocks(
+    siblings.map((t) => ({
+      id: t.id,
+      order_index: t.order_index,
+      mcq_question: t.mcq_question,
+      arena_task_id: t.arena_task_id,
+    })),
+    submitted,
+    acceptedArena,
+  );
+  const unlock = unlocks.get(taskId);
+  const locked = !(unlock?.unlocked ?? false);
+
+  // current submission (+ selected options)
+  const { data: submissionRow } = await supabase
+    .from("submissions")
+    .select("id, state, response_text, submitted_at")
+    .eq("student_id", uid)
+    .eq("course_task_id", taskId)
+    .maybeSingle();
+
+  let submission: CourseTaskWorkspaceData["submission"] = null;
+  if (submissionRow) {
+    const { data: selected } = await supabase
+      .from("submission_options")
+      .select("option_id")
+      .eq("submission_id", submissionRow.id);
+    submission = {
+      id: submissionRow.id,
+      state: submissionRow.state,
+      responseText: submissionRow.response_text,
+      selectedOptionIds: (selected ?? []).map((r) => r.option_id),
+      submittedAt: submissionRow.submitted_at,
+    };
+  }
+
+  const { data: feedback } = await supabase
+    .from("task_feedback")
+    .select("emoji")
+    .eq("student_id", uid)
+    .eq("course_task_id", taskId)
+    .maybeSingle();
+
+  return ok({
+    task: {
+      id: task.id,
+      courseId: task.course_id,
+      title: task.title,
+      description: task.description,
+      hint: task.hint,
+      videoBeforeUrl: task.video_before_url,
+      videoAfterUrl: task.video_after_url,
+      mcqQuestion: task.mcq_question,
+    },
+    options,
+    submission,
+    emoji: feedback?.emoji ?? null,
+    locked,
+    lockReason: unlock?.reason ?? null,
+  });
+}
+
+export async function listMyArena(): Promise<Result<ArenaOverview>> {
+  const s = await scope();
+  if (!s.ok) return s;
+  const { supabase, uid } = s.data;
+
+  const { data: taskRows, error: taskError } = await supabase
+    .from("arena_tasks")
+    .select("id, order_index, title, description, xp_reward, badge_id")
+    .eq("state", "active")
+    .order("order_index", { ascending: true });
+  if (taskError) {
+    return err({ code: taskError.code, message: "Arena konnte nicht geladen werden.", retryable: true });
+  }
+  const rows = taskRows ?? [];
+
+  const badgeIds = rows.map((r) => r.badge_id).filter((v): v is string => v !== null);
+  const rewardBadges = new Map<string, { id: string; name: string; imageUrl: string | null }>();
+  if (badgeIds.length > 0) {
+    const { data: badges } = await supabase
+      .from("badges")
+      .select("id, name, image_url")
+      .in("id", badgeIds);
+    for (const b of badges ?? []) rewardBadges.set(b.id, { id: b.id, name: b.name, imageUrl: b.image_url });
+  }
+
+  const acceptedArena = await fetchAcceptedArenaSet(supabase, uid);
+  const { data: arenaSubs } = await supabase
+    .from("submissions")
+    .select("arena_task_id, state")
+    .eq("student_id", uid)
+    .eq("task_kind", "arena");
+  const stateByTask = new Map<string, SubmissionState>();
+  for (const row of arenaSubs ?? []) {
+    if (row.arena_task_id) stateByTask.set(row.arena_task_id, row.state);
+  }
+
+  const unlocks = computeArenaUnlocks(
+    rows.map((t) => ({ id: t.id, order_index: t.order_index })),
+    acceptedArena,
+  );
+
+  const tasks: ArenaListItem[] = rows.map((t) => {
+    const u = unlocks.get(t.id);
+    return {
+      id: t.id,
+      orderIndex: t.order_index,
+      title: t.title,
+      description: t.description,
+      xpReward: t.xp_reward,
+      rewardBadge: t.badge_id ? rewardBadges.get(t.badge_id) ?? null : null,
+      unlocked: u?.unlocked ?? false,
+      blockingArenaTaskId: u?.blockingArenaTaskId ?? null,
+      submissionState: stateByTask.get(t.id) ?? null,
+    };
+  });
+
+  const [totalXp, badges] = await Promise.all([
+    fetchTotalXp(supabase, uid),
+    fetchEarnedBadges(supabase, uid),
+  ]);
+
+  return ok({ tasks, totalXp, badges });
+}
+
+export async function getMyArenaTask(
+  taskId: string,
+): Promise<Result<ArenaTaskWorkspaceData>> {
+  const s = await scope();
+  if (!s.ok) return s;
+  const { supabase, uid } = s.data;
+
+  const { data: task, error: taskError } = await supabase
+    .from("arena_tasks")
+    .select("id, order_index, title, description, html_window, hint, state")
+    .eq("id", taskId)
+    .maybeSingle();
+  if (taskError) {
+    return err({ code: taskError.code, message: "Arena-Aufgabe konnte nicht geladen werden.", retryable: true });
+  }
+  if (!task || task.state !== "active") {
+    return err({ code: "PGRST116", message: "Arena-Aufgabe nicht gefunden.", retryable: false });
+  }
+
+  // unlock: the whole active chain + this student's accepted arena tasks
+  const { data: chain } = await supabase
+    .from("arena_tasks")
+    .select("id, order_index")
+    .eq("state", "active")
+    .order("order_index", { ascending: true });
+  const acceptedArena = await fetchAcceptedArenaSet(supabase, uid);
+  const unlocks = computeArenaUnlocks(
+    (chain ?? []).map((t) => ({ id: t.id, order_index: t.order_index })),
+    acceptedArena,
+  );
+  const unlock = unlocks.get(taskId);
+  const locked = !(unlock?.unlocked ?? false);
+
+  const { data: submissionRow } = await supabase
+    .from("submissions")
+    .select("id, state, response_text, submitted_at")
+    .eq("student_id", uid)
+    .eq("arena_task_id", taskId)
+    .maybeSingle();
+
+  let submission: ArenaTaskWorkspaceData["submission"] = null;
+  let images: ArenaImage[] = [];
+  if (submissionRow) {
+    submission = {
+      id: submissionRow.id,
+      state: submissionRow.state,
+      responseText: submissionRow.response_text,
+      submittedAt: submissionRow.submitted_at,
+    };
+    const { data: imageRows } = await supabase
+      .from("submission_images")
+      .select("id, object_key, caption")
+      .eq("submission_id", submissionRow.id)
+      .order("order_index", { ascending: true });
+    const rows = imageRows ?? [];
+    if (rows.length > 0) {
+      // Private bucket: hand the browser short-lived signed URLs, never keys.
+      const { data: signed } = await supabase.storage
+        .from("submission-images")
+        .createSignedUrls(
+          rows.map((r) => r.object_key),
+          60 * 60,
+        );
+      const urlByKey = new Map((signed ?? []).map((x) => [x.path, x.signedUrl]));
+      images = rows.map((r) => ({
+        id: r.id,
+        caption: r.caption,
+        url: urlByKey.get(r.object_key) ?? null,
+      }));
+    }
+  }
+
+  return ok({
+    task: {
+      id: task.id,
+      orderIndex: task.order_index,
+      title: task.title,
+      description: task.description,
+      htmlWindow: task.html_window,
+      hint: task.hint,
+    },
+    submission,
+    images,
+    locked,
+    blockingArenaTaskId: unlock?.blockingArenaTaskId ?? null,
+  });
+}
+
+export async function getMyProfile(): Promise<Result<StudentProfile>> {
+  const s = await scope();
+  if (!s.ok) return s;
+  const { supabase, uid } = s.data;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name, avatar_url")
+    .eq("id", uid)
+    .maybeSingle();
+
+  const [totalXp, badges] = await Promise.all([
+    fetchTotalXp(supabase, uid),
+    fetchEarnedBadges(supabase, uid),
+  ]);
+
+  const { data: feedbackRows } = await supabase
+    .from("task_feedback")
+    .select("emoji, course_task_id, created_at")
+    .eq("student_id", uid)
+    .order("created_at", { ascending: false });
+  const fbRows = feedbackRows ?? [];
+
+  const feedback: EmojiFeedback[] = [];
+  if (fbRows.length > 0) {
+    const taskIds = fbRows.map((r) => r.course_task_id);
+    const { data: taskRows } = await supabase
+      .from("course_tasks")
+      .select("id, title, course_id")
+      .in("id", taskIds);
+    const taskById = new Map((taskRows ?? []).map((t) => [t.id, t]));
+    const courseIds = [...new Set((taskRows ?? []).map((t) => t.course_id))];
+    const { data: courseRows } = courseIds.length
+      ? await supabase.from("courses").select("id, title").in("id", courseIds)
+      : { data: [] as { id: string; title: string }[] };
+    const courseById = new Map((courseRows ?? []).map((c) => [c.id, c]));
+    for (const r of fbRows) {
+      const t = taskById.get(r.course_task_id);
+      feedback.push({
+        emoji: r.emoji,
+        taskTitle: t?.title ?? "",
+        courseTitle: t ? courseById.get(t.course_id)?.title ?? "" : "",
+        createdAt: r.created_at,
+      });
+    }
+  }
+
+  return ok({
+    displayName: profile?.display_name ?? "",
+    avatarUrl: profile?.avatar_url ?? null,
+    totalXp,
+    badges,
+    feedback,
+  });
+}
+
+export async function getCourseCompletion(
+  courseId: string,
+): Promise<Result<CourseCompletion>> {
+  const s = await scope();
+  if (!s.ok) return s;
+  const { supabase, uid } = s.data;
+
+  const { data: course, error: courseError } = await supabase
+    .from("courses")
+    .select("id, completion_video_url")
+    .eq("id", courseId)
+    .maybeSingle();
+  if (courseError) {
+    return err({ code: courseError.code, message: "Kurs konnte nicht geladen werden.", retryable: true });
+  }
+  if (!course) {
+    return err({ code: "PGRST116", message: "Kurs nicht gefunden.", retryable: false });
+  }
+
+  const tasks = await fetchActiveCourseTasks(supabase, [courseId]);
+  const activeIds = tasks.map((t) => t.id);
+  const submissionStates = await fetchCourseSubmissionStates(supabase, uid);
+  const acceptedIds = new Set<string>();
+  for (const id of activeIds) {
+    if (submissionStates.get(id) === "accepted") acceptedIds.add(id);
+  }
+  const complete = isCourseComplete(activeIds, acceptedIds);
+
+  const { data: review } = await supabase
+    .from("course_feedback")
+    .select("id")
+    .eq("student_id", uid)
+    .eq("course_id", courseId)
+    .maybeSingle();
+
+  return ok({
+    complete,
+    completionVideoUrl: complete ? course.completion_video_url : null,
+    hasReview: review !== null,
+  });
 }

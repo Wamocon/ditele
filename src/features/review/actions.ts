@@ -1,115 +1,113 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
 import { requireRole } from "@/shared/auth/guard";
-import type { Result } from "@/shared/data/result";
-import {
-  decideSubmission,
-  transferSubmission,
-  claimQuestion,
-  answerQuestion,
-  transferQuestion,
-  archiveQuestion,
-  type CriterionScore,
-} from "@/shared/data/review";
+import { createServiceRoleClient } from "@/shared/database/service-role";
+import { reviewSubmission, type ReviewOutcome } from "@/shared/data/review";
+import type { ProfileActionState, ReviewActionState } from "./action-state";
 
 /**
- * Every action re-checks the role. A route-group layout guard does not protect
- * a POST (00_MASTER_PLAN §9.3), and the database is still the real boundary —
- * these calls all go through SECURITY DEFINER RPCs that check permissions again.
+ * Layer 2 of three: the trainer layout guards the *render*, not the POST. Every
+ * action below re-checks the role, and the database RLS (plus the scope check
+ * inside `reviewSubmission`) remains the real boundary.
  */
-async function guard(locale: string) {
-  await requireRole(["trainer", "admin"], locale);
-}
 
-export async function decideSubmissionAction(input: {
-  locale: string;
-  submissionId: string;
-  submissionVersionId: string;
-  expectedVersion: number;
-  decision: "accepted" | "revision_required";
-  comment: string;
-  scores: CriterionScore[];
-}): Promise<Result<{ state: string }>> {
-  await guard(input.locale);
-  const result = await decideSubmission(input);
-  if (result.ok) {
-    revalidatePath(`/${input.locale}/trainer/submissions/${input.submissionId}`);
-    revalidatePath(`/${input.locale}/trainer/submissions`);
-    revalidatePath(`/${input.locale}/trainer`);
+const text = (formData: FormData, key: string): string => {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
+};
+
+const decisionSchema = z.enum(["accepted", "needs_revision"]);
+
+export async function reviewSubmissionAction(
+  _prev: ReviewActionState,
+  formData: FormData
+): Promise<ReviewActionState> {
+  await requireRole(["trainer", "admin"]);
+
+  const submissionId = text(formData, "submissionId");
+  const locale = text(formData, "locale") || "de";
+  const comment = text(formData, "comment");
+  const parsedDecision = decisionSchema.safeParse(text(formData, "decision"));
+
+  if (!z.uuid().safeParse(submissionId).success) {
+    return { status: "error", message: "Ungültige Einreichung.", decided: false };
   }
-  return result;
-}
-
-export async function transferSubmissionAction(input: {
-  locale: string;
-  submissionId: string;
-  expectedVersion: number;
-  toTrainerId: string;
-  reason: string;
-}): Promise<Result<{ state: string }>> {
-  await guard(input.locale);
-  const result = await transferSubmission(input);
-  if (result.ok) {
-    revalidatePath(`/${input.locale}/trainer/submissions/${input.submissionId}`);
-    revalidatePath(`/${input.locale}/trainer/submissions`);
-    revalidatePath(`/${input.locale}/trainer`);
+  if (!parsedDecision.success) {
+    return { status: "error", message: "Bitte eine Entscheidung wählen.", decided: false };
   }
-  return result;
-}
-
-export async function claimQuestionAction(input: {
-  locale: string;
-  questionId: string;
-  expectedVersion: number;
-}): Promise<Result<null>> {
-  await guard(input.locale);
-  const result = await claimQuestion(input);
-  if (result.ok) revalidateQuestions(input.locale, input.questionId);
-  return result;
-}
-
-export async function answerQuestionAction(input: {
-  locale: string;
-  questionId: string;
-  expectedVersion: number;
-  body: string;
-}): Promise<Result<null>> {
-  await guard(input.locale);
-  const result = await answerQuestion(input);
-  if (result.ok) revalidateQuestions(input.locale, input.questionId);
-  return result;
-}
-
-export async function transferQuestionAction(input: {
-  locale: string;
-  questionId: string;
-  expectedVersion: number;
-  toTrainerId: string;
-  reason: string;
-}): Promise<Result<null>> {
-  await guard(input.locale);
-  const result = await transferQuestion(input);
-  if (result.ok) revalidateQuestions(input.locale, input.questionId);
-  return result;
-}
-
-export async function archiveQuestionAction(input: {
-  locale: string;
-  questionId: string;
-  expectedVersion: number;
-}): Promise<Result<null>> {
-  await guard(input.locale);
-  const result = await archiveQuestion(input);
-  if (result.ok) {
-    revalidateQuestions(input.locale, input.questionId);
-    revalidatePath(`/${input.locale}/trainer/questions/archive`);
+  if (comment.length === 0) {
+    return { status: "error", message: "Bitte hinterlassen Sie einen Kommentar.", decided: false };
   }
-  return result;
-}
 
-function revalidateQuestions(locale: string, questionId: string) {
-  revalidatePath(`/${locale}/trainer/questions/${questionId}`);
-  revalidatePath(`/${locale}/trainer/questions`);
+  const result = await reviewSubmission({
+    submissionId,
+    decision: parsedDecision.data,
+    comment,
+  });
+  if (!result.ok) {
+    return { status: "error", message: result.error.message, decided: false };
+  }
+
   revalidatePath(`/${locale}/trainer`);
+  revalidatePath(`/${locale}/trainer/submissions`);
+  revalidatePath(`/${locale}/trainer/submissions/${submissionId}`);
+  revalidatePath(`/${locale}/trainer/progress`);
+
+  return { status: "success", message: outcomeMessage(result.data), decided: true };
+}
+
+/** Human-readable German summary, including the XP/badge grant on an arena accept. */
+function outcomeMessage(outcome: ReviewOutcome): string {
+  if (outcome.decision === "needs_revision") {
+    return "Zur Nachbesserung zurückgegeben. Der Lernende kann die Aufgabe erneut bearbeiten.";
+  }
+  if (outcome.taskKind !== "arena") {
+    return "Angenommen.";
+  }
+  const parts: string[] = ["Angenommen."];
+  if (outcome.xpAwarded > 0) parts.push(`${outcome.xpAwarded} XP vergeben.`);
+  if (outcome.badgeName) parts.push(`Abzeichen „${outcome.badgeName}" freigeschaltet.`);
+  return parts.join(" ");
+}
+
+/* ── Own profile ─────────────────────────────────────────────────────────── */
+
+export async function updateTrainerProfileAction(
+  _prev: ProfileActionState,
+  formData: FormData
+): Promise<ProfileActionState> {
+  const { principal } = await requireRole(["trainer", "admin"]);
+
+  const displayName = text(formData, "displayName");
+  const avatarUrl = text(formData, "avatarUrl");
+  const locale = text(formData, "locale") || "de";
+
+  if (displayName.length === 0) {
+    return { status: "error", message: "Bitte geben Sie einen Anzeigenamen an." };
+  }
+  if (avatarUrl.length > 0 && !z.url().safeParse(avatarUrl).success) {
+    return { status: "error", message: "Die Avatar-URL ist ungültig." };
+  }
+
+  // Scoped strictly to the caller's own row, so the service-role client cannot
+  // touch anyone else's profile.
+  const admin = createServiceRoleClient();
+  const { error } = await admin
+    .from("profiles")
+    .update({
+      display_name: displayName,
+      avatar_url: avatarUrl.length > 0 ? avatarUrl : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", principal.userId);
+
+  if (error) {
+    return { status: "error", message: "Das Profil konnte nicht gespeichert werden." };
+  }
+
+  revalidatePath(`/${locale}/trainer/profile`);
+  return { status: "success", message: "Profil gespeichert." };
 }

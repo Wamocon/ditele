@@ -1,29 +1,36 @@
 import type { Metadata } from "next";
 
+import { PageHeader } from "@/shared/layout";
 import { requireRole } from "@/shared/auth/guard";
-import { getMessages } from "@/shared/i18n/get-messages";
-import { defaultLocale, isLocale } from "@/shared/i18n/config";
-import { ProfileScreen } from "@/features/profile/profile-screen";
+import { createServerClient } from "@/shared/database/server";
+import { ProfileForm } from "@/features/review/profile-form";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const messages = await getMessages(isLocale(locale) ? locale : defaultLocale);
-  return { title: messages.profile.title };
-}
+export const metadata: Metadata = { title: "Profil" };
 
-/**
- * The trainer's profile. Body shared with `/learn/profile` and
- * `/admin/profile` — see `features/profile/profile-screen.tsx`.
- *
- * A trainer could previously not change their password or reach their
- * notification settings from here at all; both now come with the shared screen.
- */
+/** The trainer's own profile — display name and avatar. */
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  await requireRole(["trainer", "admin"], locale);
-  return <ProfileScreen locale={locale} />;
+  const { principal } = await requireRole(["trainer", "admin"], locale);
+
+  const supabase = await createServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name, avatar_url")
+    .eq("id", principal.userId)
+    .maybeSingle();
+
+  return (
+    <>
+      <PageHeader
+        title="Profil"
+        description="Verwalten Sie Ihren Anzeigenamen und Ihr Profilbild."
+      />
+      <ProfileForm
+        locale={locale}
+        email={principal.email}
+        displayName={profile?.display_name ?? principal.displayName}
+        avatarUrl={profile?.avatar_url ?? null}
+      />
+    </>
+  );
 }

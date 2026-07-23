@@ -1,33 +1,22 @@
-import { AuthorizationDeniedError } from "./errors";
 import type { AppRole, Principal } from "./types";
 
-export function hasPermission(
-  principal: Principal,
-  permission: string,
-): boolean {
-  return principal.permissions.includes(permission);
-}
-
-export function requirePermission(
-  principal: Principal,
-  permission: string,
-): void {
-  if (!hasPermission(principal, permission)) {
-    throw new AuthorizationDeniedError(permission);
-  }
-}
-
 export function hasRole(principal: Principal, role: AppRole): boolean {
-  return principal.roles.includes(role);
+  return principal.role === role;
 }
 
-export function canAccessCohort(
-  principal: Principal,
-  cohortId: string,
-): boolean {
-  return (
-    principal.cohortIds.includes(cohortId) ||
-    hasPermission(principal, "cohort.manage")
-  );
+export function isAdmin(principal: Principal): boolean {
+  return principal.role === "admin";
 }
 
+export function isTrainer(principal: Principal): boolean {
+  return principal.role === "trainer";
+}
+
+export function isStudent(principal: Principal): boolean {
+  return principal.role === "student";
+}
+
+/** Trainer or admin — the staff side that reviews work and reads answer keys. */
+export function isStaff(principal: Principal): boolean {
+  return principal.role === "admin" || principal.role === "trainer";
+}

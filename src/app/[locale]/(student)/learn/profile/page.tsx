@@ -1,13 +1,23 @@
-import { requireRole } from "@/shared/auth/guard";
-import { ProfileScreen } from "@/features/profile/profile-screen";
+import type { Metadata } from "next";
+import { PageHeader } from "@/shared/layout";
+import { ErrorState } from "@/shared/ui";
+import { getMyProfile } from "@/shared/data/learning";
+import { ProfileView } from "@/features/learning/profile-view";
 
-/**
- * The learner's profile. Body shared with `/trainer/profile` and
- * `/admin/profile` — see `features/profile/profile-screen.tsx` for why the
- * three stopped being separate screens.
- */
-export default async function ProfilePage({ params }: { params: Promise<{ locale: string }> }) {
+export const metadata: Metadata = { title: "Profil · DiTeLe" };
+
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  await requireRole(["student", "trainer", "admin"], locale);
-  return <ProfileScreen locale={locale} />;
+  const result = await getMyProfile();
+
+  if (!result.ok) {
+    return (
+      <>
+        <PageHeader title="Profil" locale={locale} />
+        <ErrorState error={result.error} locale={locale} />
+      </>
+    );
+  }
+
+  return <ProfileView locale={locale} profile={result.data} />;
 }

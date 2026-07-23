@@ -1,34 +1,18 @@
-export const APP_ROLES = [
-  "learner",
-  "trainer",
-  "admin",
-  "organization_admin",
-  "content_admin",
-  "support",
-  "integration_admin",
-  "dpo",
-] as const;
+export const APP_ROLES = ["student", "trainer", "admin"] as const;
 
 export type AppRole = (typeof APP_ROLES)[number];
 
+/** The authenticated actor. Role lives on `profiles`; no orgs/cohorts/permissions. */
 export interface Principal {
   userId: string;
-  sessionId: string;
-  organizationId: string | null;
-  primaryRole: AppRole;
-  roles: readonly AppRole[];
-  permissions: readonly string[];
-  cohortIds: readonly string[];
+  role: AppRole;
+  email: string | null;
+  displayName: string;
 }
 
 export interface AnonymousPrincipal {
   userId: null;
-  sessionId: null;
-  organizationId: null;
-  primaryRole: "guest";
-  roles: readonly [];
-  permissions: readonly [];
-  cohortIds: readonly [];
+  role: "guest";
 }
 
 export type RequestPrincipal = Principal | AnonymousPrincipal;
@@ -40,4 +24,3 @@ export interface ExpectedVersion {
 export interface IdempotentCommand {
   idempotencyKey: string;
 }
-

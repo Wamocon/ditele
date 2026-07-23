@@ -1,866 +1,543 @@
 import "server-only";
 
+import type { PostgrestError } from "@supabase/supabase-js";
+
 import { createServerClient } from "@/shared/database/server";
-import { createServiceRoleClient } from "@/shared/database/service-role";
+import type { Tables, Enums } from "@/shared/database/database.types";
+
 import { ok, err, fromSupabase, mapPostgrestError, type Result } from "./result";
 
 /**
- * WS-6 — Admin Ops data layer.
+ * Admin data layer for the clean Ditele schema (see ditele_schema.md).
  *
- * Three rules this deployment forces on you (measured, see plan/status/WS-6.md):
+ * Read functions here run on the admin's own session (`createServerClient`);
+ * the RLS admin policies (`app.is_admin()`) grant full read access, so no
+ * service-role client is needed for reads. Mutations live in `admin-actions.ts`
+ * as `"use server"` actions that re-check the role before writing.
  *
- *  1. **The service-role key cannot touch a table** (ISSUES I-002). It works for
- *     the Auth Admin API and nothing else. Every table read and write here uses
- *     the *admin's own authenticated session*.
- *  2. **`cohorts` and `cohort_memberships` have no insert path** (I-011, I-012).
- *     Creating a cohort or assigning a trainer is impossible until a migration
- *     lands. The functions below say so instead of failing at runtime.
- *  3. **Never call a decision RPC on an already-decided row** (I-007) — it hangs
- *     and poisons PostgREST for every other chat for ~30s. `decideEnrollment`
- *     re-reads and guards the state before it calls.
- *
- * Every list takes `limit` + `offset` (02_WORKSTREAMS §5.5 rule 2).
+ * This module is `server-only`. Client components may import the *types* below
+ * with `import type` (fully erased at build time) but never a runtime value.
  */
 
-/* ── Shared shapes ──────────────────────────────────────────────────────── */
+/* ── Row + enum aliases ──────────────────────────────────────────────── */
+export type Course = Tables<"courses">;
+export type CourseTask = Tables<"course_tasks">;
+export type CourseTaskOption = Tables<"course_task_options">;
+export type ArenaTask = Tables<"arena_tasks">;
+export type Badge = Tables<"badges">;
+export type Profile = Tables<"profiles">;
 
-export interface Page<T> {
-  rows: T[];
-  /** Total matching rows before limit/offset, so Pagination can be honest. */
-  total: number;
+export type CourseState = Enums<"course_state">;
+export type TaskState = Enums<"task_state">;
+export type UserRole = Enums<"user_role">;
+
+/* ── Composite read shapes ───────────────────────────────────────────── */
+export interface CourseTaskAnswer {
+  verification_answer: string;
+  correct_option_ids: string[];
+}
+export interface CourseTaskDetail extends CourseTask {
+  options: CourseTaskOption[];
+  answer: CourseTaskAnswer | null;
+}
+export interface ArenaTaskAnswer {
+  acceptance_criteria: string;
+  answer_key: string;
+}
+export interface ArenaTaskDetail extends ArenaTask {
+  answer: ArenaTaskAnswer | null;
 }
 
-export interface ListArgs {
-  limit?: number;
-  offset?: number;
+export interface CourseAssignments {
+  students: Profile[];
+  trainers: Profile[];
+  candidateStudents: Profile[];
+  candidateTrainers: Profile[];
 }
 
-const DEFAULT_LIMIT = 25;
-/** How many rows we merge in memory before paginating. See mergedPage(). */
-const MERGE_CEILING = 1000;
-
-function slice<T>(rows: T[], { limit = DEFAULT_LIMIT, offset = 0 }: ListArgs): Page<T> {
-  return { rows: rows.slice(offset, offset + limit), total: rows.length };
-}
-
-/* ── Users ──────────────────────────────────────────────────────────────── */
-
-export interface AdminUser {
-  userId: string;
-  displayName: string;
-  /** Only the Auth Admin API knows this — `profiles` has no email column. */
-  email: string | null;
-  roleCode: string | null;
-  /** The live `user_roles` row, so a role change can UPDATE it. */
-  roleRowId: string | null;
-  profileState: string;
-  locale: string;
-  timezone: string;
-  lastSignInAt: string | null;
-  /** Non-null ⇒ the account is deactivated (an Auth ban). */
-  bannedUntil: string | null;
-  emailConfirmedAt: string | null;
-  createdAt: string;
-  rowVersion: number;
-}
-
-export interface RoleOption {
+export interface TaskEmojiFeedbackRow {
   id: string;
-  code: string;
+  emoji: string;
+  created_at: string;
+  studentName: string;
+  taskTitle: string;
+  courseTitle: string;
 }
 
-/**
- * ⭐ **The three roles an administrator may assign.** `admin` · `trainer` ·
- * `learner`, in that order — highest privilege first, matching the precedence
- * in `shared/auth/role.ts`.
- *
- * `src/shared/auth/role.ts` opens with "The database keeps 8 roles. The UI
- * shows 3", and `toUiRole` collapses every one of them onto `admin | trainer |
- * student`. This function used to return the raw table, so the *only* screens
- * that contradicted that rule were the ones where a human picks a role: the
- * create-user form offered all eight, and so did the role-change panel. An
- * administrator could hand out `dpo` or `integration_admin` — roles that land
- * on the admin shell anyway, differ only in which permission grants they carry,
- * and mean nothing to anyone reading the user list.
- *
- * Filtering HERE rather than at each call site is deliberate: three screens
- * read this (create user, the role filter, the role-change panel), and a list
- * that is right in two of them is the bug all over again.
- */
-const ASSIGNABLE_ROLE_CODES = ["admin", "trainer", "learner"] as const;
-
-/**
- * ⚠️ **The other five roles are NOT deleted, and must not be.**
- *
- * `organization_admin`, `content_admin`, `support`, `integration_admin` and
- * `dpo` still exist, still carry their `role_permissions` grants, and RLS still
- * answers `app_private.has_permission(...)` from them. Two concrete reasons
- * this is a UI filter and not a migration:
- *
- *   1. `org-admin@ditele.local` holds `organization_admin` **and nothing else**.
- *      Deleting the role removes that account's only grant — a locked-out user,
- *      not a tidier list.
- *   2. The eight roles carry 42 permission grants between them. Dropping five
- *      means rewriting authorization, which is a far larger and riskier change
- *      than the one that was asked for.
- *
- * An account that already holds one of the five keeps working and still reads
- * as its mapped UI role everywhere. It simply cannot be *handed out* any more,
- * and changing such a user's role moves them onto one of the three for good.
- */
-export async function listRoles(): Promise<Result<RoleOption[]>> {
-  const supabase = await createServerClient();
-  const result = await fromSupabase<RoleOption[]>(async () => {
-    const { data, error } = await supabase
-      .from("roles")
-      .select("id, code")
-      .in("code", ASSIGNABLE_ROLE_CODES as unknown as string[]);
-    return { data, error };
-  });
-  if (!result.ok) return result;
-
-  // Ordered by privilege, not alphabetically — `.order("code")` would put the
-  // learner between the admin and the trainer, which reads as arbitrary.
-  const rank = (code: string) => ASSIGNABLE_ROLE_CODES.indexOf(code as never);
-  return ok([...result.data].sort((a, b) => rank(a.code) - rank(b.code)));
-}
-
-/**
- * Emails and sign-in timestamps live in `auth.users`, names and locales live in
- * `profiles`, and the role lives in `user_roles`. Three sources, merged here so
- * no screen ever does it twice.
- *
- * The merge is in memory: filtering by email cannot be pushed down to the
- * `profiles` query, so a server-side `.range()` would produce wrong page counts.
- * Bounded at MERGE_CEILING rows — well beyond the ~200 users this launches with,
- * and the bound is visible in `truncated` rather than silent.
- */
-export async function listAdminUsers(
-  args: ListArgs & { search?: string; roleCode?: string } = {}
-): Promise<Result<Page<AdminUser> & { truncated: boolean }>> {
-  const supabase = await createServerClient();
-
-  const [profilesRes, rolesRes] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("user_id, display_name, locale, timezone, state, row_version, created_at")
-      .order("display_name")
-      .limit(MERGE_CEILING),
-    supabase
-      .from("user_roles")
-      .select("id, user_id, role_id, revoked_at, roles(code)")
-      .is("revoked_at", null)
-      .limit(MERGE_CEILING),
-  ]);
-
-  if (profilesRes.error) return err(mapPostgrestError(profilesRes.error));
-  if (rolesRes.error) return err(mapPostgrestError(rolesRes.error));
-
-  const authUsers = await listAuthUsers();
-
-  const roleByUser = new Map<string, { rowId: string; code: string | null }>();
-  for (const row of rolesRes.data ?? []) {
-    // A user may hold several rows; the first live one drives the badge.
-    if (!roleByUser.has(row.user_id)) {
-      roleByUser.set(row.user_id, { rowId: row.id, code: row.roles?.code ?? null });
-    }
-  }
-
-  const merged: AdminUser[] = (profilesRes.data ?? []).map((p) => {
-    const role = roleByUser.get(p.user_id);
-    const auth = authUsers.get(p.user_id);
-    return {
-      userId: p.user_id,
-      displayName: p.display_name,
-      email: auth?.email ?? null,
-      roleCode: role?.code ?? null,
-      roleRowId: role?.rowId ?? null,
-      profileState: p.state,
-      locale: p.locale,
-      timezone: p.timezone,
-      lastSignInAt: auth?.lastSignInAt ?? null,
-      bannedUntil: auth?.bannedUntil ?? null,
-      emailConfirmedAt: auth?.emailConfirmedAt ?? null,
-      createdAt: p.created_at,
-      rowVersion: p.row_version,
-    };
-  });
-
-  const needle = args.search?.trim().toLowerCase();
-  const filtered = merged.filter((u) => {
-    if (args.roleCode && u.roleCode !== args.roleCode) return false;
-    if (!needle) return true;
-    return (
-      u.displayName.toLowerCase().includes(needle) ||
-      (u.email ?? "").toLowerCase().includes(needle)
-    );
-  });
-
-  return ok({
-    ...slice(filtered, args),
-    truncated: (profilesRes.data ?? []).length >= MERGE_CEILING,
-  });
-}
-
-interface AuthUserFacts {
-  email: string | null;
-  lastSignInAt: string | null;
-  bannedUntil: string | null;
-  emailConfirmedAt: string | null;
-}
-
-/**
- * The Auth Admin API is the ONE thing the service-role key can still do here.
- * Never called from a Client Component — this module is `server-only`.
- * Degrades to an empty map rather than failing the whole screen: a user list
- * without emails is worth more than an error page.
- */
-async function listAuthUsers(): Promise<Map<string, AuthUserFacts>> {
-  const facts = new Map<string, AuthUserFacts>();
-  try {
-    const admin = createServiceRoleClient();
-    const perPage = 200;
-    for (let page = 1; page <= Math.ceil(MERGE_CEILING / perPage); page += 1) {
-      const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-      if (error || !data) break;
-      for (const u of data.users) {
-        const banned = (u as { banned_until?: string | null }).banned_until ?? null;
-        facts.set(u.id, {
-          email: u.email ?? null,
-          lastSignInAt: u.last_sign_in_at ?? null,
-          bannedUntil: banned,
-          emailConfirmedAt: u.email_confirmed_at ?? null,
-        });
-      }
-      if (data.users.length < perPage) break;
-    }
-  } catch {
-    // Auth API unreachable — the caller still gets names, roles and states.
-  }
-  return facts;
-}
-
-export interface AdminUserDetail {
-  user: AdminUser;
-  enrollments: EnrollmentApplication[];
-  cohorts: { cohortId: string; cohortName: string; role: string; state: string }[];
-}
-
-export async function getAdminUser(userId: string): Promise<Result<AdminUserDetail>> {
-  const supabase = await createServerClient();
-
-  const [usersRes, membershipRes, enrollmentsRes] = await Promise.all([
-    listAdminUsers({ limit: MERGE_CEILING }),
-    supabase
-      .from("cohort_memberships")
-      .select("cohort_id, role, state, cohorts(name)")
-      .eq("user_id", userId),
-    listEnrollmentApplications({ learnerId: userId, limit: MERGE_CEILING }),
-  ]);
-
-  if (!usersRes.ok) return usersRes;
-  const user = usersRes.data.rows.find((u) => u.userId === userId);
-  if (!user) return err({ code: "PGRST116", message: "Nicht gefunden.", retryable: false });
-  if (membershipRes.error) return err(mapPostgrestError(membershipRes.error));
-
-  return ok({
-    user,
-    enrollments: enrollmentsRes.ok ? enrollmentsRes.data.rows : [],
-    cohorts: (membershipRes.data ?? []).map((m) => ({
-      cohortId: m.cohort_id,
-      cohortName: m.cohorts?.name ?? m.cohort_id,
-      role: m.role,
-      state: m.state,
-    })),
-  });
-}
-
-/* ── User mutations ─────────────────────────────────────────────────────── */
-
-/**
- * Creating the auth user is enough: a trigger writes the `profiles` row (taking
- * the name from `user_metadata.display_name`) AND a default `user_roles` row.
- * So the role is applied by UPDATING that row — inserting a second live role
- * hits the `user_roles_live_scope_uidx` unique index (23505).
- */
-export async function createAdminUser(args: {
-  email: string;
-  password: string;
-  displayName: string;
-  roleId: string;
-}): Promise<Result<{ userId: string }>> {
-  let userId: string;
-  try {
-    const admin = createServiceRoleClient();
-    const { data, error } = await admin.auth.admin.createUser({
-      email: args.email,
-      password: args.password,
-      email_confirm: true,
-      user_metadata: { display_name: args.displayName },
-    });
-    if (error || !data.user) {
-      return err({
-        code: "AUTH",
-        message: error?.message.includes("already")
-          ? "Für diese E-Mail-Adresse existiert bereits ein Konto."
-          : "Das Konto konnte nicht angelegt werden.",
-        retryable: false,
-      });
-    }
-    userId = data.user.id;
-  } catch {
-    return err({ code: "NETWORK", message: "Verbindung zum Server fehlgeschlagen.", retryable: true });
-  }
-
-  const roleResult = await setUserRole({ userId, roleId: args.roleId });
-  if (!roleResult.ok) {
-    // The account exists but has the default role. Say so — do not pretend.
-    return err({
-      code: "PARTIAL",
-      message:
-        "Das Konto wurde angelegt, die Rolle konnte aber nicht gesetzt werden. Bitte im Benutzerdetail nachtragen.",
-      retryable: false,
-    });
-  }
-  return ok({ userId });
-}
-
-/** Updates the live `user_roles` row in place. One live role per user and org. */
-export async function setUserRole(args: { userId: string; roleId: string }): Promise<Result<null>> {
-  const supabase = await createServerClient();
-  const { error } = await supabase
-    .from("user_roles")
-    .update({ role_id: args.roleId, reason: "Rollenänderung durch Administration" })
-    .eq("user_id", args.userId)
-    .is("revoked_at", null);
-  if (error) return err(mapPostgrestError(error));
-  return ok(null);
-}
-
-/** Deactivate = an Auth ban. `profiles.state` is not writable by an admin. */
-export async function setUserActive(args: { userId: string; active: boolean }): Promise<Result<null>> {
-  try {
-    const admin = createServiceRoleClient();
-    const { error } = await admin.auth.admin.updateUserById(args.userId, {
-      ban_duration: args.active ? "none" : "876000h",
-    });
-    if (error) {
-      return err({ code: "AUTH", message: "Der Status konnte nicht geändert werden.", retryable: true });
-    }
-    return ok(null);
-  } catch {
-    return err({ code: "NETWORK", message: "Verbindung zum Server fehlgeschlagen.", retryable: true });
-  }
-}
-
-export async function resetUserPassword(args: {
-  userId: string;
-  password: string;
-}): Promise<Result<null>> {
-  try {
-    const admin = createServiceRoleClient();
-    const { error } = await admin.auth.admin.updateUserById(args.userId, { password: args.password });
-    if (error) {
-      return err({
-        code: "AUTH",
-        message: "Das Passwort konnte nicht gesetzt werden. Es muss der Passwortrichtlinie entsprechen.",
-        retryable: false,
-      });
-    }
-    return ok(null);
-  } catch {
-    return err({ code: "NETWORK", message: "Verbindung zum Server fehlgeschlagen.", retryable: true });
-  }
-}
-
-/* ── Enrolment applications ─────────────────────────────────────────────── */
-
-/**
- * The `enrollment_state` enum, from RPC_CONTRACTS.md §1. A filter arrives as a
- * URL search param, so it is narrowed here rather than passed through as a
- * string — an unknown value becomes "no filter", never a failed query.
- */
-export const ENROLLMENT_STATES = [
-  "requested",
-  "approved",
-  "rejected",
-  "assigned",
-  "cancelled",
-  "completed",
-] as const;
-export type EnrollmentState = (typeof ENROLLMENT_STATES)[number];
-
-export function parseEnrollmentState(value: string | undefined): EnrollmentState | undefined {
-  return ENROLLMENT_STATES.find((s) => s === value);
-}
-
-export interface EnrollmentApplication {
+export interface CourseReviewRow {
   id: string;
-  learnerId: string;
-  learnerName: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  studentName: string;
+  courseTitle: string;
+}
+
+export interface StudentProgressRow {
+  key: string;
+  studentId: string;
+  studentName: string;
   courseId: string;
   courseTitle: string;
-  cohortId: string | null;
-  cohortName: string | null;
-  state: string;
-  requestNote: string | null;
-  decisionReason: string | null;
-  createdAt: string;
-  decidedAt: string | null;
-  rowVersion: number;
+  enrollmentState: string;
+  acceptedCourseTasks: number;
+  acceptedArenaTasks: number;
+  totalXp: number;
+  badgeCount: number;
 }
 
-export async function listEnrollmentApplications(
-  args: ListArgs & { state?: EnrollmentState; learnerId?: string } = {}
-): Promise<Result<Page<EnrollmentApplication>>> {
-  const supabase = await createServerClient();
-
-  let query = supabase
-    .from("enrollments")
-    .select(
-      "id, learner_id, course_id, cohort_id, state, request_note, decision_reason, created_at, decided_at, row_version"
-    )
-    .order("created_at", { ascending: false })
-    .limit(MERGE_CEILING);
-  if (args.state) query = query.eq("state", args.state);
-  if (args.learnerId) query = query.eq("learner_id", args.learnerId);
-
-  const [enrollmentsRes, names, courses, cohorts] = await Promise.all([
-    query,
-    displayNames(),
-    courseTitles(),
-    cohortNames(),
-  ]);
-  if (enrollmentsRes.error) return err(mapPostgrestError(enrollmentsRes.error));
-
-  const rows: EnrollmentApplication[] = (enrollmentsRes.data ?? []).map((e) => ({
-    id: e.id,
-    learnerId: e.learner_id,
-    learnerName: names.get(e.learner_id) ?? e.learner_id,
-    courseId: e.course_id,
-    courseTitle: courses.get(e.course_id) ?? e.course_id,
-    cohortId: e.cohort_id,
-    cohortName: e.cohort_id ? (cohorts.get(e.cohort_id) ?? e.cohort_id) : null,
-    state: e.state,
-    requestNote: e.request_note,
-    decisionReason: e.decision_reason,
-    createdAt: e.created_at,
-    decidedAt: e.decided_at,
-    rowVersion: e.row_version,
-  }));
-
-  return ok(slice(rows, args));
+export interface AdminOverview {
+  courses: number;
+  activeCourses: number;
+  users: number;
+  students: number;
+  trainers: number;
+  admins: number;
+  openSubmissions: number;
+  arenaTasks: number;
+  badges: number;
 }
 
-/**
- * ⚠️ I-007: a decision RPC on an already-decided row HANGS and takes PostgREST
- * down for every other chat for ~30s. Re-read the state here, immediately before
- * the call, and refuse rather than risk it. The UI hides the button too — this
- * is the second of the two guards, because a stale page can still submit.
- */
-export async function decideEnrollment(args: {
-  enrollmentId: string;
-  decision: "approved" | "rejected";
-  reason: string;
-}): Promise<Result<null>> {
-  const supabase = await createServerClient();
+/* ── The `ActionResult` shape shared with admin-actions.ts ───────────── */
+export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
 
-  const { data: current, error: readError } = await supabase
-    .from("enrollments")
-    .select("state, row_version")
-    .eq("id", args.enrollmentId)
-    .maybeSingle();
-  if (readError) return err(mapPostgrestError(readError));
-  if (!current) return err({ code: "PGRST116", message: "Nicht gefunden.", retryable: false });
-  if (current.state !== "requested") {
-    return err({
-      code: "ALREADY_DECIDED",
-      message: "Diese Anfrage wurde bereits entschieden. Bitte laden Sie die Seite neu.",
-      retryable: false,
-    });
-  }
-
-  const { error } = await supabase.rpc("decide_enrollment", {
-    p_enrollment_id: args.enrollmentId,
-    p_decision: args.decision,
-    p_reason: args.reason,
-    p_expected_version: current.row_version,
-    p_correlation_id: crypto.randomUUID(),
-  });
-  if (error) return err(mapPostgrestError(error));
-  return ok(null);
-}
-
-/** Only an `approved` enrolment can be assigned. Same hang guard as above. */
-export async function assignEnrollment(args: {
-  enrollmentId: string;
-  cohortId: string;
-  reason: string;
-}): Promise<Result<null>> {
-  const supabase = await createServerClient();
-
-  const { data: current, error: readError } = await supabase
-    .from("enrollments")
-    .select("state, row_version")
-    .eq("id", args.enrollmentId)
-    .maybeSingle();
-  if (readError) return err(mapPostgrestError(readError));
-  if (!current) return err({ code: "PGRST116", message: "Nicht gefunden.", retryable: false });
-  if (current.state !== "approved") {
-    return err({
-      code: "NOT_ASSIGNABLE",
-      message: "Nur genehmigte Anfragen können einer Gruppe zugeteilt werden.",
-      retryable: false,
-    });
-  }
-
-  const { error } = await supabase.rpc("assign_enrollment", {
-    p_enrollment_id: args.enrollmentId,
-    p_cohort_id: args.cohortId,
-    p_reason: args.reason,
-    p_expected_version: current.row_version,
-    p_correlation_id: crypto.randomUUID(),
-  });
-  if (error) return err(mapPostgrestError(error));
-  return ok(null);
-}
-
-/* ── Cohorts (groups) ───────────────────────────────────────────────────── */
-
-export const COHORT_STATES = ["waiting", "active", "completed", "cancelled"] as const;
-export type CohortState = (typeof COHORT_STATES)[number];
-
-export function parseCohortState(value: string | undefined): CohortState | undefined {
-  return COHORT_STATES.find((s) => s === value);
-}
-
-export interface AdminCohort {
-  id: string;
-  name: string;
-  state: string;
-  courseId: string;
-  courseTitle: string;
-  progressionMode: string;
-  capacity: number | null;
-  startsAt: string | null;
-  endsAt: string | null;
-  completedAt: string | null;
-  learnerCount: number;
-  trainerCount: number;
-  rowVersion: number;
-}
-
-export async function listCohorts(
-  args: ListArgs & { state?: CohortState } = {}
-): Promise<Result<Page<AdminCohort>>> {
-  const supabase = await createServerClient();
-
-  let query = supabase
-    .from("cohorts")
-    .select(
-      "id, name, state, course_id, progression_mode, capacity, starts_at, ends_at, completed_at, row_version"
-    )
-    .order("created_at", { ascending: false })
-    .limit(MERGE_CEILING);
-  if (args.state) query = query.eq("state", args.state);
-
-  const [cohortsRes, membershipsRes, courses] = await Promise.all([
-    query,
-    supabase.from("cohort_memberships").select("cohort_id, role, state").limit(MERGE_CEILING),
-    courseTitles(),
-  ]);
-  if (cohortsRes.error) return err(mapPostgrestError(cohortsRes.error));
-  if (membershipsRes.error) return err(mapPostgrestError(membershipsRes.error));
-
-  const counts = new Map<string, { learners: number; trainers: number }>();
-  for (const m of membershipsRes.data ?? []) {
-    if (m.state === "removed") continue;
-    const entry = counts.get(m.cohort_id) ?? { learners: 0, trainers: 0 };
-    if (m.role === "trainer") entry.trainers += 1;
-    else entry.learners += 1;
-    counts.set(m.cohort_id, entry);
-  }
-
-  const rows: AdminCohort[] = (cohortsRes.data ?? []).map((c) => ({
-    id: c.id,
-    name: c.name,
-    state: c.state,
-    courseId: c.course_id,
-    courseTitle: courses.get(c.course_id) ?? c.course_id,
-    progressionMode: c.progression_mode,
-    capacity: c.capacity,
-    startsAt: c.starts_at,
-    endsAt: c.ends_at,
-    completedAt: c.completed_at,
-    learnerCount: counts.get(c.id)?.learners ?? 0,
-    trainerCount: counts.get(c.id)?.trainers ?? 0,
-    rowVersion: c.row_version,
-  }));
-
-  return ok(slice(rows, args));
-}
-
-export interface CohortMember {
-  userId: string;
-  displayName: string;
-  role: string;
-  state: string;
-  assignedAt: string;
-}
-
-export async function getCohort(
-  cohortId: string
-): Promise<Result<{ cohort: AdminCohort; members: CohortMember[] }>> {
-  const supabase = await createServerClient();
-
-  const [listRes, membersRes, names] = await Promise.all([
-    listCohorts({ limit: MERGE_CEILING }),
-    supabase
-      .from("cohort_memberships")
-      .select("user_id, role, state, assigned_at")
-      .eq("cohort_id", cohortId)
-      .order("assigned_at"),
-    displayNames(),
-  ]);
-
-  if (!listRes.ok) return listRes;
-  const cohort = listRes.data.rows.find((c) => c.id === cohortId);
-  if (!cohort) return err({ code: "PGRST116", message: "Nicht gefunden.", retryable: false });
-  if (membersRes.error) return err(mapPostgrestError(membersRes.error));
-
-  return ok({
-    cohort,
-    members: (membersRes.data ?? []).map((m) => ({
-      userId: m.user_id,
-      displayName: names.get(m.user_id) ?? m.user_id,
-      role: m.role,
-      state: m.state,
-      assignedAt: m.assigned_at,
-    })),
-  });
-}
-
-/** Which transitions the UI offers. The database is still the authority. */
-export const COHORT_TRANSITIONS: Record<string, CohortState[]> = {
-  waiting: ["active", "cancelled"],
-  active: ["completed", "cancelled"],
-  completed: [],
-  cancelled: [],
-};
-
-export async function transitionCohortState(args: {
-  cohortId: string;
-  targetState: CohortState;
-  reason: string;
-}): Promise<Result<null>> {
-  const supabase = await createServerClient();
-
-  const { data: current, error: readError } = await supabase
-    .from("cohorts")
-    .select("state, row_version")
-    .eq("id", args.cohortId)
-    .maybeSingle();
-  if (readError) return err(mapPostgrestError(readError));
-  if (!current) return err({ code: "PGRST116", message: "Nicht gefunden.", retryable: false });
-
-  const allowed = COHORT_TRANSITIONS[current.state] ?? [];
-  if (!allowed.includes(args.targetState)) {
-    return err({
-      code: "INVALID_TRANSITION",
-      message: "Dieser Statuswechsel ist nicht möglich. Bitte laden Sie die Seite neu.",
-      retryable: false,
-    });
-  }
-
-  const { error } = await supabase.rpc("transition_cohort", {
-    p_cohort_id: args.cohortId,
-    p_target_state: args.targetState,
-    p_reason: args.reason,
-    p_expected_version: current.row_version,
-    p_correlation_id: crypto.randomUUID(),
-    p_idempotency_key: `cohort:${args.cohortId}:${current.row_version}:${args.targetState}`,
-  });
-  if (error) return err(mapPostgrestError(error));
-  return ok(null);
-}
-
-/** `cohorts` UPDATE is granted even though INSERT is not (I-011). */
-export async function updateCohortSchedule(args: {
-  cohortId: string;
-  name: string;
-  capacity: number | null;
-  startsAt: string | null;
-  endsAt: string | null;
-}): Promise<Result<null>> {
-  const supabase = await createServerClient();
-  const { error } = await supabase
-    .from("cohorts")
-    .update({
-      name: args.name,
-      capacity: args.capacity,
-      starts_at: args.startsAt,
-      ends_at: args.endsAt,
-    })
-    .eq("id", args.cohortId);
-  if (error) return err(mapPostgrestError(error));
-  return ok(null);
-}
-
-/* ── Support issues ─────────────────────────────────────────────────────── */
-
-export interface SupportIssue {
-  id: string;
+/* ── Action input shapes (built by client components) ────────────────── */
+export interface CourseInput {
+  slug: string;
   title: string;
   description: string;
-  severity: string;
-  state: string;
-  reporterId: string | null;
-  reporterName: string | null;
-  assigneeId: string | null;
-  assigneeName: string | null;
-  createdAt: string;
-  resolvedAt: string | null;
-  rowVersion: number;
+  cover_image_url: string;
+  intro_video_url: string;
+  completion_video_url: string;
+}
+export interface CourseTaskOptionInput {
+  id?: string;
+  label: string;
+  is_correct: boolean;
+}
+export interface SaveCourseTaskInput {
+  id?: string;
+  courseId: string;
+  title: string;
+  description: string;
+  hint: string;
+  video_before_url: string;
+  video_after_url: string;
+  mcq_question: string;
+  arena_task_id: string | null;
+  verification_answer: string;
+  options: CourseTaskOptionInput[];
+}
+export interface SaveArenaTaskInput {
+  id?: string;
+  title: string;
+  description: string;
+  html_window: string;
+  hint: string;
+  xp_reward: number;
+  badge_id: string | null;
+  acceptance_criteria: string;
+  answer_key: string;
+}
+export interface BadgeInput {
+  name: string;
+  description: string;
+  image_url: string;
+}
+export interface CreateUserInput {
+  email: string;
+  name: string;
+  role: UserRole;
+}
+export interface OwnProfileInput {
+  display_name: string;
+  avatar_url: string;
 }
 
-export async function listSupportIssues(
-  args: ListArgs & { state?: string; severity?: string } = {}
-): Promise<Result<Page<SupportIssue>>> {
+/* ── helpers ─────────────────────────────────────────────────────────── */
+function failed(error: PostgrestError): Result<never> {
+  return err(mapPostgrestError(error));
+}
+function uniq(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
+
+/* ====================================================================== */
+/* Courses                                                                */
+/* ====================================================================== */
+export async function listCourses(): Promise<Result<Course[]>> {
+  const supabase = await createServerClient();
+  return fromSupabase<Course[]>(
+    async () => await supabase.from("courses").select("*").order("created_at", { ascending: false })
+  );
+}
+
+export async function getCourse(id: string): Promise<Result<Course>> {
+  const supabase = await createServerClient();
+  return fromSupabase<Course>(
+    async () => await supabase.from("courses").select("*").eq("id", id).single()
+  );
+}
+
+/* ====================================================================== */
+/* Course tasks (+ options + answer)                                      */
+/* ====================================================================== */
+export async function listCourseTasks(courseId: string): Promise<Result<CourseTaskDetail[]>> {
   const supabase = await createServerClient();
 
-  let query = supabase
-    .from("support_issues")
-    .select(
-      "id, title, description_redacted, severity, state, reporter_id, assignee_id, created_at, resolved_at, row_version"
-    )
-    .order("created_at", { ascending: false })
-    .limit(MERGE_CEILING);
-  if (args.state) query = query.eq("state", args.state);
-  if (args.severity) query = query.eq("severity", args.severity);
+  const tasksRes = await supabase
+    .from("course_tasks")
+    .select("*")
+    .eq("course_id", courseId)
+    .order("order_index", { ascending: true });
+  if (tasksRes.error) return failed(tasksRes.error);
+  const tasks = tasksRes.data ?? [];
+  if (tasks.length === 0) return ok([]);
 
-  const [issuesRes, names] = await Promise.all([query, displayNames()]);
-  if (issuesRes.error) return err(mapPostgrestError(issuesRes.error));
-
-  const rows: SupportIssue[] = (issuesRes.data ?? []).map((i) => ({
-    id: i.id,
-    title: i.title,
-    description: i.description_redacted,
-    severity: i.severity,
-    state: i.state,
-    reporterId: i.reporter_id,
-    reporterName: i.reporter_id ? (names.get(i.reporter_id) ?? null) : null,
-    assigneeId: i.assignee_id,
-    assigneeName: i.assignee_id ? (names.get(i.assignee_id) ?? null) : null,
-    createdAt: i.created_at,
-    resolvedAt: i.resolved_at,
-    rowVersion: i.row_version,
-  }));
-
-  return ok(slice(rows, args));
-}
-
-/** UPDATE is granted on `support_issues`; INSERT is not (nothing creates one). */
-export async function updateSupportIssueState(args: {
-  issueId: string;
-  state: string;
-}): Promise<Result<null>> {
-  const supabase = await createServerClient();
-  const { error } = await supabase
-    .from("support_issues")
-    .update({
-      state: args.state,
-      ...(args.state === "resolved" ? { resolved_at: new Date().toISOString() } : {}),
-    })
-    .eq("id", args.issueId);
-  if (error) return err(mapPostgrestError(error));
-  return ok(null);
-}
-
-/* ── Own profile ────────────────────────────────────────────────────────── */
-
-/**
- * The own-profile reader and writer that used to sit here are gone. Every role
- * now reads its profile through `features/profile/data.ts` and writes it
- * through `features/profile/actions.ts`, because the row, the RLS policy and
- * the RPC were never admin-specific — only the screen that called them was.
- */
-
-/* ── Platform settings (read-only reference) ────────────────────────────── */
-
-export interface PlatformInfo {
-  organizationName: string;
-  organizationSlug: string;
-  organizationState: string;
-  courseCount: number;
-  cohortCount: number;
-  userCount: number;
-}
-
-export async function getPlatformInfo(): Promise<Result<PlatformInfo>> {
-  const supabase = await createServerClient();
-
-  const [orgRes, coursesRes, cohortsRes, profilesRes] = await Promise.all([
-    supabase.from("organizations").select("name, slug, state").limit(1).maybeSingle(),
-    // { count: "exact", head: true } silently fails on this PostgREST build
-    // (WS-0.md) — always take a row with the count.
-    supabase.from("courses").select("id", { count: "exact" }).limit(1),
-    supabase.from("cohorts").select("id", { count: "exact" }).limit(1),
-    supabase.from("profiles").select("user_id", { count: "exact" }).limit(1),
+  const ids = tasks.map((t) => t.id);
+  const [optsRes, ansRes] = await Promise.all([
+    supabase.from("course_task_options").select("*").in("course_task_id", ids).order("order_index", { ascending: true }),
+    supabase.from("course_task_answer").select("*").in("course_task_id", ids),
   ]);
+  if (optsRes.error) return failed(optsRes.error);
+  if (ansRes.error) return failed(ansRes.error);
 
-  if (orgRes.error) return err(mapPostgrestError(orgRes.error));
+  const optsByTask = new Map<string, CourseTaskOption[]>();
+  for (const o of optsRes.data ?? []) {
+    const arr = optsByTask.get(o.course_task_id) ?? [];
+    arr.push(o);
+    optsByTask.set(o.course_task_id, arr);
+  }
+  const ansByTask = new Map<string, CourseTaskAnswer>();
+  for (const a of ansRes.data ?? []) {
+    ansByTask.set(a.course_task_id, {
+      verification_answer: a.verification_answer,
+      correct_option_ids: a.correct_option_ids,
+    });
+  }
+
+  return ok(
+    tasks.map((t) => ({
+      ...t,
+      options: optsByTask.get(t.id) ?? [],
+      answer: ansByTask.get(t.id) ?? null,
+    }))
+  );
+}
+
+export async function getCourseTask(id: string): Promise<Result<CourseTaskDetail>> {
+  const supabase = await createServerClient();
+
+  const taskRes = await supabase.from("course_tasks").select("*").eq("id", id).single();
+  if (taskRes.error) return failed(taskRes.error);
+
+  const [optsRes, ansRes] = await Promise.all([
+    supabase.from("course_task_options").select("*").eq("course_task_id", id).order("order_index", { ascending: true }),
+    supabase.from("course_task_answer").select("*").eq("course_task_id", id).maybeSingle(),
+  ]);
+  if (optsRes.error) return failed(optsRes.error);
+  if (ansRes.error) return failed(ansRes.error);
+
+  const answer = ansRes.data
+    ? { verification_answer: ansRes.data.verification_answer, correct_option_ids: ansRes.data.correct_option_ids }
+    : null;
+
+  return ok({ ...taskRes.data, options: optsRes.data ?? [], answer });
+}
+
+/* ====================================================================== */
+/* Arena tasks (+ answer)                                                 */
+/* ====================================================================== */
+export async function listArenaTasks(): Promise<Result<ArenaTaskDetail[]>> {
+  const supabase = await createServerClient();
+
+  const tasksRes = await supabase.from("arena_tasks").select("*").order("order_index", { ascending: true });
+  if (tasksRes.error) return failed(tasksRes.error);
+  const tasks = tasksRes.data ?? [];
+  if (tasks.length === 0) return ok([]);
+
+  const ansRes = await supabase.from("arena_task_answer").select("*").in("arena_task_id", tasks.map((t) => t.id));
+  if (ansRes.error) return failed(ansRes.error);
+
+  const ansById = new Map<string, ArenaTaskAnswer>();
+  for (const a of ansRes.data ?? []) {
+    ansById.set(a.arena_task_id, { acceptance_criteria: a.acceptance_criteria, answer_key: a.answer_key });
+  }
+
+  return ok(tasks.map((t) => ({ ...t, answer: ansById.get(t.id) ?? null })));
+}
+
+export async function getArenaTask(id: string): Promise<Result<ArenaTaskDetail>> {
+  const supabase = await createServerClient();
+
+  const taskRes = await supabase.from("arena_tasks").select("*").eq("id", id).single();
+  if (taskRes.error) return failed(taskRes.error);
+
+  const ansRes = await supabase.from("arena_task_answer").select("*").eq("arena_task_id", id).maybeSingle();
+  if (ansRes.error) return failed(ansRes.error);
+
+  const answer = ansRes.data
+    ? { acceptance_criteria: ansRes.data.acceptance_criteria, answer_key: ansRes.data.answer_key }
+    : null;
+
+  return ok({ ...taskRes.data, answer });
+}
+
+/* ====================================================================== */
+/* Badges                                                                 */
+/* ====================================================================== */
+export async function listBadges(): Promise<Result<Badge[]>> {
+  const supabase = await createServerClient();
+  return fromSupabase<Badge[]>(
+    async () => await supabase.from("badges").select("*").order("created_at", { ascending: false })
+  );
+}
+
+/* ====================================================================== */
+/* Users / profiles                                                       */
+/* ====================================================================== */
+export async function listProfiles(): Promise<Result<Profile[]>> {
+  const supabase = await createServerClient();
+  return fromSupabase<Profile[]>(
+    async () => await supabase.from("profiles").select("*").order("display_name", { ascending: true })
+  );
+}
+
+export async function getProfile(id: string): Promise<Result<Profile>> {
+  const supabase = await createServerClient();
+  return fromSupabase<Profile>(
+    async () => await supabase.from("profiles").select("*").eq("id", id).single()
+  );
+}
+
+/* ====================================================================== */
+/* People per course                                                      */
+/* ====================================================================== */
+export async function getCourseAssignments(courseId: string): Promise<Result<CourseAssignments>> {
+  const supabase = await createServerClient();
+
+  const [enrRes, ctRes, studentsRes, trainersRes] = await Promise.all([
+    supabase.from("enrollments").select("student_id").eq("course_id", courseId),
+    supabase.from("course_trainers").select("trainer_id").eq("course_id", courseId),
+    supabase.from("profiles").select("*").eq("role", "student").order("display_name", { ascending: true }),
+    supabase.from("profiles").select("*").eq("role", "trainer").order("display_name", { ascending: true }),
+  ]);
+  if (enrRes.error) return failed(enrRes.error);
+  if (ctRes.error) return failed(ctRes.error);
+  if (studentsRes.error) return failed(studentsRes.error);
+  if (trainersRes.error) return failed(trainersRes.error);
+
+  const enrolledIds = new Set((enrRes.data ?? []).map((r) => r.student_id));
+  const trainerIds = new Set((ctRes.data ?? []).map((r) => r.trainer_id));
+  const allStudents = studentsRes.data ?? [];
+  const allTrainers = trainersRes.data ?? [];
 
   return ok({
-    organizationName: orgRes.data?.name ?? "—",
-    organizationSlug: orgRes.data?.slug ?? "—",
-    organizationState: orgRes.data?.state ?? "—",
-    courseCount: coursesRes.count ?? 0,
-    cohortCount: cohortsRes.count ?? 0,
-    userCount: profilesRes.count ?? 0,
+    students: allStudents.filter((p) => enrolledIds.has(p.id)),
+    trainers: allTrainers.filter((p) => trainerIds.has(p.id)),
+    candidateStudents: allStudents.filter((p) => !enrolledIds.has(p.id) && p.is_active),
+    candidateTrainers: allTrainers.filter((p) => !trainerIds.has(p.id) && p.is_active),
   });
 }
 
-/* ── Lookup helpers ─────────────────────────────────────────────────────── */
-
-/** user_id → display name. One query, reused by every screen that shows a person. */
-async function displayNames(): Promise<Map<string, string>> {
+/* ====================================================================== */
+/* Feedback                                                               */
+/* ====================================================================== */
+export async function listTaskEmojiFeedback(): Promise<Result<TaskEmojiFeedbackRow[]>> {
   const supabase = await createServerClient();
-  const { data } = await supabase.from("profiles").select("user_id, display_name").limit(MERGE_CEILING);
-  return new Map((data ?? []).map((p) => [p.user_id, p.display_name]));
+
+  const fbRes = await supabase.from("task_feedback").select("*").order("created_at", { ascending: false });
+  if (fbRes.error) return failed(fbRes.error);
+  const rows = fbRes.data ?? [];
+  if (rows.length === 0) return ok([]);
+
+  const studentIds = uniq(rows.map((r) => r.student_id));
+  const taskIds = uniq(rows.map((r) => r.course_task_id));
+
+  const [profRes, taskRes] = await Promise.all([
+    supabase.from("profiles").select("id, display_name").in("id", studentIds),
+    supabase.from("course_tasks").select("id, title, course_id").in("id", taskIds),
+  ]);
+  if (profRes.error) return failed(profRes.error);
+  if (taskRes.error) return failed(taskRes.error);
+
+  const tasks = taskRes.data ?? [];
+  const courseIds = uniq(tasks.map((t) => t.course_id));
+  const courseRes = courseIds.length
+    ? await supabase.from("courses").select("id, title").in("id", courseIds)
+    : { data: [], error: null as PostgrestError | null };
+  if (courseRes.error) return failed(courseRes.error);
+
+  const nameById = new Map((profRes.data ?? []).map((p) => [p.id, p.display_name]));
+  const taskById = new Map(tasks.map((t) => [t.id, t]));
+  const courseTitleById = new Map((courseRes.data ?? []).map((c) => [c.id, c.title]));
+
+  return ok(
+    rows.map((r) => {
+      const task = taskById.get(r.course_task_id);
+      return {
+        id: r.id,
+        emoji: r.emoji,
+        created_at: r.created_at,
+        studentName: nameById.get(r.student_id) ?? "—",
+        taskTitle: task?.title ?? "—",
+        courseTitle: (task && courseTitleById.get(task.course_id)) ?? "—",
+      };
+    })
+  );
 }
 
-/**
- * course_id → title. Titles live in `course_localizations`, not `courses`.
- * German first, then the course's own default locale, then anything.
- */
-async function courseTitles(): Promise<Map<string, string>> {
+export async function listCourseReviews(): Promise<Result<CourseReviewRow[]>> {
   const supabase = await createServerClient();
-  const { data } = await supabase
-    .from("course_localizations")
-    .select("course_id, locale, title")
-    .limit(MERGE_CEILING);
 
-  const byCourse = new Map<string, string>();
-  for (const row of data ?? []) {
-    if (row.locale === "de" || !byCourse.has(row.course_id)) byCourse.set(row.course_id, row.title);
+  const cfRes = await supabase.from("course_feedback").select("*").order("created_at", { ascending: false });
+  if (cfRes.error) return failed(cfRes.error);
+  const rows = cfRes.data ?? [];
+  if (rows.length === 0) return ok([]);
+
+  const studentIds = uniq(rows.map((r) => r.student_id));
+  const courseIds = uniq(rows.map((r) => r.course_id));
+
+  const [profRes, courseRes] = await Promise.all([
+    supabase.from("profiles").select("id, display_name").in("id", studentIds),
+    supabase.from("courses").select("id, title").in("id", courseIds),
+  ]);
+  if (profRes.error) return failed(profRes.error);
+  if (courseRes.error) return failed(courseRes.error);
+
+  const nameById = new Map((profRes.data ?? []).map((p) => [p.id, p.display_name]));
+  const courseTitleById = new Map((courseRes.data ?? []).map((c) => [c.id, c.title]));
+
+  return ok(
+    rows.map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      created_at: r.created_at,
+      studentName: nameById.get(r.student_id) ?? "—",
+      courseTitle: courseTitleById.get(r.course_id) ?? "—",
+    }))
+  );
+}
+
+/* ====================================================================== */
+/* Progress                                                               */
+/* ====================================================================== */
+export async function listStudentProgress(): Promise<Result<StudentProgressRow[]>> {
+  const supabase = await createServerClient();
+
+  const enrRes = await supabase
+    .from("enrollments")
+    .select("student_id, course_id, state")
+    .order("enrolled_at", { ascending: false });
+  if (enrRes.error) return failed(enrRes.error);
+  const enrollments = enrRes.data ?? [];
+  if (enrollments.length === 0) return ok([]);
+
+  const studentIds = uniq(enrollments.map((e) => e.student_id));
+  const courseIds = uniq(enrollments.map((e) => e.course_id));
+
+  const [profRes, courseRes, courseSubsRes, arenaSubsRes, xpRes, badgeRes, courseTasksRes] = await Promise.all([
+    supabase.from("profiles").select("id, display_name").in("id", studentIds),
+    supabase.from("courses").select("id, title").in("id", courseIds),
+    supabase
+      .from("submissions")
+      .select("student_id, course_task_id")
+      .eq("task_kind", "course")
+      .eq("state", "accepted")
+      .in("student_id", studentIds),
+    supabase
+      .from("submissions")
+      .select("student_id")
+      .eq("task_kind", "arena")
+      .eq("state", "accepted")
+      .in("student_id", studentIds),
+    supabase.from("xp_ledger").select("student_id, amount").in("student_id", studentIds),
+    supabase.from("badge_awards").select("student_id").in("student_id", studentIds),
+    supabase.from("course_tasks").select("id, course_id").in("course_id", courseIds),
+  ]);
+  if (profRes.error) return failed(profRes.error);
+  if (courseRes.error) return failed(courseRes.error);
+  if (courseSubsRes.error) return failed(courseSubsRes.error);
+  if (arenaSubsRes.error) return failed(arenaSubsRes.error);
+  if (xpRes.error) return failed(xpRes.error);
+  if (badgeRes.error) return failed(badgeRes.error);
+  if (courseTasksRes.error) return failed(courseTasksRes.error);
+
+  const nameById = new Map((profRes.data ?? []).map((p) => [p.id, p.display_name]));
+  const courseTitleById = new Map((courseRes.data ?? []).map((c) => [c.id, c.title]));
+  const taskToCourse = new Map((courseTasksRes.data ?? []).map((t) => [t.id, t.course_id]));
+
+  // accepted course tasks per student|course
+  const courseTaskCount = new Map<string, number>();
+  for (const s of courseSubsRes.data ?? []) {
+    if (!s.course_task_id) continue;
+    const courseId = taskToCourse.get(s.course_task_id);
+    if (!courseId) continue;
+    const key = `${s.student_id}|${courseId}`;
+    courseTaskCount.set(key, (courseTaskCount.get(key) ?? 0) + 1);
   }
-  return byCourse;
-}
-
-/** task_id → title. `tasks` is admin-readable; the title column is `slug`-free. */
-async function taskTitles(): Promise<Map<string, string>> {
-  const supabase = await createServerClient();
-  const { data } = await supabase.from("task_localizations").select("task_id, locale, title").limit(MERGE_CEILING);
-
-  const byTask = new Map<string, string>();
-  for (const row of data ?? []) {
-    if (row.locale === "de" || !byTask.has(row.task_id)) byTask.set(row.task_id, row.title);
+  // accepted arena tasks per student (global chain)
+  const arenaCount = new Map<string, number>();
+  for (const s of arenaSubsRes.data ?? []) {
+    arenaCount.set(s.student_id, (arenaCount.get(s.student_id) ?? 0) + 1);
   }
-  return byTask;
+  const xpByStudent = new Map<string, number>();
+  for (const x of xpRes.data ?? []) {
+    xpByStudent.set(x.student_id, (xpByStudent.get(x.student_id) ?? 0) + x.amount);
+  }
+  const badgesByStudent = new Map<string, number>();
+  for (const b of badgeRes.data ?? []) {
+    badgesByStudent.set(b.student_id, (badgesByStudent.get(b.student_id) ?? 0) + 1);
+  }
+
+  return ok(
+    enrollments.map((e) => ({
+      key: `${e.student_id}|${e.course_id}`,
+      studentId: e.student_id,
+      studentName: nameById.get(e.student_id) ?? "—",
+      courseId: e.course_id,
+      courseTitle: courseTitleById.get(e.course_id) ?? "—",
+      enrollmentState: e.state,
+      acceptedCourseTasks: courseTaskCount.get(`${e.student_id}|${e.course_id}`) ?? 0,
+      acceptedArenaTasks: arenaCount.get(e.student_id) ?? 0,
+      totalXp: xpByStudent.get(e.student_id) ?? 0,
+      badgeCount: badgesByStudent.get(e.student_id) ?? 0,
+    }))
+  );
 }
 
-async function cohortNames(): Promise<Map<string, string>> {
+/* ====================================================================== */
+/* Overview (dashboard KPIs)                                              */
+/* ====================================================================== */
+export async function getAdminOverview(): Promise<Result<AdminOverview>> {
   const supabase = await createServerClient();
-  const { data } = await supabase.from("cohorts").select("id, name").limit(MERGE_CEILING);
-  return new Map((data ?? []).map((c) => [c.id, c.name]));
+
+  const [coursesRes, profilesRes, subsRes, arenaRes, badgesRes] = await Promise.all([
+    supabase.from("courses").select("state"),
+    supabase.from("profiles").select("role"),
+    supabase.from("submissions").select("id", { count: "exact", head: true }).eq("state", "submitted"),
+    supabase.from("arena_tasks").select("id", { count: "exact", head: true }),
+    supabase.from("badges").select("id", { count: "exact", head: true }),
+  ]);
+  if (coursesRes.error) return failed(coursesRes.error);
+  if (profilesRes.error) return failed(profilesRes.error);
+  if (subsRes.error) return failed(subsRes.error);
+  if (arenaRes.error) return failed(arenaRes.error);
+  if (badgesRes.error) return failed(badgesRes.error);
+
+  const courses = coursesRes.data ?? [];
+  const profiles = profilesRes.data ?? [];
+
+  return ok({
+    courses: courses.length,
+    activeCourses: courses.filter((c) => c.state === "active").length,
+    users: profiles.length,
+    students: profiles.filter((p) => p.role === "student").length,
+    trainers: profiles.filter((p) => p.role === "trainer").length,
+    admins: profiles.filter((p) => p.role === "admin").length,
+    openSubmissions: subsRes.count ?? 0,
+    arenaTasks: arenaRes.count ?? 0,
+    badges: badgesRes.count ?? 0,
+  });
 }

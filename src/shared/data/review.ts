@@ -1,1292 +1,539 @@
 import "server-only";
 
-import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { createServerClient } from "@/shared/database/server";
-import { mapPostgrestError, ok, err, type DataError, type Result } from "./result";
+import { createServiceRoleClient } from "@/shared/database/service-role";
+import type { Database, Enums } from "@/shared/database/database.types";
+import { requirePrincipal } from "@/shared/auth/principal";
+import { isStaff } from "@/shared/auth/authorization";
+import { err, ok, mapPostgrestError, type Result } from "./result";
 
 /**
- * WS-4's data layer. Every trainer read and write goes through here.
+ * TRAINER data layer for the clean schema (see ditele_schema.md · TEST_PLAN §5).
  *
- * Three things measured against the live database that contradict the plan —
- * the detail is in plan/status/WS-4.md and ISSUES.md I-016…I-019:
- *
- *  1. `get_submission_review_context` returns ONLY the task title, the
- *     assessment options and the rubric. The learner's answer, the evidence,
- *     the hints and the timings all come from tables.
- *  2. `decide_submission` needs a NON-EMPTY ARRAY of rubric scores, a non-blank
- *     comment, and an idempotency key of 16–200 characters. `{}` always fails.
- *  3. A trainer session reads 0 `enrollments`, so cohort progress is built from
- *     `cohort_memberships`.
+ * Reads run through the RLS-scoped server client, so a trainer only ever sees
+ * submissions, students and answer keys for the courses they hold in
+ * `course_trainers`; staff (trainer/admin) are the only roles RLS lets read the
+ * `course_task_answer` / `arena_task_answer` keys at all. The one write path,
+ * `reviewSubmission`, re-checks the actor and then uses the service-role client
+ * so the XP/badge grants land regardless of the narrower write policies.
  */
 
-/* ── Localized helpers ──────────────────────────────────────────────────── */
+export type TaskKind = Enums<"submission_kind">;
+export type SubmissionState = Enums<"submission_state">;
+export type ReviewDecision = Enums<"review_decision">;
 
-/** Snapshot and rubric text comes back as {de,en,ru}. A key can be missing. */
-export type LocalizedText = Partial<Record<string, string>>;
+type ServerClient = SupabaseClient<Database>;
 
-export function pick(map: LocalizedText | null | undefined, locale: string): string {
-  if (!map) return "";
-  return map[locale] || map.de || map.en || Object.values(map).find(Boolean) || "";
+/* ── Overview (/trainer) ─────────────────────────────────────────────────── */
+
+export interface TrainerCourseSummary {
+  id: string;
+  title: string;
+  studentCount: number;
 }
 
-/* ── Error mapping ──────────────────────────────────────────────────────── */
-
-/**
- * The review RPCs raise domain messages that `mapPostgrestError` does not know:
- * 40001 for a concurrent decision, and a family of 42501/22023 texts. WF-3's
- * "a concurrent decision by two trainers is detected and reported" acceptance
- * criterion is satisfied here.
- */
-export function mapReviewError(error: { code?: string; message?: string } | null): DataError {
-  const message = error?.message ?? "";
-
-  if (error?.code === "40001" || /stale|not reviewable|not transferable|became stale|latest submission version/i.test(message)) {
-    return {
-      code: "CONFLICT",
-      message:
-        "Diese Abgabe wurde inzwischen von jemand anderem bearbeitet. Bitte laden Sie die Seite neu.",
-      retryable: true,
-    };
-  }
-  if (/ownership changed/i.test(message)) {
-    return {
-      code: "OWNERSHIP",
-      message: "Diese Abgabe wurde inzwischen an eine andere Person übergeben.",
-      retryable: false,
-    };
-  }
-  if (/no active rubric/i.test(message)) {
-    return {
-      code: "NO_RUBRIC",
-      message:
-        "Für diese Aufgabe ist kein aktiver Bewertungsbogen hinterlegt. Eine Entscheidung ist nicht möglich.",
-      retryable: false,
-    };
-  }
-  if (/criterion scores|required rubric criterion|outside the assigned rubric/i.test(message)) {
-    return {
-      code: "RUBRIC_SCORES",
-      message: "Bitte bewerten Sie alle Pflichtkriterien mit einer gültigen Punktzahl.",
-      retryable: false,
-    };
-  }
-  if (/comment/i.test(message)) {
-    return { code: "COMMENT_REQUIRED", message: "Ein Kommentar ist erforderlich.", retryable: false };
-  }
-  if (/target trainer is not active/i.test(message)) {
-    return {
-      code: "BAD_TARGET",
-      message: "Diese Person ist keine aktive Trainerin oder kein aktiver Trainer dieser Gruppe.",
-      retryable: false,
-    };
-  }
-  if (/scope denied/i.test(message)) {
-    return { code: "42501", message: "Keine Berechtigung für diese Abgabe.", retryable: false };
-  }
-  return mapPostgrestError(error as never);
+export interface TrainerOverview {
+  queueSize: number;
+  courses: TrainerCourseSummary[];
 }
 
-/** Every mutation in this database needs a 16–200 character key (ISSUES I-016). */
-export function idempotencyKey(operation: string, id: string, version: number): string {
-  return `ws4-${operation}-${id}-v${version}`;
-}
-
-/* ── Shared row shapes ──────────────────────────────────────────────────── */
-
-const SubmissionVersionSchema = z.object({
-  id: z.string(),
-  version_number: z.number(),
-  answer_text: z.string().nullable().default(""),
-  selected_option_ids: z.array(z.string()).nullable().default([]),
-  evidence_refs: z.array(z.string()).nullable().default([]),
-  elapsed_seconds: z.number().nullable().default(0),
-  hint_used: z.boolean().nullable().default(false),
-  submitted_at: z.string(),
-  submitted_by: z.string().nullable().default(null),
-  task_snapshot: z.unknown().nullable().default(null),
-});
-
-const SubmissionRowSchema = z.object({
-  id: z.string(),
-  state: z.string(),
-  created_at: z.string(),
-  updated_at: z.string(),
-  learner_id: z.string(),
-  task_id: z.string(),
-  cohort_id: z.string(),
-  course_id: z.string(),
-  attempt_id: z.string(),
-  latest_version_number: z.number(),
-  row_version: z.number(),
-  submission_versions: z.array(SubmissionVersionSchema).default([]),
-});
-
-const SUBMISSION_SELECT =
-  "id,state,created_at,updated_at,learner_id,task_id,cohort_id,course_id,attempt_id," +
-  "latest_version_number,row_version," +
-  "submission_versions(id,version_number,answer_text,selected_option_ids,evidence_refs," +
-  "elapsed_seconds,hint_used,submitted_at,submitted_by,task_snapshot)";
-
-/** Open work only. `accepted` and `withdrawn` have left the queue. */
-export const OPEN_SUBMISSION_STATES = ["submitted", "resubmitted", "revision_required"] as const;
-
-const SUBMISSION_STATES = [
-  "submitted",
-  "resubmitted",
-  "revision_required",
-  "accepted",
-  "withdrawn",
-] as const;
-export type SubmissionState = (typeof SUBMISSION_STATES)[number];
-
-/** A URL filter is a string from the outside world — narrow it or drop it. */
-export function asSubmissionState(value: string | undefined): SubmissionState | undefined {
-  return SUBMISSION_STATES.find((state) => state === value);
-}
-
-const QUESTION_STATES = ["open", "assigned", "answered", "transferred", "archived"] as const;
-export type QuestionState = (typeof QUESTION_STATES)[number];
-
-export function asQuestionState(value: string | undefined): QuestionState | undefined {
-  return QUESTION_STATES.find((state) => state === value);
-}
+/* ── Queue (/trainer/submissions) ────────────────────────────────────────── */
 
 export interface QueueItem {
   id: string;
-  state: string;
-  learnerId: string;
-  learnerName: string;
-  taskId: string;
+  studentName: string;
   taskTitle: string;
-  courseId: string;
-  courseTitle: string;
-  submittedAt: string;
-  waitingHours: number;
-  attemptNumber: number;
-  hintUsed: boolean;
-  elapsedSeconds: number;
-  evidenceCount: number;
-  rowVersion: number;
+  taskKind: TaskKind;
+  submittedAt: string | null;
 }
 
-export interface QueuePage {
-  items: QueueItem[];
-  total: number;
-  /** For the queue's filter. Courses, not cohorts — see readCourseTitles. */
-  courses: { id: string; name: string }[];
-}
+/* ── Review detail (/trainer/submissions/[id]) ───────────────────────────── */
 
-/* ── Small shared readers ───────────────────────────────────────────────── */
-
-type Supabase = Awaited<ReturnType<typeof createServerClient>>;
-
-async function readProfiles(supabase: Supabase, userIds: string[]): Promise<Map<string, string>> {
-  const unique = [...new Set(userIds)].filter(Boolean);
-  if (unique.length === 0) return new Map();
-  const { data } = await supabase.from("profiles").select("user_id,display_name").in("user_id", unique);
-  return new Map((data ?? []).map((row) => [row.user_id, row.display_name]));
-}
-
-async function readCohorts(supabase: Supabase): Promise<Map<string, string>> {
-  const { data } = await supabase.from("cohorts").select("id,name");
-  return new Map((data ?? []).map((row) => [row.id, row.name]));
-}
-
-/**
- * Course title per COHORT id.
- *
- * `public.questions` carries `cohort_id` and `task_id` but no `course_id`, so
- * the question screens have to go through the cohort to name the course. That
- * indirection is the clearest argument for the cohort concept being vestigial:
- * the row exists only as a pointer to the course the reader actually wanted.
- */
-async function readCourseTitlesByCohort(
-  supabase: Supabase,
-  cohortIds: string[],
-  locale: string
-): Promise<Map<string, string>> {
-  const unique = [...new Set(cohortIds)].filter(Boolean);
-  if (unique.length === 0) return new Map();
-  const { data } = await supabase.from("cohorts").select("id,course_id").in("id", unique);
-  const courseByCohort = new Map((data ?? []).map((row) => [row.id, row.course_id]));
-  const titles = await readCourseTitles(supabase, [...courseByCohort.values()], locale);
-  return new Map(
-    [...courseByCohort].map(([cohortId, courseId]) => [cohortId, titles.get(courseId) ?? "—"])
-  );
-}
-
-/**
- * Course titles for the review queue.
- *
- * The queue used to show the COHORT name, and a cohort carries no information a
- * trainer reviewing a submission can act on — the seeded one is called "Release
- * 0 Cohort" and every row said the same thing. What a trainer needs to know is
- * which COURSE the work belongs to.
- *
- * Falls back to the slug, then to an em dash, so a course whose German
- * localization is missing still identifies itself.
- */
-async function readCourseTitles(
-  supabase: Supabase,
-  courseIds: string[],
-  locale: string
-): Promise<Map<string, string>> {
-  const unique = [...new Set(courseIds)];
-  if (unique.length === 0) return new Map();
-  const [localizations, courses] = await Promise.all([
-    supabase.from("course_localizations").select("course_id,locale,title").in("course_id", unique),
-    supabase.from("courses").select("id,slug").in("id", unique),
-  ]);
-  const bySlug = new Map((courses.data ?? []).map((row) => [row.id, row.slug]));
-  const titles = new Map<string, string>();
-  for (const id of unique) {
-    const rows = (localizations.data ?? []).filter((row) => row.course_id === id);
-    const pick =
-      rows.find((row) => row.locale === locale)?.title ??
-      rows.find((row) => row.locale === "de")?.title ??
-      bySlug.get(id) ??
-      "—";
-    titles.set(id, pick);
-  }
-  return titles;
-}
-
-/**
- * The snapshot frozen into a submission has no title, so titles come from
- * `task_localizations` — which a trainer can read, unlike a student.
- */
-async function readTaskTitles(
-  supabase: Supabase,
-  taskIds: string[],
-  locale: string
-): Promise<Map<string, string>> {
-  const unique = [...new Set(taskIds)].filter(Boolean);
-  if (unique.length === 0) return new Map();
-  const { data } = await supabase
-    .from("task_localizations")
-    .select("task_id,locale,title")
-    .in("task_id", unique);
-
-  const byTask = new Map<string, Map<string, string>>();
-  for (const row of data ?? []) {
-    const entry = byTask.get(row.task_id) ?? new Map<string, string>();
-    entry.set(row.locale, row.title);
-    byTask.set(row.task_id, entry);
-  }
-  return new Map(
-    [...byTask].map(([taskId, byLocale]) => [
-      taskId,
-      byLocale.get(locale) || byLocale.get("de") || byLocale.get("en") || [...byLocale.values()][0] || "",
-    ])
-  );
-}
-
-function latestVersion(row: z.infer<typeof SubmissionRowSchema>) {
-  return (
-    row.submission_versions.find((v) => v.version_number === row.latest_version_number) ??
-    row.submission_versions.at(-1) ??
-    null
-  );
-}
-
-export function hoursSince(iso: string): number {
-  return (Date.now() - new Date(iso).getTime()) / 3_600_000;
-}
-
-/* ── The review queue ───────────────────────────────────────────────────── */
-
-export interface QueueFilters {
-  locale: string;
-  state?: SubmissionState | undefined;
-  courseId?: string | undefined;
-  /** Oldest first is the default — the queue is a FIFO of people waiting. */
-  sort?: "oldest" | "newest" | undefined;
-  limit?: number | undefined;
-  offset?: number | undefined;
-}
-
-export async function listReviewQueue(filters: QueueFilters): Promise<Result<QueuePage>> {
-  const limit = filters.limit ?? 25;
-  const offset = filters.offset ?? 0;
-
-  try {
-    const supabase = await createServerClient();
-
-    let query = supabase
-      .from("submissions")
-      .select(SUBMISSION_SELECT, { count: "exact" })
-      .order("created_at", { ascending: filters.sort !== "newest" })
-      .range(offset, offset + limit - 1);
-
-    if (filters.state) query = query.eq("state", filters.state);
-    else query = query.in("state", [...OPEN_SUBMISSION_STATES]);
-    if (filters.courseId) query = query.eq("course_id", filters.courseId);
-
-    const { data, error, count } = await query;
-    if (error) return err(mapReviewError(error));
-
-    const rows = z.array(SubmissionRowSchema).parse(data ?? []);
-    const [profiles, courseTitles, titles, attempts] = await Promise.all([
-      readProfiles(supabase, rows.map((r) => r.learner_id)),
-      readCourseTitles(supabase, rows.map((r) => r.course_id), filters.locale),
-      readTaskTitles(supabase, rows.map((r) => r.task_id), filters.locale),
-      readAttemptNumbers(supabase, rows.map((r) => r.attempt_id)),
-    ]);
-
-    const items: QueueItem[] = rows.map((row) => {
-      const version = latestVersion(row);
-      const submittedAt = version?.submitted_at ?? row.created_at;
-      return {
-        id: row.id,
-        state: row.state,
-        learnerId: row.learner_id,
-        learnerName: profiles.get(row.learner_id) ?? "—",
-        taskId: row.task_id,
-        taskTitle: titles.get(row.task_id) || "—",
-        courseId: row.course_id,
-        courseTitle: courseTitles.get(row.course_id) ?? "—",
-        submittedAt,
-        waitingHours: hoursSince(submittedAt),
-        attemptNumber: attempts.get(row.attempt_id) ?? row.latest_version_number,
-        hintUsed: version?.hint_used ?? false,
-        elapsedSeconds: version?.elapsed_seconds ?? 0,
-        evidenceCount: version?.evidence_refs?.length ?? 0,
-        rowVersion: row.row_version,
-      };
-    });
-
-    return ok({
-      items,
-      total: count ?? items.length,
-      // The filter list is COURSES now. A trainer filtering their queue is
-      // asking "show me the work for this course", never "for this cohort" —
-      // and with one auto-created cohort per course the old filter offered a
-      // single option that changed nothing.
-      courses: [...courseTitles].map(([id, name]) => ({ id, name })),
-    });
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
-async function readAttemptNumbers(
-  supabase: Supabase,
-  attemptIds: string[]
-): Promise<Map<string, number>> {
-  const unique = [...new Set(attemptIds)].filter(Boolean);
-  if (unique.length === 0) return new Map();
-  const { data } = await supabase.from("attempts").select("id,sequence_number").in("id", unique);
-  return new Map((data ?? []).map((row) => [row.id, row.sequence_number]));
-}
-
-/* ── The review detail ──────────────────────────────────────────────────── */
-
-const RubricCriterionSchema = z.object({
-  id: z.string(),
-  code: z.string().nullable().default(null),
-  labels: z.record(z.string(), z.string()).nullable().default({}),
-  position: z.number().nullable().default(0),
-  max_points: z.number(),
-  required_for_acceptance: z.boolean().nullable().default(false),
-  skill_id: z.string().nullable().default(null),
-});
-
-const ReviewContextSchema = z.object({
-  content_version_id: z.string().nullable().default(null),
-  submission_version_id: z.string(),
-  task_title: z.string().nullable().default(""),
-  options: z
-    .array(z.object({ id: z.string(), labels: z.record(z.string(), z.string()).nullable().default({}) }))
-    .default([]),
-  rubric: z
-    .object({
-      id: z.string().nullable().default(null),
-      labels: z.record(z.string(), z.string()).nullable().default({}),
-      version: z.number().nullable().default(null),
-      criteria: z.array(RubricCriterionSchema).default([]),
-    })
-    .nullable()
-    .default(null),
-});
-
-export interface RubricCriterion {
+export interface ReviewOption {
   id: string;
-  code: string | null;
   label: string;
-  maxPoints: number;
-  required: boolean;
+  isCorrect: boolean;
+  selected: boolean;
 }
 
-export interface EvidenceItem {
+export interface ReviewImage {
   id: string;
+  url: string | null;
+  caption: string;
+}
+
+export interface CourseReview {
   title: string;
-  sourceUri: string | null;
-  kind: string;
-  capturedAt: string;
+  description: string;
+  mcqQuestion: string | null;
+  options: ReviewOption[];
+  verificationAnswer: string;
 }
 
-export interface PastDecision {
+export interface ArenaReview {
+  title: string;
+  description: string;
+  acceptanceCriteria: string;
+  answerKey: string;
+  images: ReviewImage[];
+  xpReward: number;
+  badgeName: string | null;
+}
+
+export interface SubmissionReview {
   id: string;
-  decision: string;
-  comment: string;
-  createdAt: string;
-  reviewerName: string;
+  taskKind: TaskKind;
+  state: SubmissionState;
+  responseText: string;
+  studentName: string;
+  submittedAt: string | null;
+  /** Only one of `course` / `arena` is set, matching `taskKind`. */
+  course: CourseReview | null;
+  arena: ArenaReview | null;
 }
 
-export interface ReviewDetail {
-  id: string;
-  state: string;
-  rowVersion: number;
-  submissionVersionId: string;
-  versionNumber: number;
-  attemptNumber: number;
-  createdAt: string;
-  submittedAt: string;
+/* ── Progress (/trainer/progress) ────────────────────────────────────────── */
 
-  learnerId: string;
-  learnerName: string;
-  /**
-   * Plumbing only — `listCohortTrainers` and `transfer_submission` still take
-   * it. It is never rendered and never named: see `courseState` below.
-   */
-  cohortId: string;
-  courseId: string;
-  courseTitle: string;
-  /**
-   * The COURSE is the unit a trainer works in — there is no "group" in this
-   * product, and the decision gate used to read the cohort's state, which a
-   * course-assigned trainer could not even see. `cohorts` remains as the
-   * database's internal scheduling row; nothing on this screen names it.
-   */
-  courseState: string;
-
-  taskId: string;
-  taskTitle: string;
-  taskInstructionsHtml: string;
-  taskKind: string;
-  targetUrl: string | null;
-  assessmentQuestion: string;
-
-  answerText: string;
-  selectedOptions: { id: string; label: string; selected: boolean }[];
-  elapsedSeconds: number;
-  hintUsed: boolean;
-  hintsUsed: string[];
-  evidence: EvidenceItem[];
-
-  rubricTitle: string;
-  criteria: RubricCriterion[];
-  pastDecisions: PastDecision[];
-  /** false when the database will refuse a decision — the bar renders disabled. */
-  decidable: boolean;
+export interface ProgressRow {
+  studentId: string;
+  studentName: string;
+  courseTitles: string[];
+  acceptedCourseTasks: number;
+  acceptedArenaTasks: number;
+  totalXp: number;
 }
 
-export async function getReviewDetail(
-  submissionId: string,
-  locale: string
-): Promise<Result<ReviewDetail>> {
-  try {
-    const supabase = await createServerClient();
+/* ── Review outcome (write) ──────────────────────────────────────────────── */
 
-    const [{ data: contextData, error: contextError }, { data: submissionData, error: submissionError }] =
-      await Promise.all([
-        supabase.rpc("get_submission_review_context" as never, {
-          p_submission_id: submissionId,
-          p_locale: locale,
-        } as never),
-        supabase.from("submissions").select(SUBMISSION_SELECT).eq("id", submissionId).maybeSingle(),
-      ]);
+export interface ReviewOutcome {
+  decision: ReviewDecision;
+  taskKind: TaskKind;
+  /** XP granted by this decision (0 unless an arena task was newly accepted). */
+  xpAwarded: number;
+  /** Badge granted/held for this arena task, if any. */
+  badgeName: string | null;
+}
 
-    if (contextError) return err(mapReviewError(contextError));
-    if (submissionError) return err(mapReviewError(submissionError));
-    // A forbidden or unknown id comes back as null with NO error (I-017).
-    if (!contextData || !submissionData) {
-      return err({
-        code: "PGRST116",
-        message: "Diese Abgabe existiert nicht oder ist für Sie nicht sichtbar.",
-        retryable: false,
-      });
-    }
+const IMAGE_BUCKET = "submission-images";
+const SIGNED_URL_TTL = 60 * 60; // one hour
 
-    const context = ReviewContextSchema.parse(contextData);
-    const submission = SubmissionRowSchema.parse(submissionData);
-    const version = latestVersion(submission);
+/** The trainer's assigned course ids (RLS already limits the rows to them). */
+async function trainerCourseIds(supabase: ServerClient): Promise<string[]> {
+  const { data, error } = await supabase.from("course_trainers").select("course_id");
+  if (error || !data) return [];
+  return data.map((row) => row.course_id);
+}
 
-    const snapshot = (version?.task_snapshot ?? {}) as {
-      task_kind?: string;
-      target_url?: string | null;
-      assessment?: { question_translations?: LocalizedText };
-    };
+/* ────────────────────────────────────────────────────────────────────────── */
 
-    const [profiles, instructions, evidence, hints, decisions, attempts, course] =
-      await Promise.all([
-        readProfiles(supabase, [submission.learner_id]),
-        readTaskInstructions(supabase, submission.task_id, locale),
-        readEvidence(supabase, version?.evidence_refs ?? []),
-        readHintsUsed(supabase, submission.attempt_id, locale),
-        readPastDecisions(supabase, submission.id),
-        readAttemptNumbers(supabase, [submission.attempt_id]),
-        readCourse(supabase, submission.course_id, locale),
-      ]);
+export async function getTrainerOverview(): Promise<Result<TrainerOverview>> {
+  const supabase = await createServerClient();
 
-    const selectedIds = new Set(version?.selected_option_ids ?? []);
+  const { count, error: countError } = await supabase
+    .from("submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("state", "submitted");
+  if (countError) return err(mapPostgrestError(countError));
 
-    return ok({
-      id: submission.id,
-      state: submission.state,
-      rowVersion: submission.row_version,
-      submissionVersionId: context.submission_version_id,
-      versionNumber: submission.latest_version_number,
-      attemptNumber: attempts.get(submission.attempt_id) ?? 1,
-      createdAt: submission.created_at,
-      submittedAt: version?.submitted_at ?? submission.created_at,
-
-      learnerId: submission.learner_id,
-      learnerName: profiles.get(submission.learner_id) ?? "—",
-      cohortId: submission.cohort_id,
-      courseId: submission.course_id,
-      courseTitle: course.title,
-      courseState: course.state,
-
-      taskId: submission.task_id,
-      taskTitle: context.task_title || instructions.title || "—",
-      taskInstructionsHtml: instructions.html,
-      taskKind: snapshot.task_kind ?? "",
-      targetUrl: snapshot.target_url ?? null,
-      assessmentQuestion: pick(snapshot.assessment?.question_translations, locale),
-
-      answerText: version?.answer_text ?? "",
-      selectedOptions: context.options.map((option) => ({
-        id: option.id,
-        label: pick(option.labels, locale),
-        selected: selectedIds.has(option.id),
-      })),
-      elapsedSeconds: version?.elapsed_seconds ?? 0,
-      hintUsed: version?.hint_used ?? false,
-      hintsUsed: hints,
-      evidence,
-
-      rubricTitle: pick(context.rubric?.labels, locale),
-      criteria: (context.rubric?.criteria ?? [])
-        .slice()
-        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-        .map((criterion) => ({
-          id: criterion.id,
-          code: criterion.code,
-          label: pick(criterion.labels, locale) || criterion.code || "",
-          maxPoints: criterion.max_points,
-          required: criterion.required_for_acceptance ?? false,
-        })),
-      pastDecisions: decisions,
-      decidable:
-        (submission.state === "submitted" || submission.state === "resubmitted") &&
-        // The COURSE, not the cohort. The cohort's state was unreadable to a
-        // course-assigned trainer, so this was always false for them and the
-        // screen blamed a "Gruppe" the product does not have.
-        course.state === "active" &&
-        (context.rubric?.criteria.length ?? 0) > 0,
-    });
-  } catch (cause) {
-    return err(unexpected(cause));
+  const courseIds = await trainerCourseIds(supabase);
+  if (courseIds.length === 0) {
+    return ok({ queueSize: count ?? 0, courses: [] });
   }
+
+  const [{ data: courseRows, error: courseError }, { data: enrollmentRows, error: enrollmentError }] =
+    await Promise.all([
+      supabase.from("courses").select("id, title").in("id", courseIds),
+      supabase.from("enrollments").select("course_id").in("course_id", courseIds),
+    ]);
+  if (courseError) return err(mapPostgrestError(courseError));
+  if (enrollmentError) return err(mapPostgrestError(enrollmentError));
+
+  const studentsPerCourse = new Map<string, number>();
+  for (const row of enrollmentRows ?? []) {
+    studentsPerCourse.set(row.course_id, (studentsPerCourse.get(row.course_id) ?? 0) + 1);
+  }
+
+  const courses: TrainerCourseSummary[] = (courseRows ?? [])
+    .map((course) => ({
+      id: course.id,
+      title: course.title,
+      studentCount: studentsPerCourse.get(course.id) ?? 0,
+    }))
+    .sort((a, b) => a.title.localeCompare(b.title, "de"));
+
+  return ok({ queueSize: count ?? 0, courses });
 }
 
-async function readTaskInstructions(
-  supabase: Supabase,
-  taskId: string,
-  locale: string
-): Promise<{ title: string; html: string }> {
-  const { data } = await supabase
-    .from("task_localizations")
-    .select("locale,title,instructions_html")
-    .eq("task_id", taskId);
-  const rows = data ?? [];
-  const row =
-    rows.find((r) => r.locale === locale) ??
-    rows.find((r) => r.locale === "de") ??
-    rows.find((r) => r.locale === "en") ??
-    rows[0];
-  return { title: row?.title ?? "", html: row?.instructions_html ?? "" };
-}
+/* ────────────────────────────────────────────────────────────────────────── */
 
-async function readEvidence(supabase: Supabase, ids: string[]): Promise<EvidenceItem[]> {
-  if (ids.length === 0) return [];
-  const { data } = await supabase
-    .from("evidence")
-    .select("id,title,source_uri,evidence_kind,captured_at")
-    .in("id", ids);
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    sourceUri: row.source_uri,
-    kind: row.evidence_kind,
-    capturedAt: row.captured_at,
-  }));
-}
+export async function listReviewQueue(): Promise<Result<QueueItem[]>> {
+  const supabase = await createServerClient();
 
-/** Which hints the learner opened — recorded per attempt, resolved to text. */
-async function readHintsUsed(
-  supabase: Supabase,
-  attemptId: string,
-  locale: string
-): Promise<string[]> {
-  const { data: usage } = await supabase
-    .from("attempt_hint_usage")
-    .select("hint_id,first_used_at")
-    .eq("attempt_id", attemptId)
-    .order("first_used_at", { ascending: true });
-  const hintIds = (usage ?? []).map((row) => row.hint_id);
-  if (hintIds.length === 0) return [];
+  const { data: submissions, error } = await supabase
+    .from("submissions")
+    .select("id, student_id, task_kind, course_task_id, arena_task_id, submitted_at")
+    .eq("state", "submitted")
+    .order("submitted_at", { ascending: false, nullsFirst: false });
+  if (error) return err(mapPostgrestError(error));
+  if (!submissions || submissions.length === 0) return ok([]);
 
-  const { data: hints } = await supabase
-    .from("task_hints")
-    .select("id,content_translations")
-    .in("id", hintIds);
-  const byId = new Map(
-    (hints ?? []).map((row) => [row.id, pick(row.content_translations as LocalizedText, locale)])
+  const studentIds = unique(submissions.map((row) => row.student_id));
+  const courseTaskIds = unique(
+    submissions.map((row) => row.course_task_id).filter((id): id is string => id !== null)
   );
-  return hintIds.map((id) => byId.get(id) ?? "").filter(Boolean);
-}
+  const arenaTaskIds = unique(
+    submissions.map((row) => row.arena_task_id).filter((id): id is string => id !== null)
+  );
 
-async function readPastDecisions(supabase: Supabase, submissionId: string): Promise<PastDecision[]> {
-  const { data } = await supabase
-    .from("reviews")
-    .select("id,decision,comment,created_at,reviewer_id")
-    .eq("submission_id", submissionId)
-    .order("created_at", { ascending: false });
-  const rows = data ?? [];
-  if (rows.length === 0) return [];
-  const profiles = await readProfiles(supabase, rows.map((row) => row.reviewer_id));
-  return rows.map((row) => ({
-    id: row.id,
-    decision: row.decision,
-    comment: row.comment,
-    createdAt: row.created_at,
-    reviewerName: profiles.get(row.reviewer_id) ?? "—",
-  }));
-}
-
-/**
- * The course behind a submission: its title and whether it is active.
- *
- * Replaces the pair of `cohorts` reads this file used to make. Both returned
- * nothing for a course-assigned trainer — `cohorts` is gated by
- * `can_access_cohort`, which knew only about cohort membership until
- * `20260805300000` — so the screen showed "Kurs: —" and locked the decision
- * behind a group that was, in fact, active.
- */
-async function readCourse(
-  supabase: Supabase,
-  courseId: string,
-  locale: string
-): Promise<{ title: string; state: string }> {
-  const [{ data: course }, titles] = await Promise.all([
-    supabase.from("courses").select("state").eq("id", courseId).maybeSingle(),
-    readCourseTitles(supabase, [courseId], locale),
+  const [names, courseTitles, arenaTitles] = await Promise.all([
+    loadNameMap(supabase, studentIds),
+    loadTitleMap(supabase, "course_tasks", courseTaskIds),
+    loadTitleMap(supabase, "arena_tasks", arenaTaskIds),
   ]);
-  return {
-    title: titles.get(courseId) ?? "—",
-    state: (course?.state as string) ?? "",
-  };
-}
 
-/* ── Decisions ──────────────────────────────────────────────────────────── */
-
-export interface CriterionScore {
-  criterionId: string;
-  points: number;
-}
-
-/**
- * ⚠️ `p_criterion_scores` is a NON-EMPTY ARRAY, not `{}` (ISSUES I-016), and
- * `p_decision` never takes "transferred" — that is `transferSubmission`.
- */
-export async function decideSubmission(args: {
-  submissionId: string;
-  submissionVersionId: string;
-  expectedVersion: number;
-  decision: "accepted" | "revision_required";
-  comment: string;
-  scores: CriterionScore[];
-}): Promise<Result<{ state: string }>> {
-  if (args.comment.trim().length === 0) {
-    return err({ code: "COMMENT_REQUIRED", message: "Ein Kommentar ist erforderlich.", retryable: false });
-  }
-  if (args.scores.length === 0) {
-    return err({
-      code: "RUBRIC_SCORES",
-      message: "Bitte bewerten Sie alle Pflichtkriterien mit einer gültigen Punktzahl.",
-      retryable: false,
-    });
-  }
-
-  try {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase.rpc("decide_submission" as never, {
-      p_submission_id: args.submissionId,
-      p_submission_version_id: args.submissionVersionId,
-      p_expected_version: args.expectedVersion,
-      p_decision: args.decision,
-      p_comment: args.comment.trim(),
-      p_criterion_scores: args.scores.map((score) => ({
-        criterion_id: score.criterionId,
-        points: score.points,
-      })),
-      p_correlation_id: crypto.randomUUID(),
-      p_idempotency_key: idempotencyKey("decide", args.submissionId, args.expectedVersion),
-    } as never);
-
-    if (error) return err(mapReviewError(error));
-    return ok({ state: (data as { state?: string } | null)?.state ?? args.decision });
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
-export async function transferSubmission(args: {
-  submissionId: string;
-  expectedVersion: number;
-  toTrainerId: string;
-  reason: string;
-}): Promise<Result<{ state: string }>> {
-  if (args.reason.trim().length === 0) {
-    return err({ code: "REASON_REQUIRED", message: "Eine Begründung ist erforderlich.", retryable: false });
-  }
-  try {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase.rpc("transfer_submission" as never, {
-      p_submission_id: args.submissionId,
-      p_expected_version: args.expectedVersion,
-      p_to_trainer_id: args.toTrainerId,
-      p_reason: args.reason.trim(),
-      p_correlation_id: crypto.randomUUID(),
-      p_idempotency_key: idempotencyKey("transfer", args.submissionId, args.expectedVersion),
-    } as never);
-    if (error) return err(mapReviewError(error));
-    return ok({ state: (data as { state?: string } | null)?.state ?? "transferred" });
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
-/** The transfer-target picker. Excludes the current trainer server-side. */
-export async function listCohortTrainers(
-  cohortId: string,
-  exceptUserId?: string
-): Promise<Result<{ id: string; name: string }[]>> {
-  try {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase.rpc("list_active_cohort_trainers" as never, {
-      p_cohort_id: cohortId,
-    } as never);
-    if (error) return err(mapReviewError(error));
-    const rows = z
-      .array(z.object({ user_id: z.string(), display_name: z.string().nullable().default("") }))
-      .parse(data ?? []);
-    return ok(
-      rows
-        .filter((row) => row.user_id !== exceptUserId)
-        .map((row) => ({ id: row.user_id, name: row.display_name || "—" }))
-    );
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
-/* ── Questions ──────────────────────────────────────────────────────────── */
-
-export interface QuestionItem {
-  id: string;
-  subject: string;
-  state: string;
-  learnerId: string;
-  learnerName: string;
-  cohortId: string;
-  cohortName: string;
-  /** What the screens show. See readCourseTitlesByCohort. */
-  courseTitle: string;
-  taskId: string;
-  taskTitle: string;
-  assignedTrainerId: string | null;
-  assignedTrainerName: string | null;
-  createdAt: string;
-  answeredAt: string | null;
-  waitingHours: number;
-  rowVersion: number;
-  messageCount: number;
-}
-
-export interface QuestionMessage {
-  id: string;
-  body: string;
-  createdAt: string;
-  authorId: string;
-  authorName: string;
-  kind: string;
-  isTrainer: boolean;
-}
-
-export interface QuestionDetail extends QuestionItem {
-  messages: QuestionMessage[];
-  /** Only the claiming trainer may answer. */
-  canAnswer: boolean;
-  canClaim: boolean;
-}
-
-const QuestionRowSchema = z.object({
-  id: z.string(),
-  subject: z.string(),
-  state: z.string(),
-  learner_id: z.string(),
-  cohort_id: z.string(),
-  task_id: z.string(),
-  assigned_trainer_id: z.string().nullable().default(null),
-  created_at: z.string(),
-  answered_at: z.string().nullable().default(null),
-  archived_at: z.string().nullable().default(null),
-  row_version: z.number(),
-});
-
-const QUESTION_SELECT =
-  "id,subject,state,learner_id,cohort_id,task_id,assigned_trainer_id,created_at,answered_at,archived_at,row_version";
-
-export const OPEN_QUESTION_STATES = ["open", "assigned", "answered", "transferred"] as const;
-
-export async function listQuestions(args: {
-  locale: string;
-  archived?: boolean | undefined;
-  state?: QuestionState | undefined;
-  limit?: number | undefined;
-  offset?: number | undefined;
-}): Promise<Result<{ items: QuestionItem[]; total: number }>> {
-  const limit = args.limit ?? 25;
-  const offset = args.offset ?? 0;
-  try {
-    const supabase = await createServerClient();
-
-    let query = supabase
-      .from("questions")
-      .select(QUESTION_SELECT, { count: "exact" })
-      .range(offset, offset + limit - 1);
-
-    if (args.archived) query = query.eq("state", "archived");
-    else if (args.state) query = query.eq("state", args.state);
-    else query = query.in("state", [...OPEN_QUESTION_STATES]);
-
-    // Unanswered first, then oldest first — the same fairness rule as the queue.
-    query = query.order("answered_at", { ascending: true, nullsFirst: true }).order("created_at");
-
-    const { data, error, count } = await query;
-    if (error) return err(mapReviewError(error));
-
-    const rows = z.array(QuestionRowSchema).parse(data ?? []);
-    const [profiles, cohorts, titles, counts, courseTitles] = await Promise.all([
-      readProfiles(supabase, rows.flatMap((r) => [r.learner_id, r.assigned_trainer_id ?? ""])),
-      readCohorts(supabase),
-      readTaskTitles(supabase, rows.map((r) => r.task_id), args.locale),
-      readMessageCounts(supabase, rows.map((r) => r.id)),
-      readCourseTitlesByCohort(supabase, rows.map((r) => r.cohort_id), args.locale),
-    ]);
-
-    return ok({
-      items: rows.map((row) => toQuestionItem(row, profiles, cohorts, titles, counts, courseTitles)),
-      total: count ?? rows.length,
-    });
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
-function toQuestionItem(
-  row: z.infer<typeof QuestionRowSchema>,
-  profiles: Map<string, string>,
-  cohorts: Map<string, string>,
-  titles: Map<string, string>,
-  counts: Map<string, number>,
-  courseTitles: Map<string, string>
-): QuestionItem {
-  return {
+  const items: QueueItem[] = submissions.map((row) => ({
     id: row.id,
-    subject: row.subject,
-    state: row.state,
-    learnerId: row.learner_id,
-    learnerName: profiles.get(row.learner_id) ?? "—",
-    cohortId: row.cohort_id,
-    cohortName: cohorts.get(row.cohort_id) ?? "—",
-    courseTitle: courseTitles.get(row.cohort_id) ?? "—",
-    taskId: row.task_id,
-    taskTitle: titles.get(row.task_id) || "—",
-    assignedTrainerId: row.assigned_trainer_id,
-    assignedTrainerName: row.assigned_trainer_id ? profiles.get(row.assigned_trainer_id) ?? "—" : null,
-    createdAt: row.created_at,
-    answeredAt: row.answered_at,
-    waitingHours: hoursSince(row.created_at),
-    rowVersion: row.row_version,
-    messageCount: counts.get(row.id) ?? 0,
+    studentName: names.get(row.student_id) ?? "Unbekannt",
+    taskTitle:
+      (row.task_kind === "course"
+        ? row.course_task_id && courseTitles.get(row.course_task_id)
+        : row.arena_task_id && arenaTitles.get(row.arena_task_id)) || "Ohne Titel",
+    taskKind: row.task_kind,
+    submittedAt: row.submitted_at,
+  }));
+
+  return ok(items);
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+
+export async function getSubmissionForReview(
+  submissionId: string
+): Promise<Result<SubmissionReview>> {
+  const supabase = await createServerClient();
+
+  const { data: submission, error } = await supabase
+    .from("submissions")
+    .select("id, student_id, task_kind, course_task_id, arena_task_id, response_text, state, submitted_at")
+    .eq("id", submissionId)
+    .maybeSingle();
+  if (error) return err(mapPostgrestError(error));
+  if (!submission) return err({ code: "PGRST116", message: "Einreichung nicht gefunden.", retryable: false });
+
+  const studentName = (await loadNameMap(supabase, [submission.student_id])).get(submission.student_id) ?? "Unbekannt";
+
+  const base = {
+    id: submission.id,
+    taskKind: submission.task_kind,
+    state: submission.state,
+    responseText: submission.response_text,
+    studentName,
+    submittedAt: submission.submitted_at,
   };
+
+  if (submission.task_kind === "course" && submission.course_task_id) {
+    const course = await loadCourseReview(supabase, submission.id, submission.course_task_id);
+    if (!course.ok) return course;
+    return ok({ ...base, course: course.data, arena: null });
+  }
+
+  if (submission.task_kind === "arena" && submission.arena_task_id) {
+    const arena = await loadArenaReview(supabase, submission.id, submission.arena_task_id);
+    if (!arena.ok) return arena;
+    return ok({ ...base, course: null, arena: arena.data });
+  }
+
+  return err({ code: "22023", message: "Die Einreichung ist unvollständig.", retryable: false });
 }
 
-async function readMessageCounts(supabase: Supabase, ids: string[]): Promise<Map<string, number>> {
-  if (ids.length === 0) return new Map();
-  const { data } = await supabase.from("question_messages").select("question_id").in("question_id", ids);
-  const counts = new Map<string, number>();
-  for (const row of data ?? []) counts.set(row.question_id, (counts.get(row.question_id) ?? 0) + 1);
-  return counts;
+async function loadCourseReview(
+  supabase: ServerClient,
+  submissionId: string,
+  courseTaskId: string
+): Promise<Result<CourseReview>> {
+  const [taskRes, optionRes, answerRes, selectedRes] = await Promise.all([
+    supabase.from("course_tasks").select("title, description, mcq_question").eq("id", courseTaskId).maybeSingle(),
+    supabase.from("course_task_options").select("id, label, order_index").eq("course_task_id", courseTaskId).order("order_index"),
+    supabase.from("course_task_answer").select("verification_answer, correct_option_ids").eq("course_task_id", courseTaskId).maybeSingle(),
+    supabase.from("submission_options").select("option_id").eq("submission_id", submissionId),
+  ]);
+
+  if (taskRes.error) return err(mapPostgrestError(taskRes.error));
+  if (optionRes.error) return err(mapPostgrestError(optionRes.error));
+  if (answerRes.error) return err(mapPostgrestError(answerRes.error));
+  if (selectedRes.error) return err(mapPostgrestError(selectedRes.error));
+
+  const task = taskRes.data;
+  if (!task) return err({ code: "PGRST116", message: "Aufgabe nicht gefunden.", retryable: false });
+
+  const correctIds = new Set(answerRes.data?.correct_option_ids ?? []);
+  const selectedIds = new Set((selectedRes.data ?? []).map((row) => row.option_id));
+
+  const options: ReviewOption[] = (optionRes.data ?? []).map((option) => ({
+    id: option.id,
+    label: option.label,
+    isCorrect: correctIds.has(option.id),
+    selected: selectedIds.has(option.id),
+  }));
+
+  return ok({
+    title: task.title,
+    description: task.description,
+    mcqQuestion: task.mcq_question,
+    options,
+    verificationAnswer: answerRes.data?.verification_answer ?? "",
+  });
 }
 
-export async function getQuestionDetail(
-  questionId: string,
-  locale: string,
-  viewerId: string
-): Promise<Result<QuestionDetail>> {
-  try {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase
-      .from("questions")
-      .select(QUESTION_SELECT)
-      .eq("id", questionId)
-      .maybeSingle();
-    if (error) return err(mapReviewError(error));
-    if (!data) {
-      return err({
-        code: "PGRST116",
-        message: "Diese Frage existiert nicht oder ist für Sie nicht sichtbar.",
-        retryable: false,
-      });
+async function loadArenaReview(
+  supabase: ServerClient,
+  submissionId: string,
+  arenaTaskId: string
+): Promise<Result<ArenaReview>> {
+  const [taskRes, answerRes, imageRes] = await Promise.all([
+    supabase.from("arena_tasks").select("title, description, xp_reward, badge_id").eq("id", arenaTaskId).maybeSingle(),
+    supabase.from("arena_task_answer").select("acceptance_criteria, answer_key").eq("arena_task_id", arenaTaskId).maybeSingle(),
+    supabase.from("submission_images").select("id, object_key, caption, order_index").eq("submission_id", submissionId).order("order_index"),
+  ]);
+
+  if (taskRes.error) return err(mapPostgrestError(taskRes.error));
+  if (answerRes.error) return err(mapPostgrestError(answerRes.error));
+  if (imageRes.error) return err(mapPostgrestError(imageRes.error));
+
+  const task = taskRes.data;
+  if (!task) return err({ code: "PGRST116", message: "Aufgabe nicht gefunden.", retryable: false });
+
+  const imageRows = imageRes.data ?? [];
+  const signedByKey = new Map<string, string>();
+  if (imageRows.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from(IMAGE_BUCKET)
+      .createSignedUrls(imageRows.map((row) => row.object_key), SIGNED_URL_TTL);
+    for (const entry of signed ?? []) {
+      if (entry.path && entry.signedUrl) signedByKey.set(entry.path, entry.signedUrl);
     }
+  }
 
-    const row = QuestionRowSchema.parse(data);
-    const { data: messageRows } = await supabase
-      .from("question_messages")
-      .select("id,body,created_at,author_id,message_kind")
-      .eq("question_id", questionId)
-      .order("created_at", { ascending: true });
+  const images: ReviewImage[] = imageRows.map((row) => ({
+    id: row.id,
+    url: signedByKey.get(row.object_key) ?? null,
+    caption: row.caption,
+  }));
 
-    const messages = messageRows ?? [];
-    const [profiles, cohorts, titles, counts, courseTitles] = await Promise.all([
-      readProfiles(supabase, [
-        row.learner_id,
-        row.assigned_trainer_id ?? "",
-        ...messages.map((m) => m.author_id),
-      ]),
-      readCohorts(supabase),
-      readTaskTitles(supabase, [row.task_id], locale),
-      readMessageCounts(supabase, [row.id]),
-      readCourseTitlesByCohort(supabase, [row.cohort_id], locale),
+  let badgeName: string | null = null;
+  if (task.badge_id) {
+    const { data: badge } = await supabase.from("badges").select("name").eq("id", task.badge_id).maybeSingle();
+    badgeName = badge?.name ?? null;
+  }
+
+  return ok({
+    title: task.title,
+    description: task.description,
+    acceptanceCriteria: answerRes.data?.acceptance_criteria ?? "",
+    answerKey: answerRes.data?.answer_key ?? "",
+    images,
+    xpReward: task.xp_reward,
+    badgeName,
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+
+export async function listCourseProgress(): Promise<Result<ProgressRow[]>> {
+  const supabase = await createServerClient();
+
+  const courseIds = await trainerCourseIds(supabase);
+  if (courseIds.length === 0) return ok([]);
+
+  const [{ data: enrollments, error: enrollmentError }, { data: courseRows, error: courseError }] =
+    await Promise.all([
+      supabase.from("enrollments").select("student_id, course_id").in("course_id", courseIds),
+      supabase.from("courses").select("id, title").in("id", courseIds),
     ]);
+  if (enrollmentError) return err(mapPostgrestError(enrollmentError));
+  if (courseError) return err(mapPostgrestError(courseError));
 
-    const item = toQuestionItem(row, profiles, cohorts, titles, counts, courseTitles);
-    return ok({
-      ...item,
-      messages: messages.map((message) => ({
-        id: message.id,
-        body: message.body,
-        createdAt: message.created_at,
-        authorId: message.author_id,
-        authorName: profiles.get(message.author_id) ?? "—",
-        kind: message.message_kind,
-        isTrainer: message.author_id !== row.learner_id,
-      })),
-      canClaim: row.state === "open" && row.archived_at === null,
-      canAnswer: row.assigned_trainer_id === viewerId && row.archived_at === null,
-    });
-  } catch (cause) {
-    return err(unexpected(cause));
+  const courseTitleById = new Map((courseRows ?? []).map((row) => [row.id, row.title] as const));
+
+  const coursesByStudent = new Map<string, Set<string>>();
+  for (const row of enrollments ?? []) {
+    const set = coursesByStudent.get(row.student_id) ?? new Set<string>();
+    const title = courseTitleById.get(row.course_id);
+    if (title) set.add(title);
+    coursesByStudent.set(row.student_id, set);
   }
-}
 
-export async function claimQuestion(args: {
-  questionId: string;
-  expectedVersion: number;
-}): Promise<Result<null>> {
-  return questionCommand("claim_question", {
-    p_question_id: args.questionId,
-    p_expected_version: args.expectedVersion,
-    p_correlation_id: crypto.randomUUID(),
-    p_idempotency_key: idempotencyKey("claim", args.questionId, args.expectedVersion),
-  });
-}
+  const studentIds = [...coursesByStudent.keys()];
+  if (studentIds.length === 0) return ok([]);
 
-export async function answerQuestion(args: {
-  questionId: string;
-  expectedVersion: number;
-  body: string;
-}): Promise<Result<null>> {
-  if (args.body.trim().length === 0) {
-    return err({ code: "BODY_REQUIRED", message: "Bitte schreiben Sie eine Antwort.", retryable: false });
+  const [names, { data: accepted, error: acceptedError }, { data: ledger, error: ledgerError }] =
+    await Promise.all([
+      loadNameMap(supabase, studentIds),
+      supabase
+        .from("submissions")
+        .select("student_id, task_kind")
+        .in("student_id", studentIds)
+        .eq("state", "accepted"),
+      supabase.from("xp_ledger").select("student_id, amount").in("student_id", studentIds),
+    ]);
+  if (acceptedError) return err(mapPostgrestError(acceptedError));
+  if (ledgerError) return err(mapPostgrestError(ledgerError));
+
+  const courseCount = new Map<string, number>();
+  const arenaCount = new Map<string, number>();
+  for (const row of accepted ?? []) {
+    const target = row.task_kind === "course" ? courseCount : arenaCount;
+    target.set(row.student_id, (target.get(row.student_id) ?? 0) + 1);
   }
-  return questionCommand("answer_question", {
-    p_question_id: args.questionId,
-    p_body: args.body.trim(),
-    p_expected_version: args.expectedVersion,
-    p_correlation_id: crypto.randomUUID(),
-    p_idempotency_key: idempotencyKey("answer", args.questionId, args.expectedVersion),
-  });
-}
 
-export async function transferQuestion(args: {
-  questionId: string;
-  expectedVersion: number;
-  toTrainerId: string;
-  reason: string;
-}): Promise<Result<null>> {
-  if (args.reason.trim().length === 0) {
-    return err({ code: "REASON_REQUIRED", message: "Eine Begründung ist erforderlich.", retryable: false });
+  const xpByStudent = new Map<string, number>();
+  for (const row of ledger ?? []) {
+    xpByStudent.set(row.student_id, (xpByStudent.get(row.student_id) ?? 0) + row.amount);
   }
-  return questionCommand("transfer_question", {
-    p_question_id: args.questionId,
-    p_to_trainer_id: args.toTrainerId,
-    p_reason: args.reason.trim(),
-    p_expected_version: args.expectedVersion,
-    p_correlation_id: crypto.randomUUID(),
-    p_idempotency_key: idempotencyKey("qtransfer", args.questionId, args.expectedVersion),
-  });
+
+  const rows: ProgressRow[] = studentIds.map((studentId) => ({
+    studentId,
+    studentName: names.get(studentId) ?? "Unbekannt",
+    courseTitles: [...(coursesByStudent.get(studentId) ?? new Set<string>())].sort((a, b) => a.localeCompare(b, "de")),
+    acceptedCourseTasks: courseCount.get(studentId) ?? 0,
+    acceptedArenaTasks: arenaCount.get(studentId) ?? 0,
+    totalXp: xpByStudent.get(studentId) ?? 0,
+  }));
+
+  rows.sort((a, b) => a.studentName.localeCompare(b.studentName, "de"));
+  return ok(rows);
 }
 
-/** ⚠️ archive_question is the one command with no idempotency key. */
-export async function archiveQuestion(args: {
-  questionId: string;
-  expectedVersion: number;
-}): Promise<Result<null>> {
-  return questionCommand("archive_question", {
-    p_question_id: args.questionId,
-    p_expected_version: args.expectedVersion,
-    p_correlation_id: crypto.randomUUID(),
-  });
-}
+/* ────────────────────────────────────────────────────────────────────────── */
 
-async function questionCommand(name: string, args: Record<string, unknown>): Promise<Result<null>> {
-  try {
-    const supabase = await createServerClient();
-    const { error } = await supabase.rpc(name as never, args as never);
-    if (error) return err(mapReviewError(error));
-    return ok(null);
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
-export async function listQuestionTrainers(
-  cohortId: string,
-  exceptUserId?: string
-): Promise<Result<{ id: string; name: string }[]>> {
-  try {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase.rpc("list_active_question_trainers" as never, {
-      p_cohort_id: cohortId,
-    } as never);
-    if (error) return err(mapReviewError(error));
-    const rows = z
-      .array(z.object({ user_id: z.string(), display_name: z.string().nullable().default("") }))
-      .parse(data ?? []);
-    return ok(
-      rows
-        .filter((row) => row.user_id !== exceptUserId)
-        .map((row) => ({ id: row.user_id, name: row.display_name || "—" }))
-    );
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
-}
-
-/* ── Cohorts, members and progress ──────────────────────────────────────── */
-
-export interface CohortSummary {
-  id: string;
-  name: string;
-  state: string;
-  courseId: string;
-  startsAt: string | null;
-  endsAt: string | null;
-  capacity: number | null;
-  learnerCount: number;
-  trainerCount: number;
-  openSubmissions: number;
-  openQuestions: number;
-}
-
-export async function listCohorts(): Promise<Result<CohortSummary[]>> {
-  try {
-    const supabase = await createServerClient();
-    const [{ data: cohortRows, error }, { data: memberships }, { data: submissions }, { data: questions }] =
-      await Promise.all([
-        supabase.from("cohorts").select("id,name,state,course_id,starts_at,ends_at,capacity").order("name"),
-        supabase.from("cohort_memberships").select("cohort_id,role,state"),
-        supabase.from("submissions").select("cohort_id,state"),
-        supabase.from("questions").select("cohort_id,state"),
-      ]);
-    if (error) return err(mapReviewError(error));
-
-    const openSubmissionStates = new Set<string>(OPEN_SUBMISSION_STATES);
-    const openQuestionStates = new Set<string>(["open", "assigned", "transferred"]);
-
-    return ok(
-      (cohortRows ?? []).map((cohort) => {
-        const members = (memberships ?? []).filter(
-          (m) => m.cohort_id === cohort.id && m.state === "active"
-        );
-        return {
-          id: cohort.id,
-          name: cohort.name,
-          state: cohort.state as string,
-          courseId: cohort.course_id,
-          startsAt: cohort.starts_at,
-          endsAt: cohort.ends_at,
-          capacity: cohort.capacity,
-          learnerCount: members.filter((m) => m.role === "learner").length,
-          trainerCount: members.filter((m) => m.role === "trainer").length,
-          openSubmissions: (submissions ?? []).filter(
-            (s) => s.cohort_id === cohort.id && openSubmissionStates.has(s.state as string)
-          ).length,
-          openQuestions: (questions ?? []).filter(
-            (q) => q.cohort_id === cohort.id && openQuestionStates.has(q.state as string)
-          ).length,
-        };
-      })
-    );
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
+export interface ReviewInput {
+  submissionId: string;
+  decision: ReviewDecision;
+  comment: string;
 }
 
 /**
- * ⚠️ `listMemberProgress`, `getCohortDetail`, `MemberProgress` and `CohortDetail`
- * were removed by WS-13 (ISSUES.md I-055). They computed learner progress from
- * `cohort_memberships` because a trainer session read 0 rows from
- * `enrollments` (I-018) when they were written. That policy was fixed by the
- * course-trainer migration, and both progress screens now read the one
- * role-scoped RPC in `src/shared/data/progress.ts`. Their last consumers were
- * `/trainer/progress` and the deleted `/trainer/groups` tree.
+ * Record a trainer's decision and apply its effects. Re-checks the actor
+ * (must be staff and able to see the submission through RLS) before writing
+ * anything, then runs every write on the service-role client so the XP/badge
+ * grants are not blocked by the student-scoped write policies.
  */
-
-/* ── Review history ─────────────────────────────────────────────────────── */
-
-export interface HistoryEntry {
-  id: string;
-  decision: string;
-  comment: string;
-  createdAt: string;
-  submissionId: string;
-  learnerName: string;
-  taskTitle: string;
-  reviewerName: string;
-  points: number | null;
-}
-
-export async function listReviewHistory(args: {
-  locale: string;
-  limit?: number;
-  offset?: number;
-}): Promise<Result<{ items: HistoryEntry[]; total: number }>> {
-  const limit = args.limit ?? 25;
-  const offset = args.offset ?? 0;
+export async function reviewSubmission(input: ReviewInput): Promise<Result<ReviewOutcome>> {
+  let userId: string;
   try {
-    const supabase = await createServerClient();
-    const { data, error, count } = await supabase
-      .from("reviews")
-      .select("id,decision,comment,created_at,submission_id,reviewer_id", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
-    if (error) return err(mapReviewError(error));
-
-    const rows = data ?? [];
-    if (rows.length === 0) return ok({ items: [], total: count ?? 0 });
-
-    const { data: submissions } = await supabase
-      .from("submissions")
-      .select("id,learner_id,task_id")
-      .in("id", rows.map((row) => row.submission_id));
-    const { data: scores } = await supabase
-      .from("review_rubric_scores")
-      .select("review_id,points")
-      .in("review_id", rows.map((row) => row.id));
-
-    const submissionById = new Map((submissions ?? []).map((row) => [row.id, row]));
-    const [profiles, titles] = await Promise.all([
-      readProfiles(supabase, [
-        ...rows.map((row) => row.reviewer_id),
-        ...(submissions ?? []).map((row) => row.learner_id),
-      ]),
-      readTaskTitles(supabase, (submissions ?? []).map((row) => row.task_id), args.locale),
-    ]);
-
-    return ok({
-      items: rows.map((row) => {
-        const submission = submissionById.get(row.submission_id);
-        const points = (scores ?? [])
-          .filter((score) => score.review_id === row.id)
-          .reduce((sum, score) => sum + Number(score.points), 0);
-        return {
-          id: row.id,
-          decision: row.decision as string,
-          comment: row.comment,
-          createdAt: row.created_at,
-          submissionId: row.submission_id,
-          learnerName: submission ? profiles.get(submission.learner_id) ?? "—" : "—",
-          taskTitle: submission ? titles.get(submission.task_id) || "—" : "—",
-          reviewerName: profiles.get(row.reviewer_id) ?? "—",
-          points: (scores ?? []).some((score) => score.review_id === row.id) ? points : null,
-        };
-      }),
-      total: count ?? rows.length,
-    });
-  } catch (cause) {
-    return err(unexpected(cause));
+    const principal = await requirePrincipal();
+    if (!isStaff(principal)) {
+      return err({ code: "42501", message: "Keine Berechtigung für diese Aktion.", retryable: false });
+    }
+    userId = principal.userId;
+  } catch {
+    return err({ code: "AUTH", message: "Bitte melden Sie sich erneut an.", retryable: true });
   }
+
+  // Authority check: the RLS-scoped client only returns the row if this trainer
+  // is assigned to the submission's course. No row → out of scope → refuse.
+  const scoped = await createServerClient();
+  const { data: submission, error: readError } = await scoped
+    .from("submissions")
+    .select("id, student_id, task_kind, arena_task_id, state")
+    .eq("id", input.submissionId)
+    .maybeSingle();
+  if (readError) return err(mapPostgrestError(readError));
+  if (!submission) {
+    return err({ code: "42501", message: "Keine Berechtigung für diese Einreichung.", retryable: false });
+  }
+  if (submission.state !== "submitted") {
+    return err({ code: "22023", message: "Diese Einreichung wurde bereits entschieden.", retryable: false });
+  }
+
+  const admin = createServiceRoleClient();
+
+  const { error: reviewError } = await admin.from("reviews").insert({
+    submission_id: submission.id,
+    trainer_id: userId,
+    decision: input.decision,
+    comment: input.comment,
+  });
+  if (reviewError) return err(mapPostgrestError(reviewError));
+
+  const { error: updateError } = await admin
+    .from("submissions")
+    .update({ state: input.decision, updated_at: new Date().toISOString() })
+    .eq("id", submission.id);
+  if (updateError) return err(mapPostgrestError(updateError));
+
+  let xpAwarded = 0;
+  let badgeName: string | null = null;
+
+  if (input.decision === "accepted" && submission.task_kind === "arena" && submission.arena_task_id) {
+    const { data: task } = await admin
+      .from("arena_tasks")
+      .select("xp_reward, badge_id")
+      .eq("id", submission.arena_task_id)
+      .maybeSingle();
+
+    if (task) {
+      const { data: existingXp } = await admin
+        .from("xp_ledger")
+        .select("id")
+        .eq("student_id", submission.student_id)
+        .eq("arena_task_id", submission.arena_task_id)
+        .limit(1);
+
+      if (!existingXp || existingXp.length === 0) {
+        const { error: xpError } = await admin.from("xp_ledger").insert({
+          student_id: submission.student_id,
+          arena_task_id: submission.arena_task_id,
+          amount: task.xp_reward,
+        });
+        if (!xpError) xpAwarded = task.xp_reward;
+      }
+
+      if (task.badge_id) {
+        await admin.from("badge_awards").upsert(
+          {
+            student_id: submission.student_id,
+            badge_id: task.badge_id,
+            arena_task_id: submission.arena_task_id,
+          },
+          { onConflict: "student_id,badge_id", ignoreDuplicates: true }
+        );
+        const { data: badge } = await admin.from("badges").select("name").eq("id", task.badge_id).maybeSingle();
+        badgeName = badge?.name ?? null;
+      }
+    }
+  }
+
+  return ok({ decision: input.decision, taskKind: submission.task_kind, xpAwarded, badgeName });
 }
 
-/* ── Dashboard ──────────────────────────────────────────────────────────── */
+/* ── shared read helpers ─────────────────────────────────────────────────── */
 
-export interface TrainerDashboard {
-  openReviews: number;
-  openQuestions: number;
-  oldestWaitingHours: number | null;
-  decidedToday: number;
-  queuePreview: QueueItem[];
-  cohorts: CohortSummary[];
+function unique(values: string[]): string[] {
+  return [...new Set(values)];
 }
 
-export async function getTrainerDashboard(locale: string): Promise<Result<TrainerDashboard>> {
-  try {
-    const supabase = await createServerClient();
-    const [queue, cohorts, { data: questionRows }, { data: reviewRows }] = await Promise.all([
-      listReviewQueue({ locale, sort: "oldest", limit: 5 }),
-      listCohorts(),
-      supabase.from("questions").select("id,state,created_at"),
-      supabase.from("reviews").select("id,created_at"),
-    ]);
-    if (!queue.ok) return queue;
-    if (!cohorts.ok) return cohorts;
-
-    const openQuestionStates = new Set(["open", "assigned", "transferred"]);
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
-    return ok({
-      openReviews: queue.data.total,
-      openQuestions: (questionRows ?? []).filter((row) => openQuestionStates.has(row.state as string))
-        .length,
-      oldestWaitingHours: queue.data.items.length
-        ? Math.max(...queue.data.items.map((item) => item.waitingHours))
-        : null,
-      decidedToday: (reviewRows ?? []).filter((row) => new Date(row.created_at) >= startOfToday).length,
-      queuePreview: queue.data.items,
-      cohorts: cohorts.data,
-    });
-  } catch (cause) {
-    return err(unexpected(cause));
-  }
+async function loadNameMap(supabase: ServerClient, ids: string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const { data } = await supabase.from("profiles").select("id, display_name").in("id", ids);
+  return new Map((data ?? []).map((row) => [row.id, row.display_name] as const));
 }
 
-/* ── Shared fallback ────────────────────────────────────────────────────── */
-
-function unexpected(cause: unknown): DataError {
-  if (cause instanceof z.ZodError) {
-    return {
-      code: "SHAPE",
-      message: "Die Daten vom Server haben ein unerwartetes Format.",
-      retryable: false,
-    };
-  }
-  return { code: "NETWORK", message: "Verbindung zum Server fehlgeschlagen.", retryable: true };
+async function loadTitleMap(
+  supabase: ServerClient,
+  table: "course_tasks" | "arena_tasks",
+  ids: string[]
+): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  // Branch on a concrete table literal so the typed client resolves a single
+  // overload rather than a union of both tables.
+  const { data } =
+    table === "course_tasks"
+      ? await supabase.from("course_tasks").select("id, title").in("id", ids)
+      : await supabase.from("arena_tasks").select("id, title").in("id", ids);
+  return new Map(
+    (data ?? []).map((row: { id: string; title: string }) => [row.id, row.title] as const)
+  );
 }

@@ -15,6 +15,7 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
   revision_required: { label: "Überarbeitung nötig",   tone: "warning" },
   resubmitted:       { label: "Erneut eingereicht",    tone: "info" },
   accepted:          { label: "Angenommen",            tone: "success" },
+  needs_revision:    { label: "Nachbesserung nötig",   tone: "warning" },
   abandoned:         { label: "Abgebrochen",           tone: "neutral" },
   withdrawn:         { label: "Zurückgezogen",         tone: "neutral" },
 

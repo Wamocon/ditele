@@ -1,12 +1,14 @@
 import type { Route } from "next";
 import Link from "next/link";
+import { Users } from "lucide-react";
+
 import { PageHeader } from "@/shared/layout";
-import { Button, ErrorState } from "@/shared/ui";
+import { Button, Card, CardTitle, ErrorState } from "@/shared/ui";
 import { requireRole } from "@/shared/auth/guard";
-import { getAdminCourse } from "@/shared/data/content";
-import { adminStrings } from "@/features/content/i18n";
-import { CourseDetail } from "@/features/content/components/course-detail";
-import { pickLocalized } from "@/features/content/model";
+import { getCourse, listCourseTasks, listArenaTasks } from "@/shared/data/admin";
+import { CourseForm } from "@/features/admin/course-form";
+import { CourseStateControl } from "@/features/admin/course-state-control";
+import { CourseTasksManager } from "@/features/admin/course-tasks-manager";
 
 export default async function Page({
   params,
@@ -16,41 +18,70 @@ export default async function Page({
   const { locale, courseId } = await params;
   await requireRole(["admin"], locale);
 
-  const strings = adminStrings(locale);
-  const result = await getAdminCourse(courseId);
-
-  if (!result.ok) {
+  const courseResult = await getCourse(courseId);
+  if (!courseResult.ok) {
     return (
       <>
-        <PageHeader title={strings.course.title} />
-        <ErrorState message={result.error.message} />
+        <PageHeader title="Kurs" locale={locale} />
+        <ErrorState message={courseResult.error.message} />
       </>
     );
   }
+  const course = courseResult.data;
 
-  const course = result.data;
-  const title =
-    pickLocalized(
-      Object.fromEntries(course.localizations.map((entry) => [entry.locale, entry.title])),
-      locale
-    ) || course.slug;
+  const [tasksResult, arenaResult] = await Promise.all([listCourseTasks(courseId), listArenaTasks()]);
+
+  const header = (
+    <PageHeader
+      title={course.title}
+      description={course.slug}
+      breadcrumbs={[
+        { label: "Kurse", href: `/${locale}/admin/courses` },
+        { label: course.title },
+      ]}
+      locale={locale}
+      actions={
+        <Link href={`/${locale}/admin/courses/${courseId}/people` as Route}>
+          <Button variant="outline" iconLeft={<Users className="size-4" aria-hidden />}>
+            Personen verwalten
+          </Button>
+        </Link>
+      }
+    />
+  );
+
+  const arenaOptions = arenaResult.ok
+    ? arenaResult.data.map((a) => ({ id: a.id, title: a.title, order_index: a.order_index }))
+    : [];
 
   return (
     <>
-      <PageHeader
-        title={title}
-        description={course.slug}
-        breadcrumbs={[
-          { label: strings.courses.title, href: `/${locale}/admin/courses` },
-          { label: title },
-        ]}
-        actions={
-          <Link href={`/${locale}/admin/courses` as Route}>
-            <Button variant="outline">{strings.course.back}</Button>
-          </Link>
-        }
-      />
-      <CourseDetail locale={locale} course={course} />
+      {header}
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="flex flex-col gap-4 lg:order-1">
+          <CardTitle>Kursdetails</CardTitle>
+          <CourseForm locale={locale} course={course} />
+        </div>
+        <div className="lg:order-2">
+          <CourseStateControl locale={locale} courseId={courseId} state={course.state} />
+        </div>
+      </div>
+
+      <div className="mt-8">
+        {tasksResult.ok ? (
+          <CourseTasksManager
+            locale={locale}
+            courseId={courseId}
+            tasks={tasksResult.data}
+            arenaTasks={arenaOptions}
+          />
+        ) : (
+          <Card>
+            <ErrorState message={tasksResult.error.message} />
+          </Card>
+        )}
+      </div>
     </>
   );
 }

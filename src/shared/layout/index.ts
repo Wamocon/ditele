@@ -14,7 +14,6 @@ export {
   STUDENT_NAV,
   TRAINER_NAV,
   ADMIN_NAV,
-  DYNAMIC_ROUTES,
   navForRole,
   primaryNav,
   secondaryNav,

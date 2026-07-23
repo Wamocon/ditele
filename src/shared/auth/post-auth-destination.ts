@@ -9,7 +9,15 @@ import { requirePrincipal } from "./principal";
 import type { Principal } from "./types";
 
 const INTERNAL_ORIGIN = "https://ditele.invalid";
-const unsafeControlCharacter = /[\u0000-\u001f\u007f]/;
+
+/** True if the string contains an ASCII control character (0x00–0x1f or 0x7f). */
+function hasControlChar(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code <= 0x1f || code === 0x7f) return true;
+  }
+  return false;
+}
 
 export function safePostAuthenticationNext(
   locale: Locale,
@@ -20,7 +28,7 @@ export function safePostAuthenticationNext(
     !value.startsWith("/") ||
     value.startsWith("//") ||
     value.includes("\\") ||
-    unsafeControlCharacter.test(value)
+    hasControlChar(value)
   ) {
     return null;
   }
@@ -50,7 +58,7 @@ export function safePostAuthenticationNext(
   if (
     /%[0-9a-f]{2}/i.test(decodedPath) ||
     decodedPath.includes("\\") ||
-    unsafeControlCharacter.test(decodedPath) ||
+    hasControlChar(decodedPath) ||
     (decodedPath !== localeRoot &&
       !decodedPath.startsWith(`${localeRoot}/`)) ||
     decodedPath.startsWith(`${localeRoot}//`)
@@ -65,22 +73,14 @@ export function principalLandingDestination(
   locale: Locale,
   principal: Principal,
 ): Route {
-  if (principal.roles.includes("admin")) {
-    return localizedRoute(locale, "/admin");
+  switch (principal.role) {
+    case "admin":
+      return localizedRoute(locale, "/admin");
+    case "trainer":
+      return localizedRoute(locale, "/trainer");
+    default:
+      return localizedRoute(locale, "/learn");
   }
-  if (principal.roles.includes("content_admin")) {
-    return localizedRoute(locale, "/admin/courses");
-  }
-  if (principal.roles.includes("organization_admin")) {
-    return localizedRoute(locale, "/organization");
-  }
-  if (principal.roles.includes("trainer")) {
-    return localizedRoute(locale, "/trainer");
-  }
-  if (principal.roles.includes("learner")) {
-    return localizedRoute(locale, "/learn");
-  }
-  return localizedRoute(locale, "");
 }
 
 export async function resolvePostAuthenticationDestination(
